@@ -57,6 +57,184 @@
             return <span className={`icon ${className}`} {...props}>{icons[name] || "•"}</span>;
         };
 
+        // Persistent Intelligence Layer - Storage Manager
+        const AnalysisMemory = {
+          storage: null,
+          dbPromise: null,
+
+          init() {
+            if (this.dbPromise) return this.dbPromise;
+
+            this.dbPromise = new Promise((resolve, reject) => {
+              const request = window.indexedDB.open('ForensicAnalysisDB', 1);
+
+              request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('analyses')) {
+                  db.createObjectStore('analyses', { keyPath: 'id', autoIncrement: true });
+                }
+                if (!db.objectStoreNames.contains('patterns')) {
+                  db.createObjectStore('patterns', { keyPath: 'pattern' });
+                }
+              };
+
+              request.onsuccess = (e) => {
+                this.storage = e.target.result;
+                resolve(this.storage);
+              };
+
+              request.onerror = (e) => {
+                console.error('Failed to initialize IndexedDB:', e.target.error);
+                reject(e.target.error);
+              };
+            });
+
+            return this.dbPromise;
+          },
+
+          async getDB() {
+            if (!this.storage) {
+              await this.init();
+            }
+            return this.storage;
+          },
+
+          async saveAnalysis(results, files) {
+            try {
+              const db = await this.getDB();
+              const analysis = {
+                timestamp: new Date().toISOString(),
+                fileAName: files.fileA?.name,
+                fileBName: files.fileB?.name,
+                findings: results,
+                defects: this.extractDefects(results),
+                crossReferences: this.buildCrossReferences(results)
+              };
+
+              const tx = db.transaction('analyses', 'readwrite');
+              await tx.objectStore('analyses').add(analysis);
+
+              // Learn patterns from this analysis
+              await this.updatePatterns(analysis);
+
+              console.log('Analysis saved to persistent storage');
+            } catch (error) {
+              console.error('Failed to save analysis:', error);
+            }
+          },
+
+          extractDefects(results) {
+            const defects = [];
+
+            // Phase A defects
+            ['fileA', 'fileB'].forEach(fileKey => {
+              results.phaseA[fileKey].forEach(preset => {
+                const issues = preset.findings.potentialIssues.issues || preset.findings.potentialIssues;
+                if (Array.isArray(issues)) {
+                  issues.forEach(issue => {
+                    defects.push({
+                      phase: 'A',
+                      preset: preset.preset,
+                      severity: issue.severity,
+                      type: issue.type,
+                      description: issue.description,
+                      file: fileKey,
+                      timestamp: new Date().toISOString()
+                    });
+                  });
+                }
+              });
+            });
+
+            // Phase B defects
+            if (results.phaseB.discrepancies) {
+              results.phaseB.discrepancies.forEach(disc => {
+                defects.push({
+                  phase: 'B',
+                  type: 'discrepancy',
+                  severity: disc.severity,
+                  description: disc.description,
+                  timestamp: new Date().toISOString()
+                });
+              });
+            }
+
+            if (results.phaseB.omissions) {
+              results.phaseB.omissions.forEach(om => {
+                defects.push({
+                  phase: 'B',
+                  type: 'omission',
+                  element: om.element,
+                  status: om.status,
+                  timestamp: new Date().toISOString()
+                });
+              });
+            }
+
+            return defects;
+          },
+
+          buildCrossReferences(results) {
+            const refs = {
+              statutory: [],
+              procedural: [],
+              temporal: [],
+              evidential: []
+            };
+
+            // Extract all statutory references
+            ['fileA', 'fileB'].forEach(fileKey => {
+              if (results.phaseA[fileKey][0]?.findings?.legalReferences) {
+                results.phaseA[fileKey][0].findings.legalReferences.forEach(ref => {
+                  refs.statutory.push({
+                    text: ref.text,
+                    type: ref.type,
+                    source: fileKey,
+                    relatedDefects: this.findRelatedDefects(ref.text, results)
+                  });
+                });
+              }
+            });
+
+            return refs;
+          },
+
+          findRelatedDefects(reference, results) {
+            const related = [];
+            const refLower = reference.toLowerCase();
+
+            ['fileA', 'fileB'].forEach(fileKey => {
+              results.phaseA[fileKey].forEach(preset => {
+                const issues = preset.findings.potentialIssues.issues || preset.findings.potentialIssues;
+                if (Array.isArray(issues)) {
+                  issues.forEach(issue => {
+                    if (issue.description.toLowerCase().includes(refLower)) {
+                      related.push({
+                        preset: preset.preset,
+                        type: issue.type,
+                        severity: issue.severity
+                      });
+                    }
+                  });
+                }
+              });
+            });
+
+            return related;
+          },
+
+          async updatePatterns(analysis) {
+            try {
+              const db = await this.getDB();
+              // This could be expanded to learn common patterns in defects
+              // For now, just log that pattern learning is available
+              console.log('Pattern learning capability ready');
+            } catch (error) {
+              console.error('Failed to update patterns:', error);
+            }
+          }
+        };
+
         const ForensicLegalAnalyzer = () => {
           const [files, setFiles] = useState({ fileA: null, fileB: null });
           const [fileContents, setFileContents] = useState({ fileA: '', fileB: '' });
@@ -66,6 +244,15 @@
           const [expandedSections, setExpandedSections] = useState({});
           const fileInputA = useRef(null);
           const fileInputB = useRef(null);
+
+          // Initialize persistent storage on component mount
+          React.useEffect(() => {
+            AnalysisMemory.init().then(() => {
+              console.log('Persistent Intelligence Layer initialized');
+            }).catch(err => {
+              console.error('Failed to initialize storage:', err);
+            });
+          }, []);
 
           const interpretivePresets = [
             {
@@ -173,12 +360,17 @@
 
             const phaseCResults = performStatutoryInterpretation(phaseAResults, phaseBResults);
 
-            setAnalysisResults({
+            const finalResults = {
               phaseA: phaseAResults,
               phaseB: phaseBResults,
               phaseC: phaseCResults,
               summary: generateExecutiveSummary(phaseAResults, phaseBResults, phaseCResults)
-            });
+            };
+
+            setAnalysisResults(finalResults);
+
+            // Save analysis to persistent storage
+            await AnalysisMemory.saveAnalysis(finalResults, files);
 
             setAnalysisState('complete');
             setCurrentPhase('Analysis Complete');
