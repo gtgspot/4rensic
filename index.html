@@ -327,123 +327,502 @@
             return <span className={`icon ${className}`} {...props}>{icons[name] || "•"}</span>;
         };
 
-        // Persistent Intelligence Layer - Storage Manager
+        // Persistent Intelligence Layer - Production-Grade Storage Manager
         const AnalysisMemory = {
           storage: null,
           dbPromise: null,
+          DB_VERSION: 2,
+          DB_NAME: 'ForensicAnalysisDB',
+          MAX_RETRIES: 3,
+          RETRY_DELAY: 1000,
+          isInitialized: false,
 
+          // Utility: Retry with exponential backoff
+          async retryOperation(operation, retries = this.MAX_RETRIES) {
+            for (let i = 0; i < retries; i++) {
+              try {
+                return await operation();
+              } catch (error) {
+                if (i === retries - 1) throw error;
+                const delay = this.RETRY_DELAY * Math.pow(2, i);
+                console.warn(`Operation failed, retrying in ${delay}ms... (${i + 1}/${retries})`, error);
+                await new Promise(resolve => setTimeout(resolve, delay));
+              }
+            }
+          },
+
+          // Validate database health
+          async validateDatabaseHealth() {
+            try {
+              const db = await this.getDB();
+              if (!db) throw new Error('Database connection is null');
+
+              const requiredStores = ['analyses', 'defect_patterns', 'statutory_references'];
+              for (const storeName of requiredStores) {
+                if (!db.objectStoreNames.contains(storeName)) {
+                  throw new Error(`Required object store '${storeName}' is missing`);
+                }
+              }
+
+              return true;
+            } catch (error) {
+              console.error('Database health check failed:', error);
+              return false;
+            }
+          },
+
+          // Initialize with robust error handling
           init() {
             if (this.dbPromise) return this.dbPromise;
 
             this.dbPromise = new Promise((resolve, reject) => {
-              const request = window.indexedDB.open('ForensicAnalysisDB', 1);
+              // Check IndexedDB support
+              if (!window.indexedDB) {
+                const error = new Error('IndexedDB is not supported in this browser');
+                console.error(error);
+                reject(error);
+                return;
+              }
+
+              const request = window.indexedDB.open(this.DB_NAME, this.DB_VERSION);
+              let upgradeFailed = false;
 
               request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains('analyses')) {
-                  db.createObjectStore('analyses', { keyPath: 'id', autoIncrement: true });
-                }
-                if (!db.objectStoreNames.contains('patterns')) {
-                  db.createObjectStore('patterns', { keyPath: 'pattern' });
+                try {
+                  const db = e.target.result;
+                  const oldVersion = e.oldVersion;
+                  const transaction = e.target.transaction;
+
+                  console.log(`Upgrading database from version ${oldVersion} to ${this.DB_VERSION}`);
+
+                  // Table 1: analyses (complete analysis records)
+                  if (!db.objectStoreNames.contains('analyses')) {
+                    const analysesStore = db.createObjectStore('analyses', {
+                      keyPath: 'id',
+                      autoIncrement: true
+                    });
+                    analysesStore.createIndex('timestamp', 'timestamp', { unique: false });
+                    analysesStore.createIndex('fileAName', 'fileAName', { unique: false });
+                    analysesStore.createIndex('fileBName', 'fileBName', { unique: false });
+                    console.log('Created "analyses" object store');
+                  }
+
+                  // Table 2: defect_patterns (recurring defect tracking)
+                  if (!db.objectStoreNames.contains('defect_patterns')) {
+                    const patternsStore = db.createObjectStore('defect_patterns', {
+                      keyPath: 'pattern_id',
+                      autoIncrement: true
+                    });
+                    patternsStore.createIndex('defect_type', 'defect_type', { unique: false });
+                    patternsStore.createIndex('occurrence_count', 'occurrence_count', { unique: false });
+                    patternsStore.createIndex('last_seen', 'last_seen', { unique: false });
+                    console.log('Created "defect_patterns" object store');
+                  }
+
+                  // Table 3: statutory_references (statute compliance tracking)
+                  if (!db.objectStoreNames.contains('statutory_references')) {
+                    const statutesStore = db.createObjectStore('statutory_references', {
+                      keyPath: 'reference'
+                    });
+                    statutesStore.createIndex('times_encountered', 'times_encountered', { unique: false });
+                    statutesStore.createIndex('compliance_rate', 'compliance_rate', { unique: false });
+                    console.log('Created "statutory_references" object store');
+                  }
+
+                  // Migration: Remove old 'patterns' store if exists
+                  if (oldVersion < 2 && db.objectStoreNames.contains('patterns')) {
+                    db.deleteObjectStore('patterns');
+                    console.log('Migrated: Removed deprecated "patterns" object store');
+                  }
+
+                  // Handle transaction abort
+                  transaction.onabort = () => {
+                    upgradeFailed = true;
+                    console.error('Database upgrade transaction was aborted');
+                  };
+
+                } catch (error) {
+                  upgradeFailed = true;
+                  console.error('Error during database upgrade:', error);
+                  // Transaction will abort automatically
                 }
               };
 
               request.onsuccess = (e) => {
+                if (upgradeFailed) {
+                  const error = new Error('Database upgrade failed');
+                  console.error(error);
+                  reject(error);
+                  return;
+                }
+
                 this.storage = e.target.result;
+                this.isInitialized = true;
+
+                // Handle unexpected database closure
+                this.storage.onversionchange = () => {
+                  console.warn('Database version changed, closing connection');
+                  this.storage.close();
+                  this.storage = null;
+                  this.dbPromise = null;
+                  this.isInitialized = false;
+                };
+
+                // Handle database errors
+                this.storage.onerror = (event) => {
+                  console.error('Database error:', event.target.error);
+                };
+
+                console.log('✅ Database initialized successfully');
                 resolve(this.storage);
               };
 
               request.onerror = (e) => {
-                console.error('Failed to initialize IndexedDB:', e.target.error);
-                reject(e.target.error);
+                const error = e.target.error;
+                console.error('Failed to open IndexedDB:', error);
+
+                // Provide user-friendly error messages
+                let errorMessage = 'Database initialization failed';
+                if (error.name === 'QuotaExceededError') {
+                  errorMessage = 'Storage quota exceeded. Please free up space.';
+                } else if (error.name === 'VersionError') {
+                  errorMessage = 'Database version conflict. Please refresh the page.';
+                }
+
+                reject(new Error(errorMessage));
+              };
+
+              request.onblocked = () => {
+                console.warn('Database upgrade blocked. Please close other tabs using this application.');
               };
             });
 
             return this.dbPromise;
           },
 
+          // Safe database getter with validation
           async getDB() {
-            if (!this.storage) {
+            if (!this.storage || !this.isInitialized) {
               await this.init();
             }
+
+            // Validate connection is still alive
+            if (this.storage && this.storage.objectStoreNames.length === 0) {
+              console.warn('Database connection appears invalid, reinitializing...');
+              this.storage = null;
+              this.dbPromise = null;
+              this.isInitialized = false;
+              await this.init();
+            }
+
             return this.storage;
           },
 
-          async saveAnalysis(results, files) {
-            try {
-              const db = await this.getDB();
-              const analysis = {
-                timestamp: new Date().toISOString(),
-                fileAName: files.fileA?.name,
-                fileBName: files.fileB?.name,
-                findings: results,
-                defects: this.extractDefects(results),
-                crossReferences: this.buildCrossReferences(results)
-              };
+          // Validate analysis data before saving
+          validateAnalysisData(results, files, fileContents) {
+            const errors = [];
 
-              const tx = db.transaction('analyses', 'readwrite');
-              await tx.objectStore('analyses').add(analysis);
-
-              // Learn patterns from this analysis
-              await this.updatePatterns(analysis);
-
-              console.log('Analysis saved to persistent storage');
-            } catch (error) {
-              console.error('Failed to save analysis:', error);
+            if (!results || typeof results !== 'object') {
+              errors.push('Analysis results are invalid or missing');
             }
+
+            if (!files || (!files.fileA && !files.fileB)) {
+              errors.push('File information is missing');
+            }
+
+            if (files.fileA && files.fileA.name && files.fileA.name.length > 255) {
+              errors.push('File A name exceeds maximum length');
+            }
+
+            if (files.fileB && files.fileB.name && files.fileB.name.length > 255) {
+              errors.push('File B name exceeds maximum length');
+            }
+
+            // Validate content size (limit to 10MB per file)
+            const MAX_CONTENT_SIZE = 10 * 1024 * 1024;
+            if (fileContents?.fileA && fileContents.fileA.length > MAX_CONTENT_SIZE) {
+              errors.push('File A content exceeds maximum size (10MB)');
+            }
+
+            if (fileContents?.fileB && fileContents.fileB.length > MAX_CONTENT_SIZE) {
+              errors.push('File B content exceeds maximum size (10MB)');
+            }
+
+            if (errors.length > 0) {
+              throw new Error(`Validation failed: ${errors.join(', ')}`);
+            }
+
+            return true;
           },
 
+          // Sanitize text content
+          sanitizeContent(content) {
+            if (typeof content !== 'string') return '';
+
+            // Remove potential XSS vectors while preserving legal text
+            return content
+              .replace(/<script[^>]*>.*?<\/script>/gi, '')
+              .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
+              .replace(/javascript:/gi, '')
+              .replace(/on\w+\s*=/gi, '')
+              .substring(0, 10 * 1024 * 1024); // Hard limit at 10MB
+          },
+
+          // AUTO-SAVE: Complete analysis with all metadata (Production-Grade)
+          async saveAnalysis(results, files, fileContents) {
+            return this.retryOperation(async () => {
+              try {
+                // Validate input data
+                this.validateAnalysisData(results, files, fileContents);
+
+                const db = await this.getDB();
+
+                // Extract and validate components
+                const defects = this.extractDefects(results);
+                const severity = this.calculateSeveritySummary(defects);
+                const statutes = this.extractStatutoryReferences(results);
+
+                // Sanitize file contents
+                const sanitizedFileA = this.sanitizeContent(fileContents?.fileA || '');
+                const sanitizedFileB = this.sanitizeContent(fileContents?.fileB || '');
+
+                const analysis = {
+                  timestamp: new Date().toISOString(),
+                  fileAName: (files.fileA?.name || 'Unknown').substring(0, 255),
+                  fileBName: (files.fileB?.name || 'Unknown').substring(0, 255),
+                  fileAContent: sanitizedFileA,
+                  fileBContent: sanitizedFileB,
+                  findings: results,
+                  defects: defects,
+                  severity_summary: severity,
+                  statutory_references: statutes,
+                  crossReferences: this.buildCrossReferences(results),
+                  version: this.DB_VERSION,
+                  savedAt: Date.now()
+                };
+
+                // Use transaction for atomicity
+                const tx = db.transaction('analyses', 'readwrite');
+                let analysisId = null;
+
+                // Set up transaction error handling
+                await new Promise((resolve, reject) => {
+                  tx.oncomplete = () => resolve();
+                  tx.onerror = () => reject(tx.error);
+                  tx.onabort = () => reject(new Error('Transaction aborted'));
+
+                  const request = tx.objectStore('analyses').add(analysis);
+                  request.onsuccess = () => {
+                    analysisId = request.result;
+                  };
+                  request.onerror = () => reject(request.error);
+                });
+
+                // Update patterns and references (separate transactions for resilience)
+                try {
+                  await this.updateDefectPatterns(defects);
+                } catch (error) {
+                  console.warn('Failed to update defect patterns, continuing...', error);
+                }
+
+                try {
+                  await this.updateStatutoryReferences(statutes, defects);
+                } catch (error) {
+                  console.warn('Failed to update statutory references, continuing...', error);
+                }
+
+                console.log(`✅ Analysis #${analysisId} saved successfully`);
+                return analysisId;
+
+              } catch (error) {
+                console.error('Failed to save analysis:', error);
+
+                // Provide user-friendly error messages
+                if (error.name === 'QuotaExceededError') {
+                  throw new Error('Storage quota exceeded. Please delete old analyses or free up space.');
+                } else if (error.name === 'ConstraintError') {
+                  throw new Error('Data constraint violation. Analysis may already exist.');
+                } else if (error.message.includes('Validation failed')) {
+                  throw error; // Re-throw validation errors as-is
+                } else {
+                  throw new Error(`Failed to save analysis: ${error.message}`);
+                }
+              }
+            });
+          },
+
+          // Extract all defects from analysis results with robust null checking
           extractDefects(results) {
             const defects = [];
 
-            // Phase A defects
-            ['fileA', 'fileB'].forEach(fileKey => {
-              results.phaseA[fileKey].forEach(preset => {
-                const issues = preset.findings.potentialIssues.issues || preset.findings.potentialIssues;
-                if (Array.isArray(issues)) {
-                  issues.forEach(issue => {
-                    defects.push({
-                      phase: 'A',
-                      preset: preset.preset,
-                      severity: issue.severity,
-                      type: issue.type,
-                      description: issue.description,
-                      file: fileKey,
-                      timestamp: new Date().toISOString()
+            try {
+              if (!results || typeof results !== 'object') {
+                console.warn('extractDefects: Invalid results object');
+                return defects;
+              }
+
+              // Phase A defects from both files
+              ['fileA', 'fileB'].forEach(fileKey => {
+                try {
+                  if (results.phaseA && Array.isArray(results.phaseA[fileKey])) {
+                    results.phaseA[fileKey].forEach((preset, presetIndex) => {
+                      try {
+                        if (!preset || !preset.findings) {
+                          console.warn(`Phase A ${fileKey} preset ${presetIndex}: Missing findings`);
+                          return;
+                        }
+
+                        const potentialIssues = preset.findings.potentialIssues;
+                        if (!potentialIssues) return;
+
+                        const issues = potentialIssues.issues || potentialIssues;
+
+                        if (Array.isArray(issues)) {
+                          issues.forEach((issue, issueIndex) => {
+                            try {
+                              // Handle both object and string issues
+                              const issueObj = typeof issue === 'string' ? { description: issue } : issue;
+
+                              if (!issueObj || typeof issueObj !== 'object') {
+                                console.warn(`Phase A ${fileKey} preset ${presetIndex} issue ${issueIndex}: Invalid issue format`);
+                                return;
+                              }
+
+                              defects.push({
+                                phase: 'A',
+                                preset: preset.preset || 'Unknown Preset',
+                                severity: (issueObj.severity || 'MEDIUM').toUpperCase(),
+                                type: issueObj.type || 'General Issue',
+                                description: this.sanitizeContent(issueObj.description || String(issue)).substring(0, 1000),
+                                file: fileKey,
+                                timestamp: new Date().toISOString()
+                              });
+                            } catch (error) {
+                              console.error(`Error processing Phase A issue:`, error);
+                            }
+                          });
+                        }
+                      } catch (error) {
+                        console.error(`Error processing Phase A preset:`, error);
+                      }
                     });
-                  });
+                  }
+                } catch (error) {
+                  console.error(`Error processing Phase A ${fileKey}:`, error);
                 }
               });
-            });
 
-            // Phase B defects
-            if (results.phaseB.discrepancies) {
-              results.phaseB.discrepancies.forEach(disc => {
-                defects.push({
-                  phase: 'B',
-                  type: 'discrepancy',
-                  severity: disc.severity,
-                  description: disc.description,
-                  timestamp: new Date().toISOString()
-                });
-              });
-            }
+              // Phase B discrepancies
+              if (results.phaseB && Array.isArray(results.phaseB.discrepancies)) {
+                results.phaseB.discrepancies.forEach((disc, index) => {
+                  try {
+                    const discObj = typeof disc === 'string' ? { description: disc } : disc;
 
-            if (results.phaseB.omissions) {
-              results.phaseB.omissions.forEach(om => {
-                defects.push({
-                  phase: 'B',
-                  type: 'omission',
-                  element: om.element,
-                  status: om.status,
-                  timestamp: new Date().toISOString()
+                    if (!discObj || typeof discObj !== 'object') {
+                      console.warn(`Phase B discrepancy ${index}: Invalid format`);
+                      return;
+                    }
+
+                    defects.push({
+                      phase: 'B',
+                      type: 'discrepancy',
+                      severity: (discObj.severity || 'HIGH').toUpperCase(),
+                      description: this.sanitizeContent(discObj.description || String(disc)).substring(0, 1000),
+                      timestamp: new Date().toISOString()
+                    });
+                  } catch (error) {
+                    console.error(`Error processing Phase B discrepancy:`, error);
+                  }
                 });
-              });
+              }
+
+              // Phase B omissions
+              if (results.phaseB && Array.isArray(results.phaseB.omissions)) {
+                results.phaseB.omissions.forEach((om, index) => {
+                  try {
+                    if (!om || typeof om !== 'object') {
+                      console.warn(`Phase B omission ${index}: Invalid format`);
+                      return;
+                    }
+
+                    defects.push({
+                      phase: 'B',
+                      type: 'omission',
+                      severity: 'MEDIUM',
+                      element: om.element || 'Unknown Element',
+                      status: om.status || 'missing',
+                      description: `Missing: ${om.element || 'Unknown Element'}`,
+                      timestamp: new Date().toISOString()
+                    });
+                  } catch (error) {
+                    console.error(`Error processing Phase B omission:`, error);
+                  }
+                });
+              }
+
+              // Phase C defects (if any)
+              if (results.phaseC && Array.isArray(results.phaseC.defects)) {
+                results.phaseC.defects.forEach((defect, index) => {
+                  try {
+                    const defectObj = typeof defect === 'string' ? { description: defect } : defect;
+
+                    if (!defectObj || typeof defectObj !== 'object') {
+                      console.warn(`Phase C defect ${index}: Invalid format`);
+                      return;
+                    }
+
+                    defects.push({
+                      phase: 'C',
+                      type: defectObj.type || 'interpretation',
+                      severity: (defectObj.severity || 'MEDIUM').toUpperCase(),
+                      description: this.sanitizeContent(defectObj.description || String(defect)).substring(0, 1000),
+                      timestamp: new Date().toISOString()
+                    });
+                  } catch (error) {
+                    console.error(`Error processing Phase C defect:`, error);
+                  }
+                });
+              }
+
+              console.log(`✅ Extracted ${defects.length} defects from analysis`);
+
+            } catch (error) {
+              console.error('Critical error in extractDefects:', error);
             }
 
             return defects;
           },
 
+          // Calculate severity summary
+          calculateSeveritySummary(defects) {
+            const summary = { HIGH: 0, MEDIUM: 0, LOW: 0, CRITICAL: 0 };
+            defects.forEach(defect => {
+              const severity = (defect.severity || 'MEDIUM').toUpperCase();
+              if (summary.hasOwnProperty(severity)) {
+                summary[severity]++;
+              } else {
+                summary[severity] = 1;
+              }
+            });
+            return summary;
+          },
+
+          // Extract statutory references from results
+          extractStatutoryReferences(results) {
+            const statutes = new Set();
+
+            ['fileA', 'fileB'].forEach(fileKey => {
+              if (results.phaseA?.[fileKey]?.[0]?.findings?.legalReferences) {
+                results.phaseA[fileKey][0].findings.legalReferences.forEach(ref => {
+                  if (ref.text) statutes.add(ref.text);
+                });
+              }
+            });
+
+            return Array.from(statutes);
+          },
+
+          // Build cross-references between documents
           buildCrossReferences(results) {
             const refs = {
               statutory: [],
@@ -452,9 +831,8 @@
               evidential: []
             };
 
-            // Extract all statutory references
             ['fileA', 'fileB'].forEach(fileKey => {
-              if (results.phaseA[fileKey][0]?.findings?.legalReferences) {
+              if (results.phaseA?.[fileKey]?.[0]?.findings?.legalReferences) {
                 results.phaseA[fileKey][0].findings.legalReferences.forEach(ref => {
                   refs.statutory.push({
                     text: ref.text,
@@ -474,77 +852,607 @@
             const refLower = reference.toLowerCase();
 
             ['fileA', 'fileB'].forEach(fileKey => {
-              results.phaseA[fileKey].forEach(preset => {
-                const issues = preset.findings.potentialIssues.issues || preset.findings.potentialIssues;
-                if (Array.isArray(issues)) {
-                  issues.forEach(issue => {
-                    if (issue.description.toLowerCase().includes(refLower)) {
-                      related.push({
-                        preset: preset.preset,
-                        type: issue.type,
-                        severity: issue.severity
-                      });
-                    }
-                  });
-                }
-              });
+              if (results.phaseA?.[fileKey]) {
+                results.phaseA[fileKey].forEach(preset => {
+                  const issues = preset.findings.potentialIssues.issues || preset.findings.potentialIssues;
+                  if (Array.isArray(issues)) {
+                    issues.forEach(issue => {
+                      const desc = issue.description || issue;
+                      if (typeof desc === 'string' && desc.toLowerCase().includes(refLower)) {
+                        related.push({
+                          preset: preset.preset,
+                          type: issue.type,
+                          severity: issue.severity
+                        });
+                      }
+                    });
+                  }
+                });
+              }
             });
 
             return related;
           },
 
-          async updatePatterns(analysis) {
+          // PATTERN RECOGNITION: Update defect patterns
+          async updateDefectPatterns(defects) {
             try {
               const db = await this.getDB();
-              // This could be expanded to learn common patterns in defects
-              // For now, just log that pattern learning is available
-              console.log('Pattern learning capability ready');
+              const tx = db.transaction('defect_patterns', 'readwrite');
+              const store = tx.objectStore('defect_patterns');
+
+              for (const defect of defects) {
+                const defectKey = `${defect.type}_${defect.severity}`;
+
+                // Try to find existing pattern
+                const allPatterns = await new Promise((resolve, reject) => {
+                  const request = store.getAll();
+                  request.onsuccess = () => resolve(request.result);
+                  request.onerror = () => reject(request.error);
+                });
+
+                const existingPattern = allPatterns.find(p =>
+                  p.defect_type === defect.type && p.description.includes(defect.description.substring(0, 50))
+                );
+
+                if (existingPattern) {
+                  // Update existing pattern
+                  existingPattern.occurrence_count++;
+                  existingPattern.last_seen = new Date().toISOString();
+                  existingPattern.associated_statutes = Array.from(new Set([
+                    ...(existingPattern.associated_statutes || []),
+                    ...(defect.statutes || [])
+                  ]));
+
+                  // Generate recommendation for recurring issues (3+ times)
+                  if (existingPattern.occurrence_count >= 3 && !existingPattern.recommendation) {
+                    existingPattern.recommendation = this.generateRecommendation(existingPattern);
+                  }
+
+                  await new Promise((resolve, reject) => {
+                    const request = store.put(existingPattern);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                  });
+                } else {
+                  // Create new pattern
+                  const newPattern = {
+                    defect_type: defect.type,
+                    description: defect.description,
+                    first_seen: new Date().toISOString(),
+                    last_seen: new Date().toISOString(),
+                    occurrence_count: 1,
+                    associated_statutes: defect.statutes || [],
+                    recommendation: null
+                  };
+
+                  await new Promise((resolve, reject) => {
+                    const request = store.add(newPattern);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                  });
+                }
+              }
             } catch (error) {
-              console.error('Failed to update patterns:', error);
+              console.error('Failed to update defect patterns:', error);
             }
           },
 
-          async getAllAnalyses() {
+          // Generate recommendations for recurring defects
+          generateRecommendation(pattern) {
+            const recommendations = {
+              'Missing s.55D directions': 'Systematic issue with preliminary test procedure documentation. Create checklist requiring explicit documentation of: oral directions given, written directions provided, subject\'s response to directions.',
+              'Missing s.49(1) reason to believe': 'Document officer\'s subjective belief formation at time of demand. Include specific observations that led to reasonable belief.',
+              'discrepancy': 'Cross-reference detected inconsistency. Verify timeline and ensure all document versions align.',
+              'omission': 'Critical element missing from documentation. Implement mandatory field checklist for all required elements.',
+              'admissibility': 'Evidence admissibility concerns detected. Review procedural compliance and statutory requirements.',
+              'procedural': 'Procedural defect identified. Ensure strict adherence to statutory procedure timeline and requirements.'
+            };
+
+            for (const [key, recommendation] of Object.entries(recommendations)) {
+              if (pattern.description.toLowerCase().includes(key.toLowerCase())) {
+                return `${recommendation} (Occurred ${pattern.occurrence_count} times)`;
+              }
+            }
+
+            return `This issue has occurred ${pattern.occurrence_count} times. Review procedural compliance and create systematic documentation checklist.`;
+          },
+
+          // Update statutory reference statistics
+          async updateStatutoryReferences(statutes, defects) {
             try {
               const db = await this.getDB();
-              const tx = db.transaction('analyses', 'readonly');
-              const store = tx.objectStore('analyses');
-              const request = store.getAll();
+              const tx = db.transaction('statutory_references', 'readwrite');
+              const store = tx.objectStore('statutory_references');
 
-              return new Promise((resolve, reject) => {
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-              });
+              for (const statute of statutes) {
+                const existing = await new Promise((resolve, reject) => {
+                  const request = store.get(statute);
+                  request.onsuccess = () => resolve(request.result);
+                  request.onerror = () => reject(request.error);
+                });
+
+                // Find defects related to this statute
+                const relatedDefects = defects.filter(d =>
+                  d.description.toLowerCase().includes(statute.toLowerCase())
+                ).map(d => d.type);
+
+                if (existing) {
+                  // Update existing reference
+                  existing.times_encountered++;
+                  existing.associated_defects = Array.from(new Set([
+                    ...(existing.associated_defects || []),
+                    ...relatedDefects
+                  ]));
+
+                  // Calculate compliance rate (higher rate = fewer defects)
+                  const totalDefects = relatedDefects.length;
+                  existing.compliance_rate = Math.max(0, 100 - (totalDefects * 10));
+
+                  await new Promise((resolve, reject) => {
+                    const request = store.put(existing);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                  });
+                } else {
+                  // Create new reference
+                  const newRef = {
+                    reference: statute,
+                    statute_name: this.parseStatuteName(statute),
+                    times_encountered: 1,
+                    associated_defects: relatedDefects,
+                    compliance_rate: relatedDefects.length > 0 ? 90 : 100
+                  };
+
+                  await new Promise((resolve, reject) => {
+                    const request = store.add(newRef);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                  });
+                }
+              }
             } catch (error) {
-              console.error('Failed to retrieve analyses:', error);
+              console.error('Failed to update statutory references:', error);
+            }
+          },
+
+          parseStatuteName(reference) {
+            // Extract statute name from reference (e.g., "s.49(1) RSA" -> "Road Safety Act")
+            const statuteMap = {
+              'RSA': 'Road Safety Act 1986',
+              'Crimes Act': 'Crimes Act 1958',
+              'Evidence Act': 'Evidence Act 2008',
+              'Magistrates': 'Magistrates\' Court Act'
+            };
+
+            for (const [key, name] of Object.entries(statuteMap)) {
+              if (reference.includes(key)) return name;
+            }
+
+            return reference;
+          },
+
+          // Get all analyses with retry and pagination support
+          async getAllAnalyses(options = {}) {
+            return this.retryOperation(async () => {
+              try {
+                const db = await this.getDB();
+                const tx = db.transaction('analyses', 'readonly');
+                const store = tx.objectStore('analyses');
+
+                const { limit = 1000, offset = 0, sortOrder = 'desc' } = options;
+
+                return new Promise((resolve, reject) => {
+                  const analyses = [];
+                  const index = store.index('timestamp');
+                  const direction = sortOrder === 'desc' ? 'prev' : 'next';
+                  const request = index.openCursor(null, direction);
+                  let count = 0;
+                  let skipped = 0;
+
+                  request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+
+                    if (cursor) {
+                      if (skipped < offset) {
+                        skipped++;
+                        cursor.continue();
+                      } else if (count < limit) {
+                        analyses.push(cursor.value);
+                        count++;
+                        cursor.continue();
+                      } else {
+                        resolve(analyses);
+                      }
+                    } else {
+                      resolve(analyses);
+                    }
+                  };
+
+                  request.onerror = () => {
+                    console.error('Error reading analyses:', request.error);
+                    reject(request.error);
+                  };
+
+                  tx.onerror = () => {
+                    console.error('Transaction error:', tx.error);
+                    reject(tx.error);
+                  };
+                });
+              } catch (error) {
+                console.error('Failed to retrieve analyses:', error);
+                // Return empty array as fallback instead of crashing
+                return [];
+              }
+            });
+          },
+
+          // Get all defect patterns with retry logic
+          async getAllDefectPatterns() {
+            return this.retryOperation(async () => {
+              try {
+                const db = await this.getDB();
+                const tx = db.transaction('defect_patterns', 'readonly');
+                const store = tx.objectStore('defect_patterns');
+
+                return new Promise((resolve, reject) => {
+                  const request = store.getAll();
+
+                  request.onsuccess = () => {
+                    const patterns = request.result || [];
+                    console.log(`Retrieved ${patterns.length} defect patterns`);
+                    resolve(patterns);
+                  };
+
+                  request.onerror = () => {
+                    console.error('Error reading defect patterns:', request.error);
+                    reject(request.error);
+                  };
+
+                  tx.onerror = () => {
+                    console.error('Transaction error:', tx.error);
+                    reject(tx.error);
+                  };
+                });
+              } catch (error) {
+                console.error('Failed to retrieve defect patterns:', error);
+                return [];
+              }
+            });
+          },
+
+          // Get all statutory references with retry logic
+          async getAllStatutoryReferences() {
+            return this.retryOperation(async () => {
+              try {
+                const db = await this.getDB();
+                const tx = db.transaction('statutory_references', 'readonly');
+                const store = tx.objectStore('statutory_references');
+
+                return new Promise((resolve, reject) => {
+                  const request = store.getAll();
+
+                  request.onsuccess = () => {
+                    const references = request.result || [];
+                    console.log(`Retrieved ${references.length} statutory references`);
+                    resolve(references);
+                  };
+
+                  request.onerror = () => {
+                    console.error('Error reading statutory references:', request.error);
+                    reject(request.error);
+                  };
+
+                  tx.onerror = () => {
+                    console.error('Transaction error:', tx.error);
+                    reject(tx.error);
+                  };
+                });
+              } catch (error) {
+                console.error('Failed to retrieve statutory references:', error);
+                return [];
+              }
+            });
+          },
+
+          // Delete old analyses to free up space (data retention policy)
+          async deleteOldAnalyses(daysToKeep = 90) {
+            return this.retryOperation(async () => {
+              try {
+                const db = await this.getDB();
+                const cutoffDate = new Date();
+                cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+                const cutoffISO = cutoffDate.toISOString();
+
+                const tx = db.transaction('analyses', 'readwrite');
+                const store = tx.objectStore('analyses');
+                const index = store.index('timestamp');
+
+                let deletedCount = 0;
+
+                return new Promise((resolve, reject) => {
+                  const range = IDBKeyRange.upperBound(cutoffISO);
+                  const request = index.openCursor(range);
+
+                  request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor) {
+                      cursor.delete();
+                      deletedCount++;
+                      cursor.continue();
+                    } else {
+                      console.log(`Deleted ${deletedCount} old analyses`);
+                      resolve(deletedCount);
+                    }
+                  };
+
+                  request.onerror = () => reject(request.error);
+                  tx.onerror = () => reject(tx.error);
+                });
+              } catch (error) {
+                console.error('Failed to delete old analyses:', error);
+                throw error;
+              }
+            });
+          },
+
+          // Get database statistics
+          async getDatabaseStats() {
+            try {
+              const [analyses, patterns, references] = await Promise.all([
+                this.getAllAnalyses({ limit: 10000 }),
+                this.getAllDefectPatterns(),
+                this.getAllStatutoryReferences()
+              ]);
+
+              const totalDefects = analyses.reduce((sum, a) => sum + (a.defects?.length || 0), 0);
+              const avgDefectsPerAnalysis = analyses.length > 0 ? (totalDefects / analyses.length).toFixed(2) : 0;
+
+              return {
+                totalAnalyses: analyses.length,
+                totalDefectPatterns: patterns.length,
+                totalStatutoryReferences: references.length,
+                totalDefects: totalDefects,
+                averageDefectsPerAnalysis: avgDefectsPerAnalysis,
+                oldestAnalysis: analyses.length > 0 ? analyses[analyses.length - 1]?.timestamp : null,
+                newestAnalysis: analyses.length > 0 ? analyses[0]?.timestamp : null
+              };
+            } catch (error) {
+              console.error('Failed to get database stats:', error);
+              return null;
+            }
+          },
+
+          // CROSS-ANALYSIS INTELLIGENCE: Compare new analysis to history
+          async getIntelligenceForAnalysis(currentDefects) {
+            try {
+              const allPatterns = await this.getAllDefectPatterns();
+              const intelligence = [];
+
+              for (const defect of currentDefects) {
+                const matchingPattern = allPatterns.find(p =>
+                  p.defect_type === defect.type &&
+                  p.description.includes(defect.description.substring(0, 50))
+                );
+
+                if (matchingPattern) {
+                  intelligence.push({
+                    defect: defect,
+                    isRecurring: matchingPattern.occurrence_count >= 3,
+                    previousOccurrences: matchingPattern.occurrence_count,
+                    firstSeen: matchingPattern.first_seen,
+                    lastSeen: matchingPattern.last_seen,
+                    recommendation: matchingPattern.recommendation,
+                    isNovel: false
+                  });
+                } else {
+                  intelligence.push({
+                    defect: defect,
+                    isRecurring: false,
+                    previousOccurrences: 0,
+                    isNovel: true,
+                    recommendation: '⚠️ NEW ISSUE: This type of defect has not been encountered before.'
+                  });
+                }
+              }
+
+              return intelligence;
+            } catch (error) {
+              console.error('Failed to generate intelligence:', error);
               return [];
             }
+          },
+
+          // LEARNING INSIGHTS: Generate system intelligence summary
+          async generateLearningInsights() {
+            try {
+              const analyses = await this.getAllAnalyses();
+              const patterns = await this.getAllDefectPatterns();
+              const statutes = await this.getAllStatutoryReferences();
+
+              if (analyses.length === 0) {
+                return {
+                  totalAnalyses: 0,
+                  totalDefects: 0,
+                  mostCommonIssue: null,
+                  recurringPatterns: [],
+                  statuteCompliance: [],
+                  temporalTrends: null,
+                  recommendations: []
+                };
+              }
+
+              // Calculate total defects
+              const totalDefects = analyses.reduce((sum, a) => sum + (a.defects?.length || 0), 0);
+
+              // Find most common issue
+              const mostCommon = patterns.sort((a, b) => b.occurrence_count - a.occurrence_count)[0];
+
+              // Find recurring patterns (3+ occurrences)
+              const recurring = patterns.filter(p => p.occurrence_count >= 3);
+
+              // Calculate temporal trends (comparing recent vs older analyses)
+              const temporal = this.calculateTemporalTrends(analyses);
+
+              // Generate process improvement recommendations
+              const recommendations = this.generateProcessRecommendations(patterns, statutes);
+
+              return {
+                totalAnalyses: analyses.length,
+                totalDefects: totalDefects,
+                mostCommonIssue: mostCommon ? {
+                  type: mostCommon.defect_type,
+                  count: mostCommon.occurrence_count,
+                  percentage: ((mostCommon.occurrence_count / totalDefects) * 100).toFixed(1)
+                } : null,
+                recurringPatterns: recurring,
+                statuteCompliance: statutes.sort((a, b) => a.compliance_rate - b.compliance_rate).slice(0, 5),
+                temporalTrends: temporal,
+                recommendations: recommendations,
+                newIssuesThisAnalysis: 0 // This will be set by the analyzer
+              };
+            } catch (error) {
+              console.error('Failed to generate learning insights:', error);
+              return null;
+            }
+          },
+
+          // Calculate temporal trends
+          calculateTemporalTrends(analyses) {
+            if (analyses.length < 2) return null;
+
+            const sorted = analyses.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            const midpoint = Math.floor(sorted.length / 2);
+            const older = sorted.slice(0, midpoint);
+            const recent = sorted.slice(midpoint);
+
+            const olderDefectCount = older.reduce((sum, a) => sum + (a.defects?.length || 0), 0);
+            const recentDefectCount = recent.reduce((sum, a) => sum + (a.defects?.length || 0), 0);
+
+            const olderAvg = older.length > 0 ? olderDefectCount / older.length : 0;
+            const recentAvg = recent.length > 0 ? recentDefectCount / recent.length : 0;
+
+            const trend = recentAvg < olderAvg ? 'improving' : recentAvg > olderAvg ? 'worsening' : 'stable';
+            const changePercent = olderAvg > 0 ? (((recentAvg - olderAvg) / olderAvg) * 100).toFixed(1) : 0;
+
+            return {
+              trend: trend,
+              changePercent: Math.abs(changePercent),
+              direction: recentAvg < olderAvg ? 'decrease' : 'increase',
+              olderAverage: olderAvg.toFixed(1),
+              recentAverage: recentAvg.toFixed(1)
+            };
+          },
+
+          // Generate process improvement recommendations
+          generateProcessRecommendations(patterns, statutes) {
+            const recommendations = [];
+
+            // Recurring defect recommendations
+            patterns.filter(p => p.occurrence_count >= 3).forEach(pattern => {
+              if (pattern.recommendation) {
+                recommendations.push({
+                  type: 'recurring_defect',
+                  priority: pattern.occurrence_count >= 5 ? 'HIGH' : 'MEDIUM',
+                  issue: pattern.defect_type,
+                  occurrences: pattern.occurrence_count,
+                  recommendation: pattern.recommendation
+                });
+              }
+            });
+
+            // Low compliance statute recommendations
+            statutes.filter(s => s.compliance_rate < 70).forEach(statute => {
+              recommendations.push({
+                type: 'statute_compliance',
+                priority: 'HIGH',
+                statute: statute.reference,
+                complianceRate: statute.compliance_rate,
+                recommendation: `${statute.reference} has low compliance (${statute.compliance_rate}%). Review procedural requirements and create targeted training.`
+              });
+            });
+
+            return recommendations;
           }
         };
 
-        // Timeline Visualization Component
+        // Enhanced Timeline Visualization Component with Filtering
         const DefectTimeline = ({ analyses }) => {
           const [selectedDefect, setSelectedDefect] = useState(null);
+          const [filters, setFilters] = useState({
+            dateRange: 'all', // all, last7, last30, last90
+            defectType: 'all',
+            severity: 'all',
+            statute: 'all'
+          });
+          const [expandedAnalysis, setExpandedAnalysis] = useState(null);
 
-          // Group defects by type across all analyses
-          const defectEvolution = React.useMemo(() => {
-            if (!analyses || analyses.length === 0) return {};
+          // Extract unique values for filters
+          const filterOptions = React.useMemo(() => {
+            if (!analyses || analyses.length === 0) return { types: [], severities: [], statutes: [] };
 
-            return analyses.reduce((acc, analysis) => {
+            const types = new Set();
+            const severities = new Set();
+            const statutes = new Set();
+
+            analyses.forEach(analysis => {
               if (analysis.defects) {
                 analysis.defects.forEach(defect => {
-                  const key = `${defect.type}-${defect.severity}`;
-                  if (!acc[key]) acc[key] = [];
-                  acc[key].push({
-                    date: analysis.timestamp,
-                    description: defect.description,
-                    file: analysis.fileAName
-                  });
+                  types.add(defect.type);
+                  severities.add(defect.severity);
                 });
               }
-              return acc;
-            }, {});
+              if (analysis.statutory_references) {
+                analysis.statutory_references.forEach(ref => statutes.add(ref));
+              }
+            });
+
+            return {
+              types: Array.from(types),
+              severities: Array.from(severities),
+              statutes: Array.from(statutes)
+            };
           }, [analyses]);
+
+          // Filter analyses based on selected filters
+          const filteredAnalyses = React.useMemo(() => {
+            if (!analyses || analyses.length === 0) return [];
+
+            let filtered = [...analyses];
+
+            // Date range filter
+            if (filters.dateRange !== 'all') {
+              const now = new Date();
+              const daysMap = { last7: 7, last30: 30, last90: 90 };
+              const days = daysMap[filters.dateRange];
+              const cutoff = new Date(now - days * 24 * 60 * 60 * 1000);
+
+              filtered = filtered.filter(a => new Date(a.timestamp) >= cutoff);
+            }
+
+            // Defect type filter
+            if (filters.defectType !== 'all') {
+              filtered = filtered.filter(a =>
+                a.defects?.some(d => d.type === filters.defectType)
+              );
+            }
+
+            // Severity filter
+            if (filters.severity !== 'all') {
+              filtered = filtered.filter(a =>
+                a.defects?.some(d => d.severity === filters.severity)
+              );
+            }
+
+            // Statute filter
+            if (filters.statute !== 'all') {
+              filtered = filtered.filter(a =>
+                a.statutory_references?.includes(filters.statute)
+              );
+            }
+
+            return filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          }, [analyses, filters]);
 
           if (!analyses || analyses.length === 0) {
             return (
@@ -554,45 +1462,683 @@
             );
           }
 
+          const getSeverityColor = (severity) => {
+            const colors = {
+              'CRITICAL': '#dc2626',
+              'HIGH': '#f59e0b',
+              'MEDIUM': '#3b82f6',
+              'LOW': '#10b981'
+            };
+            return colors[severity?.toUpperCase()] || '#6b7280';
+          };
+
           return (
             <div style={{ padding: '20px', backgroundColor: '#f9fafb' }}>
-              <h3>📊 Defect Evolution Timeline</h3>
-              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
-                Showing patterns across {analyses.length} historical analysis sessions
-              </p>
+              <h3 style={{ marginBottom: '16px' }}>📊 Chronological Analysis Timeline</h3>
 
-              {Object.entries(defectEvolution).map(([type, occurrences]) => (
-                <div key={type} style={{
-                  marginBottom: '20px',
-                  padding: '15px',
-                  backgroundColor: 'white',
-                  borderRadius: '8px',
-                  borderLeft: '4px solid #dc2626'
-                }}>
-                  <h4>{type.replace('-', ' - ').toUpperCase()}</h4>
-                  <p style={{ fontSize: '12px', color: '#666' }}>
-                    Occurred {occurrences.length} times
-                  </p>
-
-                  <div style={{ marginTop: '10px' }}>
-                    {occurrences.map((occ, idx) => (
-                      <div key={idx} style={{
-                        padding: '8px',
-                        marginBottom: '8px',
-                        backgroundColor: '#fef2f2',
+              {/* Filters */}
+              <div style={{
+                marginBottom: '20px',
+                padding: '16px',
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+              }}>
+                <h4 style={{ marginBottom: '12px', fontSize: '14px' }}>Filter Results</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                  {/* Date Range */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#6b7280' }}>
+                      Date Range
+                    </label>
+                    <select
+                      value={filters.dateRange}
+                      onChange={(e) => setFilters({...filters, dateRange: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '6px 8px',
                         borderRadius: '4px',
+                        border: '1px solid #d1d5db',
                         fontSize: '13px'
-                      }}>
-                        <strong>{new Date(occ.date).toLocaleString()}</strong>
-                        <br />
-                        File: {occ.file}
-                        <br />
-                        {occ.description}
-                      </div>
-                    ))}
+                      }}
+                    >
+                      <option value="all">All Time</option>
+                      <option value="last7">Last 7 Days</option>
+                      <option value="last30">Last 30 Days</option>
+                      <option value="last90">Last 90 Days</option>
+                    </select>
+                  </div>
+
+                  {/* Defect Type */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#6b7280' }}>
+                      Defect Type
+                    </label>
+                    <select
+                      value={filters.defectType}
+                      onChange={(e) => setFilters({...filters, defectType: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '6px 8px',
+                        borderRadius: '4px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '13px'
+                      }}
+                    >
+                      <option value="all">All Types</option>
+                      {filterOptions.types.map(type => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Severity */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#6b7280' }}>
+                      Severity Level
+                    </label>
+                    <select
+                      value={filters.severity}
+                      onChange={(e) => setFilters({...filters, severity: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '6px 8px',
+                        borderRadius: '4px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '13px'
+                      }}
+                    >
+                      <option value="all">All Severities</option>
+                      {filterOptions.severities.map(sev => (
+                        <option key={sev} value={sev}>{sev}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Statute */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', color: '#6b7280' }}>
+                      Statute Referenced
+                    </label>
+                    <select
+                      value={filters.statute}
+                      onChange={(e) => setFilters({...filters, statute: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '6px 8px',
+                        borderRadius: '4px',
+                        border: '1px solid #d1d5db',
+                        fontSize: '13px'
+                      }}
+                    >
+                      <option value="all">All Statutes</option>
+                      {filterOptions.statutes.map(stat => (
+                        <option key={stat} value={stat}>{stat}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              ))}
+
+                <div style={{ marginTop: '12px', fontSize: '12px', color: '#6b7280' }}>
+                  Showing {filteredAnalyses.length} of {analyses.length} analyses
+                </div>
+              </div>
+
+              {/* Timeline Items */}
+              <div style={{ position: 'relative' }}>
+                {/* Timeline line */}
+                <div style={{
+                  position: 'absolute',
+                  left: '20px',
+                  top: '0',
+                  bottom: '0',
+                  width: '2px',
+                  backgroundColor: '#d1d5db'
+                }} />
+
+                {filteredAnalyses.map((analysis, idx) => {
+                  const isExpanded = expandedAnalysis === analysis.id;
+                  const defectCount = analysis.defects?.length || 0;
+                  const severitySummary = analysis.severity_summary || {};
+
+                  return (
+                    <div key={analysis.id || idx} style={{
+                      position: 'relative',
+                      marginLeft: '40px',
+                      marginBottom: '20px',
+                      padding: '16px',
+                      backgroundColor: 'white',
+                      borderRadius: '8px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onClick={() => setExpandedAnalysis(isExpanded ? null : analysis.id)}
+                    onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.15)'}
+                    onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'}
+                    >
+                      {/* Timeline dot */}
+                      <div style={{
+                        position: 'absolute',
+                        left: '-31px',
+                        top: '20px',
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        backgroundColor: defectCount > 5 ? '#dc2626' : defectCount > 2 ? '#f59e0b' : '#10b981',
+                        border: '2px solid white',
+                        boxShadow: '0 0 0 2px #d1d5db'
+                      }} />
+
+                      {/* Analysis Header */}
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                          <div>
+                            <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                              {new Date(analysis.timestamp).toLocaleString()}
+                            </div>
+                            <div style={{ fontWeight: '600', fontSize: '14px' }}>
+                              Analysis #{analysis.id}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '24px', fontWeight: 'bold', color: defectCount > 5 ? '#dc2626' : '#6b7280' }}>
+                              {defectCount}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#6b7280' }}>defects</div>
+                          </div>
+                        </div>
+
+                        <div style={{ fontSize: '13px', color: '#4b5563', marginTop: '8px' }}>
+                          <div>📄 {analysis.fileAName}</div>
+                          <div>📄 {analysis.fileBName}</div>
+                        </div>
+                      </div>
+
+                      {/* Severity Summary */}
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        {Object.entries(severitySummary).map(([severity, count]) => (
+                          count > 0 && (
+                            <span key={severity} style={{
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              fontSize: '11px',
+                              backgroundColor: getSeverityColor(severity) + '20',
+                              color: getSeverityColor(severity),
+                              fontWeight: '600'
+                            }}>
+                              {severity}: {count}
+                            </span>
+                          )
+                        ))}
+                      </div>
+
+                      {/* Expanded Details */}
+                      {isExpanded && (
+                        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
+                          <h5 style={{ marginBottom: '8px', fontSize: '13px', fontWeight: '600' }}>Defects Found:</h5>
+                          {analysis.defects?.map((defect, didx) => (
+                            <div key={didx} style={{
+                              padding: '8px',
+                              marginBottom: '6px',
+                              backgroundColor: '#f9fafb',
+                              borderRadius: '4px',
+                              borderLeft: `3px solid ${getSeverityColor(defect.severity)}`,
+                              fontSize: '12px'
+                            }}>
+                              <div style={{ fontWeight: '600', color: getSeverityColor(defect.severity) }}>
+                                {defect.severity} - {defect.type}
+                              </div>
+                              <div style={{ color: '#4b5563', marginTop: '4px' }}>
+                                {defect.description}
+                              </div>
+                            </div>
+                          ))}
+
+                          {analysis.statutory_references && analysis.statutory_references.length > 0 && (
+                            <div style={{ marginTop: '12px' }}>
+                              <h5 style={{ marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>Statutes Referenced:</h5>
+                              <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                                {analysis.statutory_references.join(', ')}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '8px', textAlign: 'right' }}>
+                        Click to {isExpanded ? 'collapse' : 'expand'} details
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {filteredAnalyses.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                  No analyses match the selected filters.
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        // Learning Insights Panel Component
+        const LearningInsightsPanel = ({ insights, currentDefects }) => {
+          if (!insights) {
+            return (
+              <div style={{
+                padding: '20px',
+                backgroundColor: '#f9fafb',
+                borderRadius: '8px',
+                textAlign: 'center',
+                color: '#6b7280'
+              }}>
+                <p>Loading intelligence summary...</p>
+              </div>
+            );
+          }
+
+          if (insights.totalAnalyses === 0) {
+            return (
+              <div style={{
+                padding: '20px',
+                backgroundColor: '#e0f2fe',
+                borderRadius: '8px',
+                border: '1px solid #0284c7'
+              }}>
+                <h3 style={{ marginBottom: '12px', color: '#0284c7' }}>📊 System Intelligence Summary</h3>
+                <p style={{ color: '#0c4a6e' }}>
+                  No historical data yet. This system will learn from each analysis and provide intelligent insights over time.
+                </p>
+              </div>
+            );
+          }
+
+          const { temporalTrends } = insights;
+          const trendIcon = temporalTrends?.trend === 'improving' ? '📈✅' : temporalTrends?.trend === 'worsening' ? '📉⚠️' : '➡️';
+          const trendColor = temporalTrends?.trend === 'improving' ? '#10b981' : temporalTrends?.trend === 'worsening' ? '#dc2626' : '#6b7280';
+
+          return (
+            <div style={{
+              padding: '24px',
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              marginBottom: '24px'
+            }}>
+              <h3 style={{
+                marginBottom: '20px',
+                fontSize: '20px',
+                fontWeight: '700',
+                color: '#1f2937',
+                borderBottom: '2px solid #e5e7eb',
+                paddingBottom: '12px'
+              }}>
+                📊 System Intelligence Summary
+              </h3>
+
+              {/* Summary Stats */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '16px',
+                marginBottom: '24px'
+              }}>
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#eff6ff',
+                  borderRadius: '8px',
+                  borderLeft: '4px solid #3b82f6'
+                }}>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#1e40af' }}>
+                    {insights.totalAnalyses}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#1e40af', marginTop: '4px' }}>
+                    Total Analyses
+                  </div>
+                </div>
+
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#fef3c7',
+                  borderRadius: '8px',
+                  borderLeft: '4px solid #f59e0b'
+                }}>
+                  <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#92400e' }}>
+                    {insights.totalDefects}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#92400e', marginTop: '4px' }}>
+                    Total Defects Found
+                  </div>
+                </div>
+
+                {currentDefects && (
+                  <div style={{
+                    padding: '16px',
+                    backgroundColor: '#f0fdf4',
+                    borderRadius: '8px',
+                    borderLeft: '4px solid #10b981'
+                  }}>
+                    <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#065f46' }}>
+                      {currentDefects.filter(d => d.isNovel).length}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#065f46', marginTop: '4px' }}>
+                      New Issues This Analysis
+                    </div>
+                  </div>
+                )}
+
+                {temporalTrends && (
+                  <div style={{
+                    padding: '16px',
+                    backgroundColor: temporalTrends.trend === 'improving' ? '#f0fdf4' : temporalTrends.trend === 'worsening' ? '#fee2e2' : '#f9fafb',
+                    borderRadius: '8px',
+                    borderLeft: `4px solid ${trendColor}`
+                  }}>
+                    <div style={{ fontSize: '22px', fontWeight: 'bold', color: trendColor }}>
+                      {trendIcon} {temporalTrends.changePercent}%
+                    </div>
+                    <div style={{ fontSize: '12px', color: trendColor, marginTop: '4px' }}>
+                      {temporalTrends.trend.charAt(0).toUpperCase() + temporalTrends.trend.slice(1)} Trend
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Most Common Issue */}
+              {insights.mostCommonIssue && (
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#fef2f2',
+                  borderRadius: '8px',
+                  marginBottom: '20px',
+                  border: '1px solid #fecaca'
+                }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#991b1b', marginBottom: '8px' }}>
+                    ⚠️ Most Common Issue
+                  </h4>
+                  <div style={{ fontSize: '13px', color: '#7f1d1d' }}>
+                    <strong>{insights.mostCommonIssue.type}</strong>
+                    <div style={{ marginTop: '4px' }}>
+                      Occurred {insights.mostCommonIssue.count} times ({insights.mostCommonIssue.percentage}% of all defects)
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Recurring Patterns */}
+              {insights.recurringPatterns && insights.recurringPatterns.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <h4 style={{ fontSize: '15px', fontWeight: '600', color: '#1f2937', marginBottom: '12px' }}>
+                    🔄 Recurring Patterns (3+ occurrences)
+                  </h4>
+                  {insights.recurringPatterns.slice(0, 3).map((pattern, idx) => (
+                    <div key={idx} style={{
+                      padding: '12px',
+                      backgroundColor: '#fff7ed',
+                      borderRadius: '6px',
+                      marginBottom: '10px',
+                      borderLeft: '3px solid #f59e0b'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#92400e' }}>
+                            {pattern.defect_type}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#78350f', marginTop: '4px' }}>
+                            {pattern.description.substring(0, 100)}{pattern.description.length > 100 ? '...' : ''}
+                          </div>
+                          {pattern.recommendation && (
+                            <div style={{
+                              marginTop: '8px',
+                              padding: '8px',
+                              backgroundColor: '#fffbeb',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              color: '#78350f'
+                            }}>
+                              <strong>💡 Recommendation:</strong> {pattern.recommendation}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{
+                          marginLeft: '12px',
+                          padding: '4px 12px',
+                          backgroundColor: '#f59e0b',
+                          color: 'white',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {pattern.occurrence_count}x
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Statute Compliance */}
+              {insights.statuteCompliance && insights.statuteCompliance.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <h4 style={{ fontSize: '15px', fontWeight: '600', color: '#1f2937', marginBottom: '12px' }}>
+                    ⚖️ Statute Compliance Rates (Lowest First)
+                  </h4>
+                  {insights.statuteCompliance.map((statute, idx) => (
+                    <div key={idx} style={{
+                      padding: '10px',
+                      backgroundColor: statute.compliance_rate < 70 ? '#fef2f2' : '#f0fdf4',
+                      borderRadius: '6px',
+                      marginBottom: '8px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      border: statute.compliance_rate < 70 ? '1px solid #fecaca' : '1px solid #bbf7d0'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: statute.compliance_rate < 70 ? '#991b1b' : '#065f46' }}>
+                          {statute.reference}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
+                          {statute.statute_name}
+                        </div>
+                      </div>
+                      <div style={{
+                        padding: '4px 12px',
+                        backgroundColor: statute.compliance_rate < 70 ? '#dc2626' : statute.compliance_rate < 85 ? '#f59e0b' : '#10b981',
+                        color: 'white',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '600'
+                      }}>
+                        {statute.compliance_rate}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Process Improvement Recommendations */}
+              {insights.recommendations && insights.recommendations.length > 0 && (
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#e0f2fe',
+                  borderRadius: '8px',
+                  border: '1px solid #0284c7'
+                }}>
+                  <h4 style={{ fontSize: '15px', fontWeight: '600', color: '#075985', marginBottom: '12px' }}>
+                    💡 Recommended Process Improvements
+                  </h4>
+                  {insights.recommendations.map((rec, idx) => (
+                    <div key={idx} style={{
+                      padding: '10px',
+                      backgroundColor: 'white',
+                      borderRadius: '6px',
+                      marginBottom: '8px',
+                      borderLeft: `3px solid ${rec.priority === 'HIGH' ? '#dc2626' : '#f59e0b'}`
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'start', gap: '8px' }}>
+                        <span style={{
+                          padding: '2px 6px',
+                          backgroundColor: rec.priority === 'HIGH' ? '#dc2626' : '#f59e0b',
+                          color: 'white',
+                          borderRadius: '4px',
+                          fontSize: '10px',
+                          fontWeight: '600',
+                          marginTop: '2px'
+                        }}>
+                          {rec.priority}
+                        </span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '12px', fontWeight: '600', color: '#1f2937', marginBottom: '4px' }}>
+                            {rec.issue || rec.statute}
+                            {rec.occurrences && ` (${rec.occurrences}x)`}
+                            {rec.complianceRate && ` - ${rec.complianceRate}% compliance`}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#4b5563' }}>
+                            {rec.recommendation}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Temporal Trends Detail */}
+              {temporalTrends && (
+                <div style={{
+                  marginTop: '20px',
+                  padding: '12px',
+                  backgroundColor: '#f9fafb',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  color: '#4b5563'
+                }}>
+                  <strong>📈 Trend Analysis:</strong> {' '}
+                  {temporalTrends.trend === 'improving' && (
+                    `Compliance improvement detected. Recent analyses average ${temporalTrends.recentAverage} defects vs ${temporalTrends.olderAverage} previously (${temporalTrends.changePercent}% improvement). Continue current documentation practices.`
+                  )}
+                  {temporalTrends.trend === 'worsening' && (
+                    `Compliance decline detected. Recent analyses average ${temporalTrends.recentAverage} defects vs ${temporalTrends.olderAverage} previously (${temporalTrends.changePercent}% increase). Review recent procedural changes.`
+                  )}
+                  {temporalTrends.trend === 'stable' && (
+                    `Compliance rates remain stable. Recent and historical defect rates are consistent.`
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        // Cross-Analysis Intelligence Display Component
+        const CrossAnalysisIntelligence = ({ intelligence }) => {
+          if (!intelligence || intelligence.length === 0) {
+            return null;
+          }
+
+          const recurringIssues = intelligence.filter(i => i.isRecurring);
+          const novelIssues = intelligence.filter(i => i.isNovel);
+
+          return (
+            <div style={{
+              padding: '20px',
+              backgroundColor: '#f9fafb',
+              borderRadius: '8px',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{ marginBottom: '16px', fontSize: '18px', fontWeight: '600' }}>
+                🔍 Cross-Analysis Intelligence
+              </h3>
+
+              {novelIssues.length > 0 && (
+                <div style={{ marginBottom: '16px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#0284c7', marginBottom: '8px' }}>
+                    ⚠️ NEW: {novelIssues.length} Novel Issue{novelIssues.length > 1 ? 's' : ''} Detected
+                  </h4>
+                  {novelIssues.map((item, idx) => (
+                    <div key={idx} style={{
+                      padding: '12px',
+                      backgroundColor: '#e0f2fe',
+                      borderRadius: '6px',
+                      marginBottom: '8px',
+                      border: '1px solid #0284c7'
+                    }}>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#075985' }}>
+                        {item.defect.type} - {item.defect.severity}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#0c4a6e', marginTop: '4px' }}>
+                        {item.defect.description}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#0369a1', marginTop: '6px', fontStyle: 'italic' }}>
+                        💡 {item.recommendation}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {recurringIssues.length > 0 && (
+                <div>
+                  <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#dc2626', marginBottom: '8px' }}>
+                    🔄 RECURRING: {recurringIssues.length} Previously Seen Issue{recurringIssues.length > 1 ? 's' : ''}
+                  </h4>
+                  {recurringIssues.map((item, idx) => (
+                    <div key={idx} style={{
+                      padding: '12px',
+                      backgroundColor: '#fef2f2',
+                      borderRadius: '6px',
+                      marginBottom: '8px',
+                      border: '1px solid #fecaca'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#991b1b' }}>
+                            {item.defect.type} - {item.defect.severity}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#7f1d1d', marginTop: '4px' }}>
+                            {item.defect.description}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#991b1b', marginTop: '6px' }}>
+                            📊 Previously occurred <strong>{item.previousOccurrences}</strong> time{item.previousOccurrences > 1 ? 's' : ''}
+                            <br />
+                            First seen: {new Date(item.firstSeen).toLocaleDateString()}
+                            <br />
+                            Last seen: {new Date(item.lastSeen).toLocaleDateString()}
+                          </div>
+                          {item.recommendation && (
+                            <div style={{
+                              marginTop: '8px',
+                              padding: '8px',
+                              backgroundColor: '#fff7ed',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              color: '#92400e',
+                              border: '1px solid #fed7aa'
+                            }}>
+                              <strong>💡 Systematic Recommendation:</strong> {item.recommendation}
+                            </div>
+                          )}
+                        </div>
+                        <span style={{
+                          padding: '4px 10px',
+                          backgroundColor: '#dc2626',
+                          color: 'white',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          whiteSpace: 'nowrap',
+                          marginLeft: '12px'
+                        }}>
+                          {item.previousOccurrences}x
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         };
@@ -1422,8 +2968,76 @@
             });
           };
 
+          // File validation constants
+          const FILE_VALIDATION = {
+            MAX_SIZE: 50 * 1024 * 1024, // 50MB
+            ALLOWED_TYPES: [
+              'application/pdf',
+              'text/plain',
+              'image/png',
+              'image/jpeg',
+              'image/jpg',
+              'image/gif',
+              'image/bmp',
+              'image/tiff'
+            ],
+            ALLOWED_EXTENSIONS: ['.pdf', '.txt', '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif']
+          };
+
+          // Validate file before processing
+          const validateFile = (file) => {
+            const errors = [];
+
+            if (!file) {
+              errors.push('No file selected');
+              return { valid: false, errors };
+            }
+
+            // Check file size
+            if (file.size > FILE_VALIDATION.MAX_SIZE) {
+              errors.push(`File size exceeds maximum allowed size (50MB). File size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+            }
+
+            if (file.size === 0) {
+              errors.push('File is empty');
+            }
+
+            // Check file type
+            const fileName = file.name.toLowerCase();
+            const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+            const fileType = file.type.toLowerCase();
+
+            const hasValidType = FILE_VALIDATION.ALLOWED_TYPES.includes(fileType);
+            const hasValidExtension = FILE_VALIDATION.ALLOWED_EXTENSIONS.some(ext => fileName.endsWith(ext));
+
+            if (!hasValidType && !hasValidExtension) {
+              errors.push(`Unsupported file type. Allowed types: PDF, Text files, Images (PNG, JPG, GIF, BMP, TIFF)`);
+            }
+
+            // Check for suspicious patterns in filename
+            if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
+              errors.push('Invalid filename');
+            }
+
+            return {
+              valid: errors.length === 0,
+              errors: errors
+            };
+          };
+
           const handleFileUpload = async (file, fileKey) => {
-            if (!file) return;
+            if (!file) {
+              console.error('No file provided to handleFileUpload');
+              return;
+            }
+
+            // Validate file before processing
+            const validation = validateFile(file);
+            if (!validation.valid) {
+              alert(`File validation failed:\n\n${validation.errors.join('\n')}`);
+              console.error('File validation errors:', validation.errors);
+              return;
+            }
 
             setIsUploading(prev => ({ ...prev, [fileKey]: true }));
             setUploadProgress(prev => ({ ...prev, [fileKey]: 0 }));
@@ -1432,6 +3046,9 @@
               let content = '';
               const fileType = file.type;
               const fileName = file.name.toLowerCase();
+
+              console.log(`✅ File validation passed for ${file.name}`);
+              console.log(`File size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
 
               // PHASE 1: OCR and Text Extraction (happens FIRST before any analysis)
               console.log(`Starting text extraction for ${file.name}...`);
@@ -1606,30 +3223,45 @@
             setAnalysisResults(finalResults);
             setAnalysisProgress(90);
 
-            // Save analysis to persistent storage
-            await AnalysisMemory.saveAnalysis(finalResults, files);
+            // Save analysis to persistent storage with file contents
+            const analysisId = await AnalysisMemory.saveAnalysis(finalResults, files, fileContents);
+            console.log(`✅ Analysis #${analysisId} saved with learning capability enabled`);
 
-            // Reload historical analyses and detect patterns
+            // Reload historical analyses
             const updatedAnalyses = await AnalysisMemory.getAllAnalyses();
             setHistoricalAnalyses(updatedAnalyses || []);
 
-            setAnalysisProgress(95);
+            setAnalysisProgress(92);
 
-            // Run pattern detection
+            // Generate learning insights from all analyses
+            const learningInsights = await AnalysisMemory.generateLearningInsights();
+            console.log('📊 Learning insights generated:', learningInsights);
+
+            setAnalysisProgress(94);
+
+            // Extract current defects for cross-analysis intelligence
+            const currentDefects = AnalysisMemory.extractDefects(finalResults);
+
+            // Generate cross-analysis intelligence
+            const crossIntelligence = await AnalysisMemory.getIntelligenceForAnalysis(currentDefects);
+            setContextualInsights({
+              learningInsights: learningInsights,
+              crossIntelligence: crossIntelligence
+            });
+            console.log('🔍 Cross-analysis intelligence:', crossIntelligence);
+
+            setAnalysisProgress(96);
+
+            // Run pattern detection (legacy support)
             if (updatedAnalyses && updatedAnalyses.length > 0) {
               const patterns = await PatternDetector.analyze(finalResults, updatedAnalyses);
               setDetectedPatterns(patterns);
               console.log('Pattern detection completed:', patterns);
-
-              // Run contextual intelligence analysis
-              const insights = await ContextualIntelligence.enhanceFindings(finalResults, updatedAnalyses);
-              setContextualInsights(insights.contextualInsights);
-              console.log('Contextual intelligence analysis completed:', insights.contextualInsights);
             }
 
             setAnalysisProgress(100);
             setAnalysisState('complete');
-            setCurrentPhase('Analysis Complete');
+            setCurrentPhase('Analysis Complete - Intelligence Insights Ready');
           };
 
           // Word-by-Word Linguistic Inspection Engine
@@ -4304,14 +5936,87 @@
             return categories;
           };
 
-          // Helper functions for defect categorization
+          const exportReport = async () => {
+            if (!analysisResults) return;
 
-          const checkPattern = (content, pattern) => {
-            const matches = content.match(pattern) || [];
-            return {
-              count: matches.length,
-              matches: matches
+            // Generate enhanced report with historical context
+            const learningInsights = await AnalysisMemory.generateLearningInsights();
+            const currentDefects = AnalysisMemory.extractDefects(analysisResults);
+            const crossIntelligence = await AnalysisMemory.getIntelligenceForAnalysis(currentDefects);
+            const allPatterns = await AnalysisMemory.getAllDefectPatterns();
+            const allStatutes = await AnalysisMemory.getAllStatutoryReferences();
+
+            const enhancedReport = {
+              metadata: {
+                exportDate: new Date().toISOString(),
+                reportVersion: '2.0-Enhanced',
+                includesLearningData: true
+              },
+              currentAnalysis: {
+                timestamp: new Date().toISOString(),
+                files: {
+                  fileA: files.fileA?.name,
+                  fileB: files.fileB?.name
+                },
+                findings: analysisResults,
+                defectsFound: currentDefects.length,
+                severitySummary: AnalysisMemory.calculateSeveritySummary(currentDefects)
+              },
+              systemIntelligence: {
+                totalHistoricalAnalyses: learningInsights.totalAnalyses,
+                totalDefectsTracked: learningInsights.totalDefects,
+                mostCommonIssue: learningInsights.mostCommonIssue,
+                complianceTrends: learningInsights.temporalTrends,
+                recommendations: learningInsights.recommendations
+              },
+              crossAnalysisIntelligence: {
+                novelIssues: crossIntelligence.filter(i => i.isNovel).length,
+                recurringIssues: crossIntelligence.filter(i => i.isRecurring).length,
+                details: crossIntelligence.map(intel => ({
+                  defectType: intel.defect.type,
+                  severity: intel.defect.severity,
+                  description: intel.defect.description,
+                  isNovel: intel.isNovel,
+                  isRecurring: intel.isRecurring,
+                  previousOccurrences: intel.previousOccurrences || 0,
+                  recommendation: intel.recommendation
+                }))
+              },
+              defectPatterns: {
+                total: allPatterns.length,
+                recurring: allPatterns.filter(p => p.occurrence_count >= 3).length,
+                patterns: allPatterns.map(p => ({
+                  type: p.defect_type,
+                  description: p.description,
+                  occurrences: p.occurrence_count,
+                  firstSeen: p.first_seen,
+                  lastSeen: p.last_seen,
+                  recommendation: p.recommendation
+                }))
+              },
+              statutoryCompliance: {
+                total: allStatutes.length,
+                compliance: allStatutes.map(s => ({
+                  reference: s.reference,
+                  statute: s.statute_name,
+                  timesEncountered: s.times_encountered,
+                  complianceRate: s.compliance_rate,
+                  associatedDefects: s.associated_defects
+                }))
+              },
+              exportedBy: 'Forensic Legal Analyzer v2.0 - Enhanced Learning System'
             };
+
+            // Create downloadable file
+            const blob = new Blob([JSON.stringify(enhancedReport, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `forensic-analysis-enhanced-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            console.log('📥 Enhanced report exported with full learning context');
           };
 
           const identifyDisclosureDefects = (contentA, contentB) => {
@@ -4549,12 +6254,31 @@
             const defects = [];
             const combined = contentA + contentB;
 
-            // Look for hearsay indicators
-            const hearsayIndicators = [
-              { pattern: /told.*me|informed.*me|said.*to.*me|stated.*to.*me/gi, description: 'out-of-court statement relayed by witness' },
-              { pattern: /according to|as per|based on.*information/gi, description: 'reliance on second-hand information' },
-              { pattern: /report.*indicated|document.*states|record.*shows/gi, description: 'reliance on documentary hearsay' }
-            ];
+                  <div style={{
+                    backgroundColor: '#eff6ff',
+                    borderLeft: '4px solid #2563eb',
+                    padding: '16px',
+                    marginBottom: '24px'
+                  }}>
+                    <h3 style={{
+                      fontWeight: '600',
+                      color: '#1e3a8a',
+                      marginBottom: '8px'
+                    }}>System Capabilities:</h3>
+                    <ul style={{
+                      fontSize: '14px',
+                      color: '#1e40af',
+                      listStyle: 'none',
+                      padding: 0
+                    }}>
+                      <li style={{ marginBottom: '4px' }}>• Phase A: Multi-preset forensic examination using {interpretivePresets.length} interpretive frameworks</li>
+                      <li style={{ marginBottom: '4px' }}>• Phase B: Statutory framework identification and cross-reference analysis</li>
+                      <li style={{ marginBottom: '4px' }}>• Phase C: Comprehensive statutory interpretation applying modern purposive approach</li>
+                      <li style={{ marginBottom: '4px' }}>• Identifies legal flaws, factual inconsistencies, and procedural defects</li>
+                      <li style={{ marginBottom: '4px', fontWeight: '600' }}>• 📊 Learning System: Tracks defect patterns, compliance trends, and generates process improvements</li>
+                      <li style={{ fontWeight: '600' }}>• 🔍 Cross-Analysis Intelligence: Identifies recurring issues and novel defects across all analyses</li>
+                    </ul>
+                  </div>
 
             hearsayIndicators.forEach(indicator => {
               const matches = combined.match(indicator.pattern);
@@ -8401,6 +10125,23 @@ Authorities:
 
                         </div>
                       </AnalysisSection>
+                    )}
+
+                    {/* Learning Insights Panel */}
+                    {contextualInsights?.learningInsights && (
+                      <div className="fade-in" style={{ marginBottom: '24px' }}>
+                        <LearningInsightsPanel
+                          insights={contextualInsights.learningInsights}
+                          currentDefects={contextualInsights.crossIntelligence}
+                        />
+                      </div>
+                    )}
+
+                    {/* Cross-Analysis Intelligence */}
+                    {contextualInsights?.crossIntelligence && contextualInsights.crossIntelligence.length > 0 && (
+                      <div className="fade-in" style={{ marginBottom: '24px' }}>
+                        <CrossAnalysisIntelligence intelligence={contextualInsights.crossIntelligence} />
+                      </div>
                     )}
 
                     {historicalAnalyses.length > 0 && (
