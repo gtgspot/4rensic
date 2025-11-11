@@ -1,0 +1,788 @@
+// ============================================
+// Forensic Legal Analyzer - Main Stylesheet
+// Victorian Law Compliance Checker
+// ============================================
+
+// Import Variables and Mixins
+@import 'variables';
+@import 'mixins';
+
+// Import Components
+@import 'components/index';
+
+// Import Responsive Styles
+@import 'responsive';
+
+// ============================================
+// Reset & Base Styles
+// ============================================
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: $font-primary;
+  font-size: $font-size-base;
+  line-height: $line-height-normal;
+  color: $color-text-primary;
+  background-color: $color-bg-secondary;
+  overflow-x: hidden;
+}
+
+// ============================================
+// Typography
+// ============================================
+
+h1, .h1 {
+  @include heading-1;
+  margin-bottom: $spacing-4;
+}
+
+h2, .h2 {
+  @include heading-2;
+  margin-bottom: $spacing-3;
+}
+
+h3, .h3 {
+  @include heading-3;
+  margin-bottom: $spacing-3;
+}
+
+h4, .h4 {
+  @include heading-4;
+  margin-bottom: $spacing-2;
+}
+
+p {
+  @include body-text;
+  margin-bottom: $spacing-4;
+}
+
+a {
+  color: $color-primary;
+  text-decoration: none;
+  transition: color $transition-base $ease-out;
+
+  &:hover {
+    color: $color-primary-light;
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    @include focus-visible;
+  }
+}
+
+strong, b {
+  font-weight: $font-weight-semibold;
+}
+
+em, i {
+  font-style: italic;
+}
+
+code {
+  @include mono-text;
+  padding: $spacing-1 $spacing-2;
+  background-color: $color-gray-100;
+  border-radius: $border-radius-sm;
+  color: $color-primary-dark;
+}
+
+pre {
+  @include mono-text;
+  padding: $spacing-4;
+  background-color: $color-gray-900;
+  color: $color-text-inverse;
+  border-radius: $border-radius-md;
+  overflow-x: auto;
+  margin-bottom: $spacing-4;
+  @include custom-scrollbar;
+
+  code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+  }
+}
+
+// ============================================
+// Layout & Container
+// ============================================
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  @include flex-column;
+}
+
+.container {
+  width: 100%;
+  max-width: $container-xl;
+  margin: 0 auto;
+  padding: 0 $spacing-6;
+
+  @include respond-below('md') {
+    padding: 0 $spacing-4;
+  }
+
+  &--sm {
+    max-width: $container-sm;
+  }
+
+  &--md {
+    max-width: $container-md;
+  }
+
+  &--lg {
+    max-width: $container-lg;
+  }
+
+  &--xl {
+    max-width: $container-xl;
+  }
+
+  &--fluid {
+    max-width: 100%;
+  }
+}
+
+.section {
+  padding: $spacing-12 0;
+
+  @include respond-below('md') {
+    padding: $spacing-8 0;
+  }
+}
+
+// ============================================
+// Header / App Bar
+// ============================================
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: $z-index-sticky;
+  height: $header-height;
+  background: $header-bg;
+  @include gradient-primary;
+  box-shadow: $shadow-md;
+
+  &__container {
+    @include flex-between;
+    height: 100%;
+    padding: 0 $spacing-6;
+
+    @include respond-below('md') {
+      padding: 0 $spacing-4;
+    }
+  }
+
+  &__logo {
+    @include flex-start;
+    gap: $spacing-3;
+    color: $header-text;
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    text-decoration: none;
+
+    &:hover {
+      color: $header-text;
+      text-decoration: none;
+      opacity: 0.9;
+    }
+  }
+
+  &__title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    color: $header-text;
+
+    @include respond-below('md') {
+      font-size: $font-size-lg;
+    }
+  }
+
+  &__subtitle {
+    font-size: $font-size-sm;
+    color: rgba($header-text, 0.9);
+    font-weight: $font-weight-normal;
+
+    @include respond-below('md') {
+      display: none;
+    }
+  }
+
+  &__actions {
+    @include flex-end;
+    gap: $spacing-4;
+  }
+}
+
+// ============================================
+// Main Content Area
+// ============================================
+
+.main-content {
+  flex: 1;
+  padding: $spacing-8 0;
+
+  @include respond-below('md') {
+    padding: $spacing-6 0;
+  }
+}
+
+// ============================================
+// Cards
+// ============================================
+
+.card {
+  @include card;
+  margin-bottom: $spacing-6;
+
+  &--hoverable {
+    @include hover-lift;
+  }
+
+  &__header {
+    @include card-header;
+    @include flex-between;
+
+    h3 {
+      margin: 0;
+      font-size: $font-size-lg;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+    }
+  }
+
+  &__body {
+    @include card-body;
+  }
+
+  &__footer {
+    @include card-footer;
+    @include flex-between;
+  }
+
+  &--primary {
+    border-color: $color-primary;
+    border-width: $border-width-medium;
+  }
+
+  &--success {
+    border-color: $color-success;
+    border-left-width: 4px;
+  }
+
+  &--warning {
+    border-color: $color-warning;
+    border-left-width: 4px;
+  }
+
+  &--error {
+    border-color: $color-error;
+    border-left-width: 4px;
+  }
+}
+
+// ============================================
+// Buttons
+// ============================================
+
+.btn {
+  @include button-base;
+
+  &--primary {
+    @include button-primary;
+  }
+
+  &--secondary {
+    @include button-secondary;
+  }
+
+  &--outline {
+    @include button-outline;
+  }
+
+  &--ghost {
+    @include button-ghost;
+  }
+
+  &--success {
+    background-color: $color-success;
+    color: $color-text-inverse;
+    border-color: $color-success;
+
+    &:hover:not(:disabled) {
+      background-color: darken($color-success, 10%);
+      box-shadow: $shadow-md;
+    }
+  }
+
+  &--danger {
+    background-color: $color-error;
+    color: $color-text-inverse;
+    border-color: $color-error;
+
+    &:hover:not(:disabled) {
+      background-color: darken($color-error, 10%);
+      box-shadow: $shadow-md;
+    }
+  }
+
+  &--sm {
+    padding: $spacing-1 $spacing-3;
+    font-size: $font-size-sm;
+  }
+
+  &--lg {
+    padding: $spacing-3 $spacing-6;
+    font-size: $font-size-lg;
+  }
+
+  &--block {
+    width: 100%;
+    display: flex;
+  }
+
+  &__icon {
+    margin-right: $spacing-2;
+  }
+}
+
+// ============================================
+// Form Elements
+// ============================================
+
+.form-group {
+  margin-bottom: $spacing-6;
+
+  &__label {
+    display: block;
+    margin-bottom: $spacing-2;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+    color: $color-text-primary;
+  }
+
+  &__input {
+    @include input-base;
+  }
+
+  &__textarea {
+    @include input-base;
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  &__select {
+    @include input-base;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234a5568' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right $spacing-3 center;
+    padding-right: $spacing-8;
+  }
+
+  &__help {
+    display: block;
+    margin-top: $spacing-2;
+    font-size: $font-size-sm;
+    color: $color-text-tertiary;
+  }
+
+  &__error {
+    display: block;
+    margin-top: $spacing-2;
+    font-size: $font-size-sm;
+    color: $color-error;
+  }
+
+  &--error &__input,
+  &--error &__textarea,
+  &--error &__select {
+    @include input-error;
+  }
+
+  &--success &__input,
+  &--success &__textarea,
+  &--success &__select {
+    @include input-success;
+  }
+}
+
+// ============================================
+// Badges
+// ============================================
+
+.badge {
+  @include badge-base;
+
+  &--critical {
+    @include badge-severity($color-critical, $color-critical);
+  }
+
+  &--high {
+    @include badge-severity($color-high, $color-high);
+  }
+
+  &--medium {
+    @include badge-severity($color-medium, darken($color-medium, 20%));
+  }
+
+  &--low {
+    @include badge-severity($color-low, $color-low);
+  }
+
+  &--success {
+    @include badge-severity($color-success, $color-success);
+  }
+
+  &--info {
+    @include badge-severity($color-info, $color-info);
+  }
+
+  &--warning {
+    @include badge-severity($color-warning, darken($color-warning, 20%));
+  }
+
+  &--compliant {
+    @include badge-severity($color-compliant, $color-compliant);
+  }
+
+  &--non-compliant {
+    @include badge-severity($color-non-compliant, $color-non-compliant);
+  }
+}
+
+// ============================================
+// Tables
+// ============================================
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: $spacing-6;
+
+  &__header {
+    background-color: $table-header-bg;
+    border-bottom: $border-width-medium solid $table-border-color;
+  }
+
+  &__row {
+    border-bottom: $border-width-thin solid $table-border-color;
+    transition: background-color $transition-base $ease-out;
+
+    &:hover {
+      background-color: $table-row-hover;
+    }
+
+    &--selected {
+      background-color: rgba($color-primary, 0.05);
+    }
+  }
+
+  &__cell,
+  &__header-cell {
+    padding: $spacing-3 $spacing-4;
+    text-align: left;
+  }
+
+  &__header-cell {
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__cell {
+    font-size: $font-size-sm;
+    color: $color-text-primary;
+  }
+
+  &--striped {
+    .table__row:nth-child(even) {
+      background-color: $color-gray-50;
+    }
+  }
+
+  &--bordered {
+    border: $border-width-thin solid $table-border-color;
+
+    .table__cell,
+    .table__header-cell {
+      border-right: $border-width-thin solid $table-border-color;
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+  }
+}
+
+// ============================================
+// Alerts
+// ============================================
+
+.alert {
+  padding: $spacing-4 $spacing-5;
+  border-radius: $border-radius-md;
+  border-left: 4px solid;
+  margin-bottom: $spacing-6;
+  @include flex-start;
+  gap: $spacing-3;
+
+  &__icon {
+    flex-shrink: 0;
+    font-size: $font-size-xl;
+  }
+
+  &__content {
+    flex: 1;
+  }
+
+  &__title {
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-1;
+  }
+
+  &__message {
+    font-size: $font-size-sm;
+  }
+
+  &--success {
+    background-color: rgba($color-success, 0.1);
+    border-color: $color-success;
+    color: darken($color-success, 30%);
+  }
+
+  &--warning {
+    background-color: rgba($color-warning, 0.1);
+    border-color: $color-warning;
+    color: darken($color-warning, 30%);
+  }
+
+  &--error {
+    background-color: rgba($color-error, 0.1);
+    border-color: $color-error;
+    color: darken($color-error, 20%);
+  }
+
+  &--info {
+    background-color: rgba($color-info, 0.1);
+    border-color: $color-info;
+    color: darken($color-info, 30%);
+  }
+}
+
+// ============================================
+// Loading Spinner
+// ============================================
+
+.spinner {
+  @include spinner;
+
+  &--sm {
+    @include spinner(16px, 2px);
+  }
+
+  &--lg {
+    @include spinner(32px, 4px);
+  }
+
+  &--primary {
+    @include spinner(24px, 3px, $color-primary);
+  }
+
+  &--white {
+    @include spinner(24px, 3px, $color-text-inverse);
+  }
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: $color-bg-overlay;
+  @include flex-column-center;
+  z-index: $z-index-modal;
+
+  &__spinner {
+    @include spinner(48px, 4px, $color-text-inverse);
+  }
+
+  &__text {
+    margin-top: $spacing-4;
+    color: $color-text-inverse;
+    font-size: $font-size-lg;
+  }
+}
+
+// ============================================
+// Modal/Dialog
+// ============================================
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: $z-index-modal;
+  @include flex-column-center;
+  padding: $spacing-6;
+
+  &__backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: $color-bg-overlay;
+  }
+
+  &__content {
+    position: relative;
+    background: $color-bg-primary;
+    border-radius: $border-radius-xl;
+    box-shadow: $shadow-2xl;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    @include custom-scrollbar;
+    @include slide-in-up;
+  }
+
+  &__header {
+    @include flex-between;
+    padding: $spacing-6;
+    border-bottom: $border-width-thin solid $color-border-light;
+
+    h3 {
+      margin: 0;
+    }
+  }
+
+  &__close {
+    @include button-ghost;
+    padding: $spacing-2;
+    font-size: $font-size-xl;
+  }
+
+  &__body {
+    padding: $spacing-6;
+  }
+
+  &__footer {
+    @include flex-end;
+    gap: $spacing-3;
+    padding: $spacing-6;
+    border-top: $border-width-thin solid $color-border-light;
+  }
+}
+
+// ============================================
+// Utility Classes
+// ============================================
+
+// Display
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-flex { display: flex !important; }
+.d-inline-flex { display: inline-flex !important; }
+.d-grid { display: grid !important; }
+
+// Flexbox
+.flex-row { flex-direction: row !important; }
+.flex-column { flex-direction: column !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+.align-center { align-items: center !important; }
+.align-start { align-items: flex-start !important; }
+.align-end { align-items: flex-end !important; }
+.justify-center { justify-content: center !important; }
+.justify-start { justify-content: flex-start !important; }
+.justify-end { justify-content: flex-end !important; }
+.justify-between { justify-content: space-between !important; }
+.gap-1 { gap: $spacing-1 !important; }
+.gap-2 { gap: $spacing-2 !important; }
+.gap-3 { gap: $spacing-3 !important; }
+.gap-4 { gap: $spacing-4 !important; }
+.gap-6 { gap: $spacing-6 !important; }
+
+// Spacing
+.m-0 { margin: 0 !important; }
+.mt-1 { margin-top: $spacing-1 !important; }
+.mt-2 { margin-top: $spacing-2 !important; }
+.mt-3 { margin-top: $spacing-3 !important; }
+.mt-4 { margin-top: $spacing-4 !important; }
+.mt-6 { margin-top: $spacing-6 !important; }
+.mb-1 { margin-bottom: $spacing-1 !important; }
+.mb-2 { margin-bottom: $spacing-2 !important; }
+.mb-3 { margin-bottom: $spacing-3 !important; }
+.mb-4 { margin-bottom: $spacing-4 !important; }
+.mb-6 { margin-bottom: $spacing-6 !important; }
+.p-0 { padding: 0 !important; }
+.p-2 { padding: $spacing-2 !important; }
+.p-4 { padding: $spacing-4 !important; }
+.p-6 { padding: $spacing-6 !important; }
+
+// Text
+.text-center { text-align: center !important; }
+.text-left { text-align: left !important; }
+.text-right { text-align: right !important; }
+.text-primary { color: $color-primary !important; }
+.text-secondary { color: $color-text-secondary !important; }
+.text-muted { color: $color-text-muted !important; }
+.text-success { color: $color-success !important; }
+.text-warning { color: $color-warning !important; }
+.text-error { color: $color-error !important; }
+.font-bold { font-weight: $font-weight-bold !important; }
+.font-semibold { font-weight: $font-weight-semibold !important; }
+.font-normal { font-weight: $font-weight-normal !important; }
+
+// Background
+.bg-primary { background-color: $color-primary !important; }
+.bg-secondary { background-color: $color-bg-secondary !important; }
+.bg-white { background-color: $color-bg-primary !important; }
+
+// Borders
+.border-0 { border: none !important; }
+.border-top { border-top: $border-width-thin solid $color-border-light !important; }
+.border-bottom { border-bottom: $border-width-thin solid $color-border-light !important; }
+.rounded { border-radius: $border-radius-md !important; }
+.rounded-lg { border-radius: $border-radius-lg !important; }
+
+// Width
+.w-full { width: 100% !important; }
+.w-auto { width: auto !important; }
+
+// Accessibility
+.sr-only {
+  @include visually-hidden;
+}
+
+// Print
+.print-hidden {
+  @include print-hidden;
+}
+
+.print-only {
+  @include print-only;
+}

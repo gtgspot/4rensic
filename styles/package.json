@@ -1,0 +1,32 @@
+{
+  "name": "forensic-legal-analyzer-styles",
+  "version": "1.0.0",
+  "description": "Professional CSS/SCSS design system for the Forensic Legal Analyzer - Victorian Law Compliance Checker",
+  "main": "css/forensic-legal-analyzer.css",
+  "scripts": {
+    "build": "sass scss/main.scss css/forensic-legal-analyzer.css --style=expanded",
+    "build:min": "sass scss/main.scss css/forensic-legal-analyzer.min.css --style=compressed --no-source-map",
+    "build:all": "npm run build && npm run build:min",
+    "watch": "sass --watch scss:css --style=expanded",
+    "clean": "rm -f css/*.css css/*.map"
+  },
+  "keywords": [
+    "forensic",
+    "legal",
+    "victorian-law",
+    "compliance",
+    "scss",
+    "css",
+    "design-system"
+  ],
+  "author": "Forensic Legal Analyzer Team",
+  "license": "PROPRIETARY",
+  "devDependencies": {
+    "sass": "^1.69.0"
+  },
+  "files": [
+    "css/",
+    "scss/",
+    "README.md"
+  ]
+}

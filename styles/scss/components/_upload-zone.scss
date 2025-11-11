@@ -1,0 +1,283 @@
+// ============================================
+// Upload Zone Component Styles
+// ============================================
+
+.upload-zone {
+  position: relative;
+  border: 2px dashed $upload-zone-border;
+  border-radius: $border-radius-lg;
+  background-color: $upload-zone-bg;
+  padding: $spacing-8;
+  text-align: center;
+  transition: all $transition-base $ease-out;
+  cursor: pointer;
+
+  &:hover {
+    background-color: $upload-zone-hover-bg;
+    border-color: $upload-zone-hover-border;
+    box-shadow: $shadow-md;
+  }
+
+  &--active {
+    border-color: $color-primary;
+    background-color: rgba($color-primary, 0.05);
+    box-shadow: $shadow-lg;
+  }
+
+  &--dragover {
+    border-color: $color-primary;
+    background-color: rgba($color-primary, 0.1);
+    border-style: solid;
+    transform: scale(1.02);
+  }
+
+  &--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  &__icon {
+    font-size: 48px;
+    color: $color-primary;
+    margin-bottom: $spacing-4;
+    display: block;
+  }
+
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $spacing-2;
+  }
+
+  &__description {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-4;
+  }
+
+  &__button {
+    @include button-primary;
+    margin: $spacing-4 auto 0;
+  }
+
+  &__input {
+    display: none;
+  }
+
+  &__supported-formats {
+    margin-top: $spacing-4;
+    font-size: $font-size-xs;
+    color: $color-text-tertiary;
+  }
+
+  // URL Input variant
+  &--url {
+    padding: $spacing-6;
+
+    .upload-zone__input {
+      display: block;
+      @include input-base;
+      margin-top: $spacing-3;
+    }
+  }
+}
+
+// File Preview Card
+.file-preview {
+  @include card;
+  @include flex-between;
+  padding: $spacing-4;
+  margin-top: $spacing-4;
+
+  &__info {
+    @include flex-start;
+    gap: $spacing-3;
+    flex: 1;
+  }
+
+  &__icon {
+    font-size: $font-size-2xl;
+    color: $color-primary;
+  }
+
+  &__details {
+    flex: 1;
+  }
+
+  &__name {
+    font-size: $font-size-base;
+    font-weight: $font-weight-medium;
+    color: $color-text-primary;
+    margin-bottom: $spacing-1;
+    @include truncate;
+  }
+
+  &__meta {
+    font-size: $font-size-xs;
+    color: $color-text-tertiary;
+    @include flex-start;
+    gap: $spacing-3;
+  }
+
+  &__size,
+  &__type {
+    display: inline-block;
+  }
+
+  &__actions {
+    @include flex-end;
+    gap: $spacing-2;
+  }
+
+  &__remove {
+    @include button-ghost;
+    padding: $spacing-2;
+    color: $color-error;
+    font-size: $font-size-lg;
+
+    &:hover {
+      background-color: rgba($color-error, 0.1);
+    }
+  }
+
+  &__status {
+    @include badge-base;
+    font-size: $font-size-xs;
+
+    &--pending {
+      background-color: rgba($color-info, 0.1);
+      color: $color-info;
+    }
+
+    &--success {
+      background-color: rgba($color-success, 0.1);
+      color: $color-success;
+    }
+
+    &--error {
+      background-color: rgba($color-error, 0.1);
+      color: $color-error;
+    }
+  }
+}
+
+// Document Classification Display
+.document-classification {
+  background-color: $color-gray-50;
+  border-radius: $border-radius-md;
+  padding: $spacing-4;
+  margin-top: $spacing-4;
+  border-left: 4px solid $color-primary;
+
+  &__title {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: $spacing-2;
+  }
+
+  &__type {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-primary;
+    margin-bottom: $spacing-3;
+  }
+
+  &__framework {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-2;
+
+    strong {
+      color: $color-text-primary;
+    }
+  }
+
+  &__legislation {
+    margin-top: $spacing-3;
+    padding-top: $spacing-3;
+    border-top: $border-width-thin solid $color-border-light;
+
+    &-title {
+      font-size: $font-size-xs;
+      font-weight: $font-weight-semibold;
+      color: $color-text-tertiary;
+      text-transform: uppercase;
+      margin-bottom: $spacing-2;
+    }
+
+    &-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: $spacing-2;
+    }
+
+    &-item {
+      @include badge-base;
+      background-color: rgba($color-primary, 0.1);
+      color: $color-primary;
+      font-size: $font-size-xs;
+      font-weight: $font-weight-normal;
+      text-transform: none;
+    }
+  }
+}
+
+// Dual Upload Layout (File A & File B)
+.dual-upload {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-6;
+  margin-bottom: $spacing-8;
+
+  @include respond-below('md') {
+    grid-template-columns: 1fr;
+  }
+
+  &__column {
+    position: relative;
+
+    &-label {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+      margin-bottom: $spacing-4;
+      @include flex-start;
+      gap: $spacing-2;
+
+      &::before {
+        content: '';
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: $border-radius-full;
+        background-color: $color-primary;
+      }
+    }
+  }
+
+  &__divider {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background-color: $color-bg-primary;
+    border: $border-width-medium solid $color-border-medium;
+    border-radius: $border-radius-full;
+    @include flex-column-center;
+    color: $color-text-tertiary;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    z-index: 1;
+
+    @include respond-below('md') {
+      display: none;
+    }
+  }
+}

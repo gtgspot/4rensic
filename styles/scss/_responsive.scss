@@ -1,0 +1,537 @@
+// ============================================
+// Responsive Design & Mobile Optimizations
+// ============================================
+
+// Mobile First Approach
+// Base styles are mobile-first, progressively enhanced for larger screens
+
+// ============================================
+// Mobile Specific (<640px)
+// ============================================
+
+@include respond-below('sm') {
+  // Typography adjustments
+  h1, .h1 {
+    font-size: $font-size-2xl;
+  }
+
+  h2, .h2 {
+    font-size: $font-size-xl;
+  }
+
+  h3, .h3 {
+    font-size: $font-size-lg;
+  }
+
+  // Container padding
+  .container {
+    padding: 0 $spacing-3;
+  }
+
+  // Section padding
+  .section {
+    padding: $spacing-6 0;
+  }
+
+  // Header adjustments
+  .app-header {
+    height: 60px;
+
+    &__container {
+      padding: 0 $spacing-3;
+    }
+
+    &__title {
+      font-size: $font-size-base;
+    }
+
+    &__subtitle {
+      display: none;
+    }
+
+    &__actions {
+      gap: $spacing-2;
+    }
+  }
+
+  // Card adjustments
+  .card {
+    padding: $spacing-4;
+    margin-bottom: $spacing-4;
+
+    &__header,
+    &__body,
+    &__footer {
+      padding: $spacing-4;
+    }
+  }
+
+  // Button adjustments
+  .btn {
+    width: 100%;
+    justify-content: center;
+
+    &--sm {
+      width: auto;
+    }
+
+    &__icon {
+      margin-right: $spacing-1;
+    }
+  }
+
+  // Table responsiveness
+  .table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    @include custom-scrollbar;
+
+    &__cell,
+    &__header-cell {
+      padding: $spacing-2 $spacing-3;
+      font-size: $font-size-xs;
+    }
+  }
+
+  // Modal adjustments
+  .modal {
+    padding: $spacing-3;
+
+    &__content {
+      max-height: 95vh;
+    }
+
+    &__header,
+    &__body,
+    &__footer {
+      padding: $spacing-4;
+    }
+  }
+
+  // Upload zone mobile
+  .upload-zone {
+    padding: $spacing-6 $spacing-4;
+
+    &__icon {
+      font-size: 32px;
+    }
+
+    &__title {
+      font-size: $font-size-base;
+    }
+
+    &__description {
+      font-size: $font-size-xs;
+    }
+  }
+
+  // Dual upload - stack vertically
+  .dual-upload {
+    grid-template-columns: 1fr;
+    gap: $spacing-4;
+
+    &__divider {
+      display: none;
+    }
+  }
+
+  // Phase sections mobile
+  .phase-section {
+    &__header {
+      padding: $spacing-4;
+
+      &-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: $spacing-3;
+      }
+
+      h3 {
+        font-size: $font-size-base;
+      }
+    }
+
+    &__body {
+      padding: $spacing-4;
+    }
+  }
+
+  // Summary stats mobile
+  .summary-stats {
+    grid-template-columns: 1fr;
+    gap: $spacing-3;
+
+    &__item {
+      padding: $spacing-4;
+
+      &-value {
+        font-size: $font-size-2xl;
+      }
+    }
+  }
+
+  // Findings list mobile
+  .findings-list {
+    &__item {
+      padding: $spacing-3;
+
+      &-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: $spacing-2;
+      }
+
+      &-meta {
+        flex-direction: column;
+        gap: $spacing-2;
+      }
+    }
+  }
+
+  // Defect details mobile
+  .defect-details {
+    padding: $spacing-4;
+
+    &__grid {
+      grid-template-columns: 1fr;
+      gap: $spacing-3;
+    }
+  }
+
+  // Cross-reference mobile
+  .cross-reference-matrix {
+    &__body {
+      padding: $spacing-4;
+    }
+
+    &__category {
+      padding: $spacing-3;
+    }
+  }
+
+  .cross-ref-item {
+    padding: $spacing-3;
+
+    &__mapping {
+      grid-template-columns: 1fr;
+      gap: $spacing-2;
+      text-align: center;
+    }
+
+    &__arrow {
+      transform: rotate(90deg);
+    }
+  }
+
+  // Timeline mobile
+  .timeline {
+    &__item {
+      padding-left: 48px;
+      padding-bottom: $spacing-6;
+    }
+
+    &__line {
+      left: 16px;
+    }
+
+    &__marker {
+      left: 8px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  // Discrepancy comparison mobile
+  .discrepancy-comparison {
+    grid-template-columns: 1fr;
+    gap: $spacing-3;
+    padding: $spacing-3;
+
+    &__vs {
+      display: none;
+    }
+
+    &__file {
+      padding: $spacing-3;
+    }
+  }
+
+  // Analysis results mobile
+  .analysis-results {
+    &__header {
+      &-meta {
+        flex-direction: column;
+        gap: $spacing-2;
+      }
+    }
+
+    &__actions {
+      flex-direction: column;
+      width: 100%;
+
+      .btn {
+        width: 100%;
+      }
+    }
+  }
+}
+
+// ============================================
+// Tablet (640px - 1024px)
+// ============================================
+
+@include respond-to('sm') {
+  // Header enhancements
+  .app-header {
+    &__subtitle {
+      display: block;
+    }
+  }
+
+  // Card improvements
+  .card {
+    padding: $spacing-5;
+  }
+
+  // Button improvements
+  .btn {
+    width: auto;
+
+    &--block {
+      width: 100%;
+    }
+  }
+
+  // Dual upload - 2 columns
+  .dual-upload {
+    grid-template-columns: 1fr 1fr;
+
+    &__divider {
+      display: flex;
+    }
+  }
+
+  // Summary stats - 2 columns
+  .summary-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  // Defect details - 2 columns
+  .defect-details {
+    &__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+}
+
+// ============================================
+// Desktop (1024px+)
+// ============================================
+
+@include respond-to('lg') {
+  // Full desktop layout
+  .container {
+    padding: 0 $spacing-8;
+  }
+
+  // Summary stats - 4 columns
+  .summary-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  // Phase sections side-by-side
+  .phase-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-6;
+  }
+
+  // Defect details - 3 columns
+  .defect-details {
+    &__grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  // Timeline improvements
+  .timeline {
+    &__marker {
+      width: 28px;
+      height: 28px;
+    }
+  }
+}
+
+// ============================================
+// Large Desktop (1280px+)
+// ============================================
+
+@include respond-to('xl') {
+  .container {
+    max-width: $container-xl;
+  }
+
+  // More spacious layout
+  .section {
+    padding: $spacing-16 0;
+  }
+
+  .card {
+    padding: $spacing-8;
+
+    &__header,
+    &__body,
+    &__footer {
+      padding: $spacing-6;
+    }
+  }
+}
+
+// ============================================
+// Print Styles
+// ============================================
+
+@media print {
+  // Hide non-essential elements
+  .app-header,
+  .btn,
+  .upload-zone,
+  .modal,
+  .loading-overlay {
+    @include print-hidden;
+  }
+
+  // Optimize for print
+  body {
+    background: white;
+    color: black;
+  }
+
+  .card {
+    page-break-inside: avoid;
+    box-shadow: none;
+    border: $border-width-thin solid #000;
+  }
+
+  .phase-section {
+    page-break-inside: avoid;
+    margin-bottom: $spacing-4;
+  }
+
+  // Expand all collapsed sections
+  .phase-section__body--collapsed {
+    display: block !important;
+  }
+
+  // Remove interactive elements
+  .phase-section__header {
+    cursor: default;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
+
+  // Simplify colors for better print quality
+  .badge,
+  .compliance-status,
+  .timeline__marker {
+    border: 1px solid #000 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  // Show URLs in links
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: $font-size-xs;
+  }
+
+  // Page breaks
+  h1, h2, h3, h4 {
+    page-break-after: avoid;
+  }
+
+  .findings-list__item,
+  .defect-details,
+  .cross-ref-item {
+    page-break-inside: avoid;
+  }
+}
+
+// ============================================
+// Landscape Orientation (Tablets/Phones)
+// ============================================
+
+@media (max-width: 1024px) and (orientation: landscape) {
+  .app-header {
+    height: 50px;
+
+    &__title {
+      font-size: $font-size-base;
+    }
+
+    &__subtitle {
+      display: none;
+    }
+  }
+
+  .main-content {
+    padding: $spacing-4 0;
+  }
+
+  .modal {
+    &__content {
+      max-height: 80vh;
+    }
+  }
+}
+
+// ============================================
+// High DPI Displays (Retina)
+// ============================================
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  // Improve rendering on high DPI screens
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+// ============================================
+// Reduced Motion (Accessibility)
+// ============================================
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+// ============================================
+// Dark Mode Support (Future Enhancement)
+// ============================================
+
+@media (prefers-color-scheme: dark) {
+  // Note: Dark mode styles would go here
+  // Currently not implemented to maintain professional legal document appearance
+  // Uncomment and customize if dark mode is desired:
+
+  /*
+  body {
+    background-color: $color-gray-900;
+    color: $color-gray-100;
+  }
+
+  .card {
+    background-color: $color-gray-800;
+    border-color: $color-gray-700;
+  }
+  */
+}
