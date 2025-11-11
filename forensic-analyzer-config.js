@@ -1202,6 +1202,531 @@ const ForensicAnalyzerConfig = {
      */
     getSeverityColor(severity) {
       return ForensicAnalyzerConfig.severity.colorMapping[severity] || '#e5e7eb';
+    },
+
+    // ============================================================================
+    // AUTOMATED PROVISIONAL ELEMENT & STATUTORY SEQUENCE TESTING
+    // ============================================================================
+
+    /**
+     * Automatically detect legislative framework from document text
+     * @param {string} text - Document text to analyze
+     * @param {string} fileName - Document file name
+     * @returns {Object} Detected legislative framework
+     */
+    autoDetectLegislativeFramework(text, fileName = '') {
+      const framework = {
+        primaryLegislation: [],
+        applicableSections: [],
+        jurisdiction: 'Victoria, Australia',
+        documentType: null,
+        confidence: 0,
+        provisionalElements: [],
+        statutorySequences: []
+      };
+
+      // Detect primary legislation
+      ForensicAnalyzerConfig.victorianLegislation.primaryActs.forEach(act => {
+        if (act.pattern.test(text)) {
+          framework.primaryLegislation.push({
+            name: act.name,
+            shortName: act.shortName,
+            category: act.category,
+            keyProvisions: act.keyProvisions || {}
+          });
+        }
+      });
+
+      // Detect specific sections being referenced
+      const sectionPattern = /\bs\.?\s*(\d+[A-Z]*(?:\(\d+\))?(?:\([a-z]\))?)/gi;
+      let match;
+      const sections = new Set();
+      while ((match = sectionPattern.exec(text)) !== null) {
+        sections.add(match[0]);
+      }
+      framework.applicableSections = Array.from(sections);
+
+      // Determine document type based on content
+      const documentTypes = [
+        { type: 'Police Statement', pattern: /\b(?:victoria\s+police|constable|officer|statement\s+of)\b/gi },
+        { type: 'Defence Statement', pattern: /\b(?:defence|defendant|accused|statement\s+pursuant\s+to\s+section\s+185)\b/gi },
+        { type: 'Court Document', pattern: /\b(?:magistrates['']?\s+court|county\s+court|supreme\s+court)\b/gi },
+        { type: 'Disclosure Document', pattern: /\b(?:disclosure|prosecution\s+brief|part\s+3\.3)\b/gi },
+        { type: 'Evidence Certificate', pattern: /\b(?:evidentiary\s+certificate|certificate\s+of)\b/gi }
+      ];
+
+      for (const docType of documentTypes) {
+        if (docType.pattern.test(text)) {
+          framework.documentType = docType.type;
+          break;
+        }
+      }
+
+      // Calculate confidence score
+      framework.confidence = framework.primaryLegislation.length * 30 +
+                            (framework.documentType ? 40 : 0) +
+                            Math.min(framework.applicableSections.length * 5, 30);
+
+      return framework;
+    },
+
+    /**
+     * Test provisional elements - conditions that must exist before powers can be exercised
+     * @param {string} text - Document text to analyze
+     * @param {Object} detectedFramework - Auto-detected legislative framework
+     * @returns {Object} Provisional element test results
+     */
+    testProvisionalElements(text, detectedFramework) {
+      const results = {
+        tested: [],
+        passed: [],
+        failed: [],
+        warnings: [],
+        summary: {
+          totalTests: 0,
+          passedTests: 0,
+          failedTests: 0,
+          complianceRate: 0
+        }
+      };
+
+      // Test Road Safety Act provisional elements if detected
+      const hasRoadSafetyAct = detectedFramework.primaryLegislation.some(
+        leg => leg.name.includes('Road Safety Act')
+      );
+
+      if (hasRoadSafetyAct) {
+        // Test Section 49 provisional elements
+        const s49Tests = ForensicAnalyzerConfig.complianceChecking.roadSafetyAct.section49;
+
+        s49Tests.preconditions.sequence.forEach(precondition => {
+          const test = {
+            section: 's.49',
+            step: precondition.step,
+            requirement: precondition.requirement,
+            mustExistBefore: precondition.mustExistBefore,
+            found: false,
+            evidence: [],
+            severity: 'critical'
+          };
+
+          // Check if requirement language exists in document
+          if (precondition.step === 1) {
+            // Check for one of the circumstances
+            s49Tests.preconditions.circumstances.forEach(circ => {
+              circ.keywords.forEach(keyword => {
+                const pattern = new RegExp('\\b' + keyword + '\\b', 'gi');
+                if (pattern.test(text)) {
+                  test.found = true;
+                  test.evidence.push(`Found keyword: "${keyword}" for ${circ.subsection}`);
+                }
+              });
+            });
+          } else if (precondition.step === 2) {
+            // Check for reasonable belief language
+            const beliefTest = ForensicAnalyzerConfig.utils.analyzeReasonableBeliefTest(text);
+            test.found = beliefTest.subjectiveElementFound && beliefTest.objectiveElementFound;
+            test.evidence = [
+              `Subjective element: ${beliefTest.subjectiveElementFound}`,
+              `Objective element: ${beliefTest.objectiveElementFound}`
+            ];
+          } else if (precondition.step === 3) {
+            // Check if person was informed
+            const informedPattern = /\b(?:informed|advised|told|explained|stated\s+to)\b.*\b(?:requirement|test|section)\b/gi;
+            test.found = informedPattern.test(text);
+            if (test.found) {
+              test.evidence.push('Found evidence of informing person of requirement');
+            }
+          }
+
+          results.tested.push(test);
+          if (test.found) {
+            results.passed.push(test);
+          } else {
+            results.failed.push(test);
+          }
+        });
+
+        // Test Section 55D provisional elements (authority)
+        const s55DTests = ForensicAnalyzerConfig.complianceChecking.roadSafetyAct.section55D;
+        s55DTests.preconditions.sequence.forEach(precondition => {
+          const test = {
+            section: 's.55D',
+            step: precondition.step,
+            requirement: precondition.requirement,
+            mustExistBefore: precondition.mustExistBefore,
+            found: false,
+            evidence: [],
+            severity: 'critical'
+          };
+
+          if (precondition.keywords) {
+            precondition.keywords.forEach(keyword => {
+              const pattern = new RegExp('\\b' + keyword + '\\b', 'gi');
+              if (pattern.test(text)) {
+                test.found = true;
+                test.evidence.push(`Found keyword: "${keyword}"`);
+              }
+            });
+          }
+
+          results.tested.push(test);
+          if (test.found) {
+            results.passed.push(test);
+          } else {
+            results.failed.push(test);
+          }
+        });
+
+        // Test Section 55E provisional elements (proper performance)
+        const s55ETests = ForensicAnalyzerConfig.complianceChecking.roadSafetyAct.section55E;
+        s55ETests.preconditions.sequence.forEach(precondition => {
+          const test = {
+            section: 's.55E',
+            step: precondition.step,
+            requirement: precondition.requirement,
+            mustExistBefore: precondition.mustExistBefore,
+            found: false,
+            evidence: [],
+            severity: 'critical'
+          };
+
+          if (precondition.keywords) {
+            precondition.keywords.forEach(keyword => {
+              const pattern = new RegExp('\\b' + keyword + '\\b', 'gi');
+              if (pattern.test(text)) {
+                test.found = true;
+                test.evidence.push(`Found keyword: "${keyword}"`);
+              }
+            });
+          }
+
+          results.tested.push(test);
+          if (test.found) {
+            results.passed.push(test);
+          } else {
+            results.failed.push(test);
+          }
+        });
+      }
+
+      // Calculate summary
+      results.summary.totalTests = results.tested.length;
+      results.summary.passedTests = results.passed.length;
+      results.summary.failedTests = results.failed.length;
+      results.summary.complianceRate = results.summary.totalTests > 0
+        ? Math.round((results.summary.passedTests / results.summary.totalTests) * 100)
+        : 0;
+
+      return results;
+    },
+
+    /**
+     * Validate statutory sequence - ensures steps occur in correct order
+     * @param {string} text - Document text to analyze
+     * @param {Object} detectedFramework - Auto-detected legislative framework
+     * @returns {Object} Statutory sequence validation results
+     */
+    validateStatutorySequence(text, detectedFramework) {
+      const results = {
+        sequences: [],
+        violations: [],
+        compliant: true,
+        summary: {
+          totalSequences: 0,
+          compliantSequences: 0,
+          violatedSequences: 0
+        }
+      };
+
+      const hasRoadSafetyAct = detectedFramework.primaryLegislation.some(
+        leg => leg.name.includes('Road Safety Act')
+      );
+
+      if (hasRoadSafetyAct) {
+        // Validate Section 49 sequence
+        const s49Sequence = {
+          name: 'Section 49 Preliminary Breath Test Sequence',
+          steps: ForensicAnalyzerConfig.complianceChecking.roadSafetyAct.section49.preconditions.sequence,
+          compliance: {
+            step1: { found: false, position: -1 },
+            step2: { found: false, position: -1 },
+            step3: { found: false, position: -1 }
+          },
+          sequenceValid: false,
+          violations: []
+        };
+
+        // Find positions of each step in the text
+        const lines = text.split('\n');
+
+        // Step 1: Check for circumstances
+        lines.forEach((line, index) => {
+          if (/\b(?:driver|driving|in\s+charge|accident|reasonable\s+belief)\b/gi.test(line)) {
+            if (!s49Sequence.compliance.step1.found) {
+              s49Sequence.compliance.step1.found = true;
+              s49Sequence.compliance.step1.position = index;
+            }
+          }
+        });
+
+        // Step 2: Reasonable belief formation
+        lines.forEach((line, index) => {
+          if (/\b(?:formed|believed|opinion|suspicion)\b/gi.test(line)) {
+            if (!s49Sequence.compliance.step2.found) {
+              s49Sequence.compliance.step2.found = true;
+              s49Sequence.compliance.step2.position = index;
+            }
+          }
+        });
+
+        // Step 3: Informing person
+        lines.forEach((line, index) => {
+          if (/\b(?:informed|advised|told).*\b(?:requirement|test|section)\b/gi.test(line)) {
+            if (!s49Sequence.compliance.step3.found) {
+              s49Sequence.compliance.step3.found = true;
+              s49Sequence.compliance.step3.position = index;
+            }
+          }
+        });
+
+        // Validate sequence order
+        const step1Pos = s49Sequence.compliance.step1.position;
+        const step2Pos = s49Sequence.compliance.step2.position;
+        const step3Pos = s49Sequence.compliance.step3.position;
+
+        if (step1Pos >= 0 && step2Pos >= 0 && step3Pos >= 0) {
+          if (step1Pos < step2Pos && step2Pos < step3Pos) {
+            s49Sequence.sequenceValid = true;
+          } else {
+            s49Sequence.sequenceValid = false;
+            if (step2Pos < step1Pos) {
+              s49Sequence.violations.push({
+                type: 'Out of Sequence',
+                severity: 'critical',
+                description: 'Reasonable belief formed before establishing circumstance under s.49(1)',
+                expected: 'Circumstance must exist before belief can be formed',
+                actual: `Belief mentioned at line ${step2Pos}, circumstance at line ${step1Pos}`
+              });
+            }
+            if (step3Pos < step2Pos) {
+              s49Sequence.violations.push({
+                type: 'Out of Sequence',
+                severity: 'critical',
+                description: 'Person informed before reasonable belief documented',
+                expected: 'Belief must be formed before informing person',
+                actual: `Informed at line ${step3Pos}, belief at line ${step2Pos}`
+              });
+            }
+          }
+        } else {
+          s49Sequence.sequenceValid = false;
+          if (step1Pos < 0) {
+            s49Sequence.violations.push({
+              type: 'Missing Precondition',
+              severity: 'critical',
+              description: 'No circumstance under s.49(1) documented',
+              expected: 'One of circumstances s.49(1)(a)-(h) must be present'
+            });
+          }
+          if (step2Pos < 0) {
+            s49Sequence.violations.push({
+              type: 'Missing Precondition',
+              severity: 'critical',
+              description: 'Reasonable belief formation not documented',
+              expected: 'Officer must document formation of reasonable belief'
+            });
+          }
+          if (step3Pos < 0) {
+            s49Sequence.violations.push({
+              type: 'Missing Precondition',
+              severity: 'high',
+              description: 'No evidence person was informed of requirement',
+              expected: 'Person must be informed of requirement and statutory basis'
+            });
+          }
+        }
+
+        results.sequences.push(s49Sequence);
+        if (!s49Sequence.sequenceValid) {
+          results.violations.push(...s49Sequence.violations);
+          results.compliant = false;
+        }
+      }
+
+      // Calculate summary
+      results.summary.totalSequences = results.sequences.length;
+      results.summary.compliantSequences = results.sequences.filter(s => s.sequenceValid).length;
+      results.summary.violatedSequences = results.violations.length;
+
+      return results;
+    },
+
+    /**
+     * Comprehensive automated analysis - runs all tests autonomously
+     * This is the main function called automatically when a file is uploaded
+     *
+     * @param {string} text - Document text to analyze
+     * @param {string} fileName - Original file name
+     * @returns {Object} Complete automated analysis results
+     */
+    runAutomatedAnalysis(text, fileName = 'document.txt') {
+      console.log(`[Automated Analysis] Starting analysis for: ${fileName}`);
+      console.log(`[Automated Analysis] Document length: ${text.length} characters`);
+
+      const analysis = {
+        fileName: fileName,
+        timestamp: new Date().toISOString(),
+
+        // Step 1: Auto-detect legislative framework
+        framework: null,
+
+        // Step 2: Test provisional elements
+        provisionalTests: null,
+
+        // Step 3: Validate statutory sequences
+        sequenceValidation: null,
+
+        // Step 4: Test reasonable belief (if applicable)
+        reasonableBeliefTest: null,
+
+        // Step 5: Overall compliance assessment
+        overallCompliance: {
+          status: 'unknown',
+          score: 0,
+          criticalIssues: 0,
+          highIssues: 0,
+          mediumIssues: 0,
+          lowIssues: 0,
+          recommendations: []
+        },
+
+        // Execution metadata
+        executionTime: 0,
+        testsRun: 0,
+        errors: []
+      };
+
+      const startTime = Date.now();
+
+      try {
+        // STEP 1: Auto-detect legislative framework
+        console.log('[Automated Analysis] Step 1: Detecting legislative framework...');
+        analysis.framework = ForensicAnalyzerConfig.utils.autoDetectLegislativeFramework(text, fileName);
+        console.log(`[Automated Analysis] Framework detected: ${analysis.framework.primaryLegislation.length} acts identified`);
+        console.log(`[Automated Analysis] Document type: ${analysis.framework.documentType}`);
+        console.log(`[Automated Analysis] Confidence: ${analysis.framework.confidence}%`);
+        analysis.testsRun++;
+
+        // STEP 2: Test provisional elements
+        console.log('[Automated Analysis] Step 2: Testing provisional elements...');
+        analysis.provisionalTests = ForensicAnalyzerConfig.utils.testProvisionalElements(text, analysis.framework);
+        console.log(`[Automated Analysis] Provisional tests: ${analysis.provisionalTests.summary.passedTests}/${analysis.provisionalTests.summary.totalTests} passed`);
+        analysis.testsRun++;
+
+        // STEP 3: Validate statutory sequences
+        console.log('[Automated Analysis] Step 3: Validating statutory sequences...');
+        analysis.sequenceValidation = ForensicAnalyzerConfig.utils.validateStatutorySequence(text, analysis.framework);
+        console.log(`[Automated Analysis] Sequence validation: ${analysis.sequenceValidation.summary.compliantSequences}/${analysis.sequenceValidation.summary.totalSequences} compliant`);
+        analysis.testsRun++;
+
+        // STEP 4: Test reasonable belief if Road Safety Act detected
+        const hasRoadSafetyAct = analysis.framework.primaryLegislation.some(
+          leg => leg.name.includes('Road Safety Act')
+        );
+        if (hasRoadSafetyAct) {
+          console.log('[Automated Analysis] Step 4: Testing reasonable belief...');
+          analysis.reasonableBeliefTest = ForensicAnalyzerConfig.utils.analyzeReasonableBeliefTest(text);
+          console.log(`[Automated Analysis] Reasonable belief: ${analysis.reasonableBeliefTest.compliant ? 'COMPLIANT' : 'NON-COMPLIANT'}`);
+          analysis.testsRun++;
+        }
+
+        // STEP 5: Calculate overall compliance
+        console.log('[Automated Analysis] Step 5: Calculating overall compliance...');
+
+        // Count issues by severity
+        const allIssues = [
+          ...(analysis.provisionalTests?.failed || []),
+          ...(analysis.sequenceValidation?.violations || []),
+          ...(analysis.reasonableBeliefTest?.defects || [])
+        ];
+
+        allIssues.forEach(issue => {
+          const severity = issue.severity || 'medium';
+          if (severity === 'critical') analysis.overallCompliance.criticalIssues++;
+          else if (severity === 'high') analysis.overallCompliance.highIssues++;
+          else if (severity === 'medium') analysis.overallCompliance.mediumIssues++;
+          else if (severity === 'low') analysis.overallCompliance.lowIssues++;
+        });
+
+        // Calculate compliance score
+        const totalTests = analysis.provisionalTests.summary.totalTests +
+                          analysis.sequenceValidation.summary.totalSequences +
+                          (analysis.reasonableBeliefTest ? 1 : 0);
+
+        const passedTests = analysis.provisionalTests.summary.passedTests +
+                           analysis.sequenceValidation.summary.compliantSequences +
+                           (analysis.reasonableBeliefTest?.compliant ? 1 : 0);
+
+        analysis.overallCompliance.score = totalTests > 0
+          ? Math.round((passedTests / totalTests) * 100)
+          : 0;
+
+        // Determine overall status
+        if (analysis.overallCompliance.criticalIssues > 0) {
+          analysis.overallCompliance.status = 'CRITICAL NON-COMPLIANCE';
+        } else if (analysis.overallCompliance.highIssues > 0) {
+          analysis.overallCompliance.status = 'HIGH RISK NON-COMPLIANCE';
+        } else if (analysis.overallCompliance.mediumIssues > 0) {
+          analysis.overallCompliance.status = 'PARTIAL COMPLIANCE';
+        } else {
+          analysis.overallCompliance.status = 'COMPLIANT';
+        }
+
+        // Generate recommendations
+        if (analysis.provisionalTests.failed.length > 0) {
+          analysis.overallCompliance.recommendations.push({
+            priority: 'critical',
+            recommendation: `${analysis.provisionalTests.failed.length} provisional element(s) not satisfied. Review statutory prerequisites.`
+          });
+        }
+
+        if (analysis.sequenceValidation.violations.length > 0) {
+          analysis.overallCompliance.recommendations.push({
+            priority: 'critical',
+            recommendation: `${analysis.sequenceValidation.violations.length} statutory sequence violation(s) detected. Steps must occur in correct order.`
+          });
+        }
+
+        if (analysis.reasonableBeliefTest && !analysis.reasonableBeliefTest.compliant) {
+          analysis.overallCompliance.recommendations.push({
+            priority: 'critical',
+            recommendation: 'Reasonable belief test not satisfied. Ensure both subjective and objective elements are documented.'
+          });
+        }
+
+        if (analysis.framework.confidence < 50) {
+          analysis.overallCompliance.recommendations.push({
+            priority: 'high',
+            recommendation: 'Legislative framework detection confidence is low. Document may be missing statutory references.'
+          });
+        }
+
+      } catch (error) {
+        console.error('[Automated Analysis] Error during analysis:', error);
+        analysis.errors.push({
+          type: 'Analysis Error',
+          message: error.message,
+          stack: error.stack
+        });
+      }
+
+      analysis.executionTime = Date.now() - startTime;
+      console.log(`[Automated Analysis] Complete in ${analysis.executionTime}ms`);
+      console.log(`[Automated Analysis] Overall Status: ${analysis.overallCompliance.status}`);
+      console.log(`[Automated Analysis] Compliance Score: ${analysis.overallCompliance.score}%`);
+
+      return analysis;
     }
   },
 
@@ -1210,10 +1735,29 @@ const ForensicAnalyzerConfig = {
   // ============================================================================
 
   version: {
-    config: '2.0.0',
-    application: '2.0.0',
+    config: '2.1.0',
+    application: '2.1.0',
     lastUpdated: '2025-11-11',
     changelog: [
+      {
+        version: '2.1.0',
+        date: '2025-11-11',
+        changes: [
+          'Added automated provisional element testing framework',
+          'Added automated statutory sequence validation engine',
+          'Added legislative framework auto-detection system',
+          'Implemented runAutomatedAnalysis() - comprehensive autonomous analysis',
+          'Added autoDetectLegislativeFramework() with confidence scoring',
+          'Added testProvisionalElements() for precondition validation',
+          'Added validateStatutorySequence() for temporal order checking',
+          'Automated tests run on every uploaded file',
+          'Results automatically reported to client-side UI',
+          'Tests identify correct legislative documentation sources',
+          'Framework validation ensures governing legal source of truth',
+          'Compliance scoring and status determination',
+          'Priority-based recommendations generation'
+        ]
+      },
       {
         version: '2.0.0',
         date: '2025-11-11',

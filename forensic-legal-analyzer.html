@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forensic Legal Document Analysis - Victorian Criminal Procedure</title>
 
+    <!-- Forensic Analyzer Configuration -->
+    <script src="forensic-analyzer-config.js"></script>
+
     <!-- React 18 via CDN -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -1320,10 +1323,37 @@
                     const extractedDocs = await Promise.all(
                         fileArray.map(async (file) => {
                             const text = await extractText(file);
+
+                            // AUTOMATED PROVISIONAL ELEMENT & STATUTORY SEQUENCE TESTING
+                            // Runs automatically on every uploaded file
+                            let automatedAnalysis = null;
+                            if (typeof ForensicAnalyzerConfig !== 'undefined' && ForensicAnalyzerConfig.utils.runAutomatedAnalysis) {
+                                console.log(`\n${'='.repeat(80)}`);
+                                console.log(`AUTOMATED COMPLIANCE ANALYSIS - ${file.name.toUpperCase()}`);
+                                console.log('='.repeat(80));
+
+                                automatedAnalysis = ForensicAnalyzerConfig.utils.runAutomatedAnalysis(text, file.name);
+
+                                console.log('\nAUTOMATED ANALYSIS SUMMARY:');
+                                console.log('─'.repeat(80));
+                                console.log(`✓ Legislative Framework: ${automatedAnalysis.framework.primaryLegislation.length} acts detected`);
+                                console.log(`✓ Document Type: ${automatedAnalysis.framework.documentType || 'Unknown'}`);
+                                console.log(`✓ Framework Confidence: ${automatedAnalysis.framework.confidence}%`);
+                                console.log(`✓ Provisional Tests: ${automatedAnalysis.provisionalTests.summary.passedTests}/${automatedAnalysis.provisionalTests.summary.totalTests} passed`);
+                                console.log(`✓ Sequence Validation: ${automatedAnalysis.sequenceValidation.summary.compliantSequences}/${automatedAnalysis.sequenceValidation.summary.totalSequences} compliant`);
+                                if (automatedAnalysis.reasonableBeliefTest) {
+                                    console.log(`✓ Reasonable Belief Test: ${automatedAnalysis.reasonableBeliefTest.compliant ? 'COMPLIANT' : 'NON-COMPLIANT'}`);
+                                }
+                                console.log(`\n► OVERALL STATUS: ${automatedAnalysis.overallCompliance.status}`);
+                                console.log(`► COMPLIANCE SCORE: ${automatedAnalysis.overallCompliance.score}%`);
+                                console.log('='.repeat(80) + '\n');
+                            }
+
                             return {
                                 name: file.name,
                                 text: text,
-                                size: file.size
+                                size: file.size,
+                                automatedAnalysis: automatedAnalysis
                             };
                         })
                     );
