@@ -940,14 +940,157 @@
             }
           ];
 
+          // Victorian Law Document Type Classifier
+          const classifyDocumentType = (filename, content) => {
+            const types = {
+              'Statutory Legislation': /\bact\s+\d{4}\b|primary legislation|statute/i,
+              'Delegated Legislation': /\bregulation|rules|order|instrument\b/i,
+              'Victoria Police Manual': /\bvictoria police|vpm|police manual|operational procedure/i,
+              'Disclosure Document': /\bdisclosure|discovery|prosecution brief/i,
+              'Evidence Exhibit': /\bexhibit|evidentiary material|physical evidence/i,
+              'Statement': /\bstatement of|witness statement|affidavit|statutory declaration/i,
+              'Court Order': /\border of the court|court order|judicial order/i,
+              'Evidentiary Certificate': /\bevidentiary certificate|certificate of|s\.\s*\d+\s+certificate/i,
+              'Summons': /\bsummons|witness summons|subpoena/i,
+              'Charge Sheet': /\bcharge sheet|charges|indictment|complaint/i,
+              'Submission': /\bsubmission|written submission|legal submission/i,
+              'Deposition': /\bdeposition|committal|preliminary hearing/i,
+              'Case Law': /\b[A-Z][a-z]+\s+v\s+[A-Z][a-z]+|\[\d{4}\]|CLR|VR|VSC/,
+              'Legal Narrative': /\bnarrativ|chronolog|fact pattern|sequence of events/i,
+              'Court Documentation': /\bfiling|pleading|court document|notice of/i
+            };
+
+            for (const [type, pattern] of Object.entries(types)) {
+              if (pattern.test(content) || pattern.test(filename)) {
+                return type;
+              }
+            }
+            return 'General Legal Document';
+          };
+
+          // Victorian Governing Framework Identifier
+          const identifyVictorianFramework = (content, documentType) => {
+            const framework = {
+              primaryLegislation: [],
+              subordinateInstrumentation: [],
+              jurisdiction: 'Victoria, Australia',
+              governingCourts: [],
+              relevantPoliceProcedures: [],
+              applicableEvidentRules: []
+            };
+
+            // Victorian Primary Legislation
+            const vicActPatterns = [
+              /Criminal\s+Procedure\s+Act\s+2009/gi,
+              /Evidence\s+Act\s+2008/gi,
+              /Crimes\s+Act\s+1958/gi,
+              /Charter\s+of\s+Human\s+Rights\s+and\s+Responsibilities\s+Act\s+2006/gi,
+              /Victoria\s+Police\s+Act\s+2013/gi,
+              /Sentencing\s+Act\s+1991/gi,
+              /Children,\s+Youth\s+and\s+Families\s+Act\s+2005/gi,
+              /Supreme\s+Court\s+Act\s+1986/gi,
+              /Magistrates[\'']?\s+Court\s+Act\s+1989/gi,
+              /County\s+Court\s+Act\s+1958/gi,
+              /Bail\s+Act\s+1977/gi,
+              /Confiscation\s+Act\s+1997/gi
+            ];
+
+            vicActPatterns.forEach(pattern => {
+              const matches = content.match(pattern);
+              if (matches) {
+                framework.primaryLegislation.push(...new Set(matches));
+              }
+            });
+
+            // Victorian Subordinate Instruments
+            const vicRegPatterns = [
+              /Criminal\s+Procedure\s+Regulations/gi,
+              /Evidence\s+\(Miscellaneous\s+Provisions\s*\)\s+Regulations/gi,
+              /Victoria\s+Police\s+Regulations/gi,
+              /Supreme\s+Court\s+\(General\s+Civil\s+Procedure\s*\)\s+Rules/gi,
+              /Magistrates[\'']?\s+Court\s+General\s+Civil\s+Procedure\s+Rules/gi
+            ];
+
+            vicRegPatterns.forEach(pattern => {
+              const matches = content.match(pattern);
+              if (matches) {
+                framework.subordinateInstrumentation.push(...new Set(matches));
+              }
+            });
+
+            // Victorian Courts
+            const courtPatterns = [
+              /Supreme\s+Court\s+of\s+Victoria/gi,
+              /County\s+Court\s+of\s+Victoria/gi,
+              /Magistrates[\'']?\s+Court\s+of\s+Victoria/gi,
+              /Children[\'']?s\s+Court\s+of\s+Victoria/gi,
+              /Coroners\s+Court\s+of\s+Victoria/gi
+            ];
+
+            courtPatterns.forEach(pattern => {
+              const matches = content.match(pattern);
+              if (matches) {
+                framework.governingCourts.push(...new Set(matches));
+              }
+            });
+
+            // Victorian Police Procedures
+            if (documentType === 'Victoria Police Manual' || content.match(/victoria\s+police/i)) {
+              const vpmPatterns = [
+                /VPM\s+[A-Z0-9-]+/g,
+                /Operational\s+Procedure\s+\d+/gi,
+                /Victoria\s+Police\s+Manual\s+Section\s+\d+/gi
+              ];
+
+              vpmPatterns.forEach(pattern => {
+                const matches = content.match(pattern);
+                if (matches) {
+                  framework.relevantPoliceProcedures.push(...new Set(matches));
+                }
+              });
+            }
+
+            // Victorian Evidence Rules
+            const evidenceRules = [
+              /s\.\s*\d+\s+Evidence\s+Act/gi,
+              /section\s+\d+\s+of\s+the\s+Evidence\s+Act/gi,
+              /Division\s+\d+\s+of\s+Part\s+\d+\s+of\s+the\s+Evidence\s+Act/gi
+            ];
+
+            evidenceRules.forEach(pattern => {
+              const matches = content.match(pattern);
+              if (matches) {
+                framework.applicableEvidentRules.push(...new Set(matches));
+              }
+            });
+
+            return framework;
+          };
+
           const handleFileUpload = async (file, fileKey) => {
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = (e) => {
               const content = e.target.result;
-              setFiles(prev => ({ ...prev, [fileKey]: file }));
+
+              // Classify document and identify framework
+              const documentType = classifyDocumentType(file.name, content);
+              const framework = identifyVictorianFramework(content, documentType);
+
+              // Enhanced file metadata
+              const enhancedFile = {
+                ...file,
+                documentType: documentType,
+                framework: framework,
+                uploadTimestamp: new Date().toISOString()
+              };
+
+              setFiles(prev => ({ ...prev, [fileKey]: enhancedFile }));
               setFileContents(prev => ({ ...prev, [fileKey]: content }));
+
+              console.log(`File ${fileKey} classified as: ${documentType}`);
+              console.log(`Governing framework:`, framework);
             };
             reader.readAsText(file);
           };
@@ -1035,6 +1178,255 @@
             setCurrentPhase('Analysis Complete');
           };
 
+          // Word-by-Word Linguistic Inspection Engine
+          const performLinguisticInspection = (content, documentType, framework) => {
+            const lines = content.split('\n');
+            const linguisticReport = {
+              totalWords: 0,
+              totalLines: lines.length,
+              lineByLineAnalysis: [],
+              wordAccuracyIssues: [],
+              grammaticalDefects: [],
+              legalTerminologyIssues: [],
+              victorianComplianceDefects: []
+            };
+
+            lines.forEach((line, lineIndex) => {
+              const lineNumber = lineIndex + 1;
+              const words = line.trim().split(/\s+/).filter(w => w.length > 0);
+              linguisticReport.totalWords += words.length;
+
+              const lineAnalysis = {
+                lineNumber: lineNumber,
+                content: line,
+                wordCount: words.length,
+                issues: [],
+                wordByWordInspection: []
+              };
+
+              // Word-by-word inspection
+              words.forEach((word, wordIndex) => {
+                const wordPosition = wordIndex + 1;
+                const cleanWord = word.replace(/[^\w\s'-]/g, '').toLowerCase();
+
+                const wordInspection = {
+                  position: wordPosition,
+                  word: word,
+                  issues: []
+                };
+
+                // Victorian legal terminology accuracy
+                const victorianTermIssues = checkVictorianLegalTerminology(word, cleanWord, documentType);
+                if (victorianTermIssues.length > 0) {
+                  wordInspection.issues.push(...victorianTermIssues);
+                  linguisticReport.legalTerminologyIssues.push({
+                    line: lineNumber,
+                    word: word,
+                    position: wordPosition,
+                    issues: victorianTermIssues
+                  });
+                }
+
+                // Check for spelling and accuracy
+                const spellingIssues = checkLegalSpelling(word, cleanWord);
+                if (spellingIssues) {
+                  wordInspection.issues.push(spellingIssues);
+                  linguisticReport.wordAccuracyIssues.push({
+                    line: lineNumber,
+                    word: word,
+                    position: wordPosition,
+                    issue: spellingIssues
+                  });
+                }
+
+                if (wordInspection.issues.length > 0) {
+                  lineAnalysis.wordByWordInspection.push(wordInspection);
+                }
+              });
+
+              // Line-level checks
+              const lineIssues = performLineInspection(line, lineNumber, documentType, framework);
+              lineAnalysis.issues.push(...lineIssues);
+
+              if (lineIssues.length > 0) {
+                linguisticReport.grammaticalDefects.push(...lineIssues.map(issue => ({
+                  line: lineNumber,
+                  content: line,
+                  issue: issue
+                })));
+              }
+
+              linguisticReport.lineByLineAnalysis.push(lineAnalysis);
+            });
+
+            return linguisticReport;
+          };
+
+          // Victorian Legal Terminology Checker
+          const checkVictorianLegalTerminology = (originalWord, cleanWord, documentType) => {
+            const issues = [];
+
+            // Victorian-specific terminology that must be accurate
+            const victorianTerms = {
+              'informant': { correct: 'informant', common_errors: ['informent', 'informent'], context: 'Victorian police terminology' },
+              'indictable': { correct: 'indictable', common_errors: ['indicatable', 'indictible'], context: 'Victorian criminal law' },
+              'committals': { correct: 'committals', common_errors: ['commitals', 'commital'], context: 'Victorian court procedure' },
+              'magistrate': { correct: 'magistrate', common_errors: ['magistrait', 'magistrat'], context: 'Victorian judicial officer' },
+              'summons': { correct: 'summons', common_errors: ['summon', 'summonses'], context: 'Victorian court process' },
+              'pursuant': { correct: 'pursuant', common_errors: ['persuan', 'persuant'], context: 'Legal terminology' },
+              'defence': { correct: 'defence', american: 'defense', context: 'Australian spelling (not defense)' },
+              'practitioner': { correct: 'practitioner', common_errors: ['practisioner', 'practioner'], context: 'Legal practitioner' },
+              'recognised': { correct: 'recognised', american: 'recognized', context: 'Australian spelling (not recognized)' },
+              'summarised': { correct: 'summarised', american: 'summarized', context: 'Australian spelling (not summarized)' }
+            };
+
+            for (const [term, info] of Object.entries(victorianTerms)) {
+              if (info.common_errors && info.common_errors.includes(cleanWord)) {
+                issues.push({
+                  type: 'Victorian Legal Terminology Error',
+                  severity: 'high',
+                  description: `"${originalWord}" should be "${info.correct}" in ${info.context}`,
+                  correct: info.correct,
+                  context: info.context
+                });
+              }
+
+              // Check for American spelling in Victorian context
+              if (info.american && cleanWord === info.american) {
+                issues.push({
+                  type: 'Australian Spelling Required',
+                  severity: 'medium',
+                  description: `"${originalWord}" uses American spelling. Victorian documents require "${info.correct}"`,
+                  correct: info.correct,
+                  context: info.context
+                });
+              }
+            }
+
+            return issues;
+          };
+
+          // Legal Spelling Checker
+          const checkLegalSpelling = (word, cleanWord) => {
+            const commonLegalMisspellings = {
+              'achive': 'achieve',
+              'admissable': 'admissible',
+              'alledge': 'allege',
+              'arguement': 'argument',
+              'benificial': 'beneficial',
+              'calender': 'calendar',
+              'comitted': 'committed',
+              'complience': 'compliance',
+              'defendent': 'defendant',
+              'discreation': 'discretion',
+              'existance': 'existence',
+              'fourty': 'forty',
+              'gaurd': 'guard',
+              'guidence': 'guidance',
+              'independant': 'independent',
+              'judgement': 'judgment',  // Note: In Australian legal context, both are acceptable
+              'liason': 'liaison',
+              'maintainance': 'maintenance',
+              'occassion': 'occasion',
+              'occurance': 'occurrence',
+              'persue': 'pursue',
+              'preceed': 'precede',
+              'priviledge': 'privilege',
+              'proceedure': 'procedure',
+              'recieve': 'receive',
+              'seperate': 'separate',
+              'statutory': 'statuary'  // Common typo
+            };
+
+            if (commonLegalMisspellings[cleanWord]) {
+              return {
+                type: 'Spelling Error',
+                severity: 'medium',
+                description: `"${word}" appears to be misspelled. Correct spelling: "${commonLegalMisspellings[cleanWord]}"`,
+                suggestion: commonLegalMisspellings[cleanWord]
+              };
+            }
+
+            return null;
+          };
+
+          // Line-Level Inspection
+          const performLineInspection = (line, lineNumber, documentType, framework) => {
+            const issues = [];
+
+            // Check for incomplete statutory references
+            if (/section\s+\d+\s*$/i.test(line) && !line.includes('Act')) {
+              issues.push({
+                type: 'Incomplete Statutory Reference',
+                severity: 'high',
+                description: 'Section reference without specifying the Act',
+                defect: 'Section reference incomplete - must specify governing Act'
+              });
+            }
+
+            // Check for incorrect conjunction usage in legal lists
+            if (/,\s+and\s+,/.test(line)) {
+              issues.push({
+                type: 'Grammatical Error',
+                severity: 'low',
+                description: 'Incorrect comma placement with conjunction',
+                defect: 'Oxford comma usage inconsistent or incorrect'
+              });
+            }
+
+            // Check for passive voice in Victoria Police procedural documents
+            if (documentType === 'Victoria Police Manual' && /was\s+\w+ed\b|were\s+\w+ed\b/i.test(line)) {
+              issues.push({
+                type: 'Passive Voice in Procedural Document',
+                severity: 'low',
+                description: 'Victoria Police procedures should use active voice',
+                defect: 'Consider rephrasing in active voice for clarity'
+              });
+            }
+
+            // Check for ambiguous temporal references
+            if (/as soon as possible|ASAP|promptly|immediately/i.test(line)) {
+              issues.push({
+                type: 'Vague Temporal Reference',
+                severity: 'medium',
+                description: 'Imprecise time requirement - Victorian statutory compliance requires specific timeframes',
+                defect: 'Replace with specific timeframe (e.g., "within 7 days", "within 24 hours")'
+              });
+            }
+
+            // Check for missing mandatory elements in statements
+            if (documentType === 'Statement' && lineNumber === 1) {
+              if (!/statement\s+of/i.test(line)) {
+                issues.push({
+                  type: 'Missing Statement Header',
+                  severity: 'high',
+                  description: 'Statement documents should begin with "Statement of [name]"',
+                  defect: 'Required header missing - Victoria Police disclosure requirements'
+                });
+              }
+            }
+
+            // Check for incorrect court references
+            const incorrectCourtRefs = [
+              { pattern: /Magistrates Court(?!\s+of\s+Victoria)/gi, correct: 'Magistrates\' Court of Victoria' },
+              { pattern: /Supreme Court(?!\s+of\s+Victoria)/gi, correct: 'Supreme Court of Victoria' },
+              { pattern: /County Court(?!\s+of\s+Victoria)/gi, correct: 'County Court of Victoria' }
+            ];
+
+            incorrectCourtRefs.forEach(ref => {
+              if (ref.pattern.test(line)) {
+                issues.push({
+                  type: 'Incomplete Court Reference',
+                  severity: 'high',
+                  description: `Court reference should be "${ref.correct}" in Victorian documents`,
+                  defect: 'Full court name required for Victorian jurisdiction'
+                });
+              }
+            });
+
+            return issues;
+          };
+
           const generateFindings = (content, preset) => {
             const words = content.split(/\s+/).filter(w => w.length > 0);
             const lines = content.split('\n').filter(l => l.trim().length > 0);
@@ -1042,9 +1434,13 @@
             // Extract legal references first so we can pass them to issue identification
             const legalReferences = extractLegalReferences(content);
 
+            // Perform comprehensive linguistic inspection
+            const linguisticInspection = performLinguisticInspection(content, 'General Legal Document', {});
+
             return {
               wordCount: words.length,
               lineCount: lines.length,
+              linguisticInspection: linguisticInspection,
               keyTermsIdentified: extractKeyTerms(content, preset),
               proceduralElements: identifyProceduralElements(content, preset),
               legalReferences: legalReferences,
@@ -1417,14 +1813,386 @@
             };
           };
 
+          // Victorian Law Statutory Compliance Checker
+          const checkVictorianStatutoryCompliance = (content, documentType, legalReferences) => {
+            const complianceIssues = [];
+
+            // Criminal Procedure Act 2009 compliance checks
+            if (documentType === 'Disclosure Document' || documentType === 'Statement') {
+              if (!legalReferences.some(ref => /Criminal\s+Procedure\s+Act\s+2009/i.test(ref.text))) {
+                complianceIssues.push({
+                  severity: 'high',
+                  statute: 'Criminal Procedure Act 2009',
+                  section: 'General Compliance',
+                  defect: 'Disclosure documents must reference Criminal Procedure Act 2009',
+                  compliance: 'non-compliant',
+                  remediation: 'Add reference to governing legislation - Criminal Procedure Act 2009'
+                });
+              }
+
+              // Check for disclosure timeline compliance
+              if (!/within\s+\d+\s+(days?|weeks?|months?)/i.test(content)) {
+                complianceIssues.push({
+                  severity: 'high',
+                  statute: 'Criminal Procedure Act 2009',
+                  section: 'Part 5.2 - Disclosure timing',
+                  defect: 'No specific timeframe for disclosure identified',
+                  compliance: 'potentially non-compliant',
+                  remediation: 'Specify disclosure timeline as required by CPA 2009 Part 5.2'
+                });
+              }
+            }
+
+            // Evidence Act 2008 compliance checks
+            if (documentType === 'Evidence Exhibit' || documentType === 'Evidentiary Certificate') {
+              if (!legalReferences.some(ref => /Evidence\s+Act\s+2008/i.test(ref.text))) {
+                complianceIssues.push({
+                  severity: 'high',
+                  statute: 'Evidence Act 2008 (Vic)',
+                  section: 'General Compliance',
+                  defect: 'Evidentiary materials must reference Evidence Act 2008',
+                  compliance: 'non-compliant',
+                  remediation: 'Add reference to Evidence Act 2008 (Vic)'
+                });
+              }
+
+              // Check for certificate requirements under Evidence Act
+              if (documentType === 'Evidentiary Certificate' && !/certificate\s+under\s+section\s+\d+/i.test(content)) {
+                complianceIssues.push({
+                  severity: 'critical',
+                  statute: 'Evidence Act 2008 (Vic)',
+                  section: 'Certificate provisions',
+                  defect: 'Certificate must specify authorizing section',
+                  compliance: 'non-compliant',
+                  remediation: 'Add "Certificate under section [X] of the Evidence Act 2008"'
+                });
+              }
+            }
+
+            // Victoria Police Act 2013 compliance checks
+            if (documentType === 'Victoria Police Manual' || /victoria\s+police/i.test(content)) {
+              if (!/Victoria\s+Police\s+Act\s+2013/i.test(content)) {
+                complianceIssues.push({
+                  severity: 'medium',
+                  statute: 'Victoria Police Act 2013',
+                  section: 'General Compliance',
+                  defect: 'Police procedures should reference Victoria Police Act 2013',
+                  compliance: 'potentially non-compliant',
+                  remediation: 'Add reference to Victoria Police Act 2013'
+                });
+              }
+            }
+
+            // Charter of Human Rights compliance checks
+            const humanRightsIndicators = /rights?|fairness|natural justice|discrimination|equality/i;
+            if (humanRightsIndicators.test(content)) {
+              if (!/Charter\s+of\s+Human\s+Rights/i.test(content)) {
+                complianceIssues.push({
+                  severity: 'medium',
+                  statute: 'Charter of Human Rights and Responsibilities Act 2006',
+                  section: 'Human rights considerations',
+                  defect: 'Document discusses rights but does not reference Charter',
+                  compliance: 'consider-charter',
+                  remediation: 'Consider whether Charter of Human Rights and Responsibilities Act 2006 is engaged'
+                });
+              }
+            }
+
+            // Court-specific compliance checks
+            if (documentType === 'Court Order' || documentType === 'Court Documentation') {
+              const hasCourtRef = /Supreme\s+Court|County\s+Court|Magistrates/i.test(content);
+              const hasFullCourtName = /Supreme\s+Court\s+of\s+Victoria|County\s+Court\s+of\s+Victoria|Magistrates[\'']?\s+Court\s+of\s+Victoria/i.test(content);
+
+              if (hasCourtRef && !hasFullCourtName) {
+                complianceIssues.push({
+                  severity: 'high',
+                  statute: 'Court rules and procedures',
+                  section: 'Court identification',
+                  defect: 'Court references must use full official name including "of Victoria"',
+                  compliance: 'non-compliant',
+                  remediation: 'Use full court names: "Supreme Court of Victoria", "County Court of Victoria", "Magistrates\' Court of Victoria"'
+                });
+              }
+            }
+
+            return complianceIssues;
+          };
+
+          // Cross-File Narrative and Timeline Evaluator
+          const evaluateCrossFileNarrativeTimeline = (contentA, contentB, fileAMetadata, fileBMetadata) => {
+            const narrativeAnalysis = {
+              timelineDiscrepancies: [],
+              narrativeInconsistencies: [],
+              eventSequenceMismatch: [],
+              factualContradictions: [],
+              sequentialMapping: []
+            };
+
+            // Extract dates and temporal references from both files
+            const datesA = extractDatesAndTimeline(contentA);
+            const datesB = extractDatesAndTimeline(contentB);
+
+            // Extract events and narrative elements
+            const eventsA = extractNarrativeEvents(contentA);
+            const eventsB = extractNarrativeEvents(contentB);
+
+            // Compare timelines
+            datesA.forEach(dateA => {
+              const matchingDatesB = datesB.filter(dateB =>
+                dateB.normalizedDate === dateA.normalizedDate
+              );
+
+              if (matchingDatesB.length > 0) {
+                matchingDatesB.forEach(dateB => {
+                  if (dateA.context !== dateB.context) {
+                    narrativeAnalysis.timelineDiscrepancies.push({
+                      date: dateA.normalizedDate,
+                      fileA: { line: dateA.line, context: dateA.context },
+                      fileB: { line: dateB.line, context: dateB.context },
+                      severity: 'high',
+                      defect: 'Same date referenced with different contexts',
+                      mapping: `File A Line ${dateA.line} vs File B Line ${dateB.line}`
+                    });
+                  }
+                });
+              }
+            });
+
+            // Compare event sequences
+            const commonTerms = findCommonNarrativeTerms(eventsA, eventsB);
+            commonTerms.forEach(term => {
+              const orderA = eventsA.findIndex(e => e.text.toLowerCase().includes(term.toLowerCase()));
+              const orderB = eventsB.findIndex(e => e.text.toLowerCase().includes(term.toLowerCase()));
+
+              if (orderA !== -1 && orderB !== -1) {
+                const contextA = eventsA[orderA];
+                const contextB = eventsB[orderB];
+
+                // Check if surrounding context differs significantly
+                if (contextA.surrounding !== contextB.surrounding) {
+                  narrativeAnalysis.eventSequenceMismatch.push({
+                    term: term,
+                    fileA: { line: contextA.line, sequence: orderA, context: contextA.text },
+                    fileB: { line: contextB.line, sequence: orderB, context: contextB.text },
+                    severity: 'medium',
+                    defect: 'Same event referenced but surrounding narrative differs',
+                    mapping: `File A Line ${contextA.line} (Event #${orderA + 1}) vs File B Line ${contextB.line} (Event #${orderB + 1})`
+                  });
+                }
+              }
+            });
+
+            // Look for direct contradictions
+            const contradictions = findFactualContradictions(contentA, contentB);
+            narrativeAnalysis.factualContradictions = contradictions;
+
+            // Build sequential mapping of all cross-referenced elements
+            narrativeAnalysis.sequentialMapping = buildSequentialMapping(
+              datesA,
+              datesB,
+              eventsA,
+              eventsB,
+              contentA,
+              contentB
+            );
+
+            return narrativeAnalysis;
+          };
+
+          // Extract dates and temporal references
+          const extractDatesAndTimeline = (content) => {
+            const dates = [];
+            const lines = content.split('\n');
+
+            const datePatterns = [
+              /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/g,  // DD/MM/YYYY or DD-MM-YYYY
+              /\b(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})\b/g,    // YYYY/MM/DD
+              /\b(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})\b/gi,
+              /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(\d{4})\b/gi
+            ];
+
+            lines.forEach((line, index) => {
+              datePatterns.forEach(pattern => {
+                const matches = [...line.matchAll(pattern)];
+                matches.forEach(match => {
+                  dates.push({
+                    line: index + 1,
+                    original: match[0],
+                    normalizedDate: match[0],  // Simplified - would normally parse to standard format
+                    context: line.trim()
+                  });
+                });
+              });
+
+              // Temporal markers
+              const temporalMarkers = [
+                /\bbefore\s+[^.]+/gi,
+                /\bafter\s+[^.]+/gi,
+                /\bwithin\s+\d+\s+(days?|weeks?|months?|years?)/gi,
+                /\bon\s+or\s+about\s+[^.]+/gi
+              ];
+
+              temporalMarkers.forEach(pattern => {
+                const matches = [...line.matchAll(pattern)];
+                matches.forEach(match => {
+                  dates.push({
+                    line: index + 1,
+                    original: match[0],
+                    normalizedDate: 'temporal-marker',
+                    context: line.trim()
+                  });
+                });
+              });
+            });
+
+            return dates;
+          };
+
+          // Extract narrative events
+          const extractNarrativeEvents = (content) => {
+            const events = [];
+            const lines = content.split('\n');
+
+            const eventIndicators = [
+              /\b(occurred|happened|took place|transpired|witnessed|observed|attended|conducted|performed|executed)\b/gi,
+              /\b(seized|arrested|detained|charged|interviewed|questioned)\b/gi,
+              /\b(stated|declared|asserted|claimed|testified|deposed)\b/gi,
+              /\b(found|discovered|located|identified|recovered)\b/gi
+            ];
+
+            lines.forEach((line, index) => {
+              eventIndicators.forEach(pattern => {
+                if (pattern.test(line)) {
+                  const surrounding = lines.slice(Math.max(0, index - 1), Math.min(lines.length, index + 2)).join(' ');
+                  events.push({
+                    line: index + 1,
+                    text: line.trim(),
+                    surrounding: surrounding.trim()
+                  });
+                }
+              });
+            });
+
+            return events;
+          };
+
+          // Find common narrative terms
+          const findCommonNarrativeTerms = (eventsA, eventsB) => {
+            const termsA = new Set(
+              eventsA.flatMap(e => e.text.toLowerCase().match(/\b\w{4,}\b/g) || [])
+            );
+            const termsB = new Set(
+              eventsB.flatMap(e => e.text.toLowerCase().match(/\b\w{4,}\b/g) || [])
+            );
+
+            return [...termsA].filter(term => termsB.has(term) && !['this', 'that', 'with', 'from', 'have', 'been', 'were', 'said'].includes(term));
+          };
+
+          // Find factual contradictions
+          const findFactualContradictions = (contentA, contentB) => {
+            const contradictions = [];
+
+            // Simple contradiction patterns
+            const contradictionPatterns = [
+              { pattern: /\b(yes|no|true|false|did|did not|was|was not)\b/gi, type: 'affirmation/negation' },
+              { pattern: /\b\d+\s+(person|people|officer|individual|item|exhibit)/gi, type: 'quantity' },
+              { pattern: /\b(present|absent|available|unavailable)\b/gi, type: 'presence' }
+            ];
+
+            // This is a simplified version - full implementation would use NLP
+            contradictionPatterns.forEach(({ pattern, type }) => {
+              const matchesA = contentA.match(pattern) || [];
+              const matchesB = contentB.match(pattern) || [];
+
+              if (matchesA.length > 0 && matchesB.length > 0) {
+                const uniqueA = new Set(matchesA.map(m => m.toLowerCase()));
+                const uniqueB = new Set(matchesB.map(m => m.toLowerCase()));
+
+                // Check for direct opposites
+                uniqueA.forEach(a => {
+                  if (a.includes('not') && uniqueB.has(a.replace(/not\s+/, ''))) {
+                    contradictions.push({
+                      type: type,
+                      fileA: a,
+                      fileB: a.replace(/not\s+/, ''),
+                      severity: 'high',
+                      defect: 'Direct contradiction between documents'
+                    });
+                  }
+                });
+              }
+            });
+
+            return contradictions;
+          };
+
+          // Build sequential mapping
+          const buildSequentialMapping = (datesA, datesB, eventsA, eventsB, contentA, contentB) => {
+            const mapping = [];
+
+            // Map all dates sequentially
+            datesA.forEach((dateA, indexA) => {
+              mapping.push({
+                sequenceNumber: mapping.length + 1,
+                type: 'temporal',
+                source: 'File A',
+                line: dateA.line,
+                element: dateA.original,
+                context: dateA.context,
+                crossReference: datesB.find(db => db.normalizedDate === dateA.normalizedDate) || null
+              });
+            });
+
+            datesB.forEach((dateB, indexB) => {
+              if (!mapping.find(m => m.source === 'File B' && m.line === dateB.line)) {
+                mapping.push({
+                  sequenceNumber: mapping.length + 1,
+                  type: 'temporal',
+                  source: 'File B',
+                  line: dateB.line,
+                  element: dateB.original,
+                  context: dateB.context,
+                  crossReference: datesA.find(da => da.normalizedDate === dateB.normalizedDate) || null
+                });
+              }
+            });
+
+            // Map all events sequentially
+            eventsA.forEach(eventA => {
+              mapping.push({
+                sequenceNumber: mapping.length + 1,
+                type: 'narrative-event',
+                source: 'File A',
+                line: eventA.line,
+                element: eventA.text,
+                context: eventA.surrounding,
+                crossReference: null
+              });
+            });
+
+            eventsB.forEach(eventB => {
+              mapping.push({
+                sequenceNumber: mapping.length + 1,
+                type: 'narrative-event',
+                source: 'File B',
+                line: eventB.line,
+                element: eventB.text,
+                context: eventB.surrounding,
+                crossReference: null
+              });
+            });
+
+            return mapping.sort((a, b) => a.sequenceNumber - b.sequenceNumber);
+          };
+
           const performCrossReference = (phaseAResults) => {
             const discrepancies = [];
             const consistencies = [];
             const omissions = [];
-            
+
             const refsA = new Set(phaseAResults.fileA[0].findings.legalReferences.map(r => r.text.toLowerCase()));
             const refsB = new Set(phaseAResults.fileB[0].findings.legalReferences.map(r => r.text.toLowerCase()));
-            
+
             refsA.forEach(ref => {
               if (refsB.has(ref)) {
                 consistencies.push({ type: 'Statutory Reference', element: ref, status: 'Present in both documents' });
@@ -1432,16 +2200,16 @@
                 omissions.push({ type: 'Statutory Reference', element: ref, status: 'Present only in File A' });
               }
             });
-            
+
             refsB.forEach(ref => {
               if (!refsA.has(ref)) {
                 omissions.push({ type: 'Statutory Reference', element: ref, status: 'Present only in File B' });
               }
             });
-            
+
             const termsA = phaseAResults.fileA[0].findings.keyTermsIdentified.map(t => t.term);
             const termsB = phaseAResults.fileB[0].findings.keyTermsIdentified.map(t => t.term);
-            
+
             const significantDiscrepancy = Math.abs(termsA.length - termsB.length) > 5;
             if (significantDiscrepancy) {
               discrepancies.push({
@@ -1450,13 +2218,39 @@
                 severity: 'medium'
               });
             }
-            
+
+            // Add Victorian statutory compliance checks
+            const complianceA = checkVictorianStatutoryCompliance(
+              fileContents.fileA,
+              files.fileA?.documentType || 'General Legal Document',
+              phaseAResults.fileA[0].findings.legalReferences
+            );
+
+            const complianceB = checkVictorianStatutoryCompliance(
+              fileContents.fileB,
+              files.fileB?.documentType || 'General Legal Document',
+              phaseAResults.fileB[0].findings.legalReferences
+            );
+
+            // Add narrative and timeline evaluation
+            const narrativeEvaluation = evaluateCrossFileNarrativeTimeline(
+              fileContents.fileA,
+              fileContents.fileB,
+              files.fileA,
+              files.fileB
+            );
+
             return {
               discrepancies,
               consistencies: consistencies.slice(0, 10),
               omissions: omissions.slice(0, 10),
               governingFramework: identifyGoverningFramework(phaseAResults),
-              complianceAssessment: assessCompliance(phaseAResults)
+              complianceAssessment: assessCompliance(phaseAResults),
+              victorianCompliance: {
+                fileA: complianceA,
+                fileB: complianceB
+              },
+              narrativeAndTimeline: narrativeEvaluation
             };
           };
 
