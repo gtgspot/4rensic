@@ -3394,76 +3394,736 @@
             return assessment;
           };
 
+          // ============================================================================
+          // PHASE C: COMPREHENSIVE STATUTORY INTERPRETATION ENGINE
+          // Implements Interpretation Act 1984 (Vic) and Common Law Maxims
+          // ============================================================================
+
+          /**
+           * Apply Interpretation Act 1984 (Vic) Section 35(a) - Purposive Construction
+           * Analyzes provisions to determine Parliament's intention and legislative purpose
+           */
+          const applyPurposiveConstruction = (provision, context) => {
+            const analysis = {
+              provision: provision,
+              parliamentaryIntention: '',
+              mischiefAddressed: '',
+              purposeAdvanced: '',
+              recommendation: ''
+            };
+
+            // Analyze based on provision type
+            if (provision.includes('s.49') || provision.includes('section 49')) {
+              analysis.parliamentaryIntention = 'Parliament intended to provide lawful authority for preliminary breath testing while protecting individual rights through procedural safeguards';
+              analysis.mischiefAddressed = 'Addresses the mischief of impaired driving detection while preventing arbitrary testing without reasonable grounds';
+              analysis.purposeAdvanced = 'Road safety through evidence-based detection of alcohol impairment, balanced against procedural fairness';
+              analysis.recommendation = 'Interpret requirements strictly - each element must be satisfied to advance the protective purpose';
+            } else if (provision.includes('s.55') || provision.includes('section 55')) {
+              analysis.parliamentaryIntention = 'Parliament intended to establish evidentiary breath testing regime with strict procedural compliance to ensure accuracy and fairness';
+              analysis.mischiefAddressed = 'Prevents unreliable breath test evidence while ensuring procedural integrity of testing process';
+              analysis.purposeAdvanced = 'Reliable evidence of BAC levels through mandated procedures and device standards';
+              analysis.recommendation = 'Strict compliance with directions and procedures required - deviations undermine legislative purpose';
+            } else if (provision.includes('RSA') || provision.includes('Road Safety Act')) {
+              analysis.parliamentaryIntention = 'Comprehensive road safety framework balancing enforcement with procedural protections';
+              analysis.mischiefAddressed = 'Road trauma from impaired driving while maintaining evidentiary standards';
+              analysis.purposeAdvanced = 'Public safety through evidence-based prosecutions with procedural safeguards';
+              analysis.recommendation = 'Purposive interpretation requires balancing safety objectives with fairness to accused';
+            } else {
+              analysis.parliamentaryIntention = 'Determine purpose through text, context, and legislative scheme';
+              analysis.mischiefAddressed = 'Consider what problem the provision addresses';
+              analysis.purposeAdvanced = 'Interpretation should advance the identified legislative purpose';
+              analysis.recommendation = 'Apply purposive construction per Interpretation Act 1984 (Vic) s.35(a)';
+            }
+
+            return analysis;
+          };
+
+          /**
+           * Apply Interpretation Act 1984 (Vic) Section 36 - Use of Extrinsic Materials
+           * Identifies ambiguous provisions and suggests reference to extrinsic aids
+           */
+          const identifyExtrinsicMaterialsNeeded = (provision, ambiguity) => {
+            const extrinsicAnalysis = {
+              provision: provision,
+              isAmbiguous: false,
+              ambiguityType: '',
+              suggestedMaterials: [],
+              applicationGuidance: ''
+            };
+
+            // Identify common ambiguous phrases in Victorian traffic law
+            const ambiguousPhrases = [
+              { phrase: 'reason to believe', type: 'Subjective vs Objective Standard' },
+              { phrase: 'as soon as practicable', type: 'Temporal Requirement' },
+              { phrase: 'in accordance with', type: 'Compliance Standard' },
+              { phrase: 'satisfied that', type: 'Evidentiary Threshold' },
+              { phrase: 'directions', type: 'Form and Content of Directions' },
+              { phrase: 'approved', type: 'Authorization Standard' }
+            ];
+
+            for (const item of ambiguousPhrases) {
+              if (provision.toLowerCase().includes(item.phrase) || ambiguity.includes(item.phrase)) {
+                extrinsicAnalysis.isAmbiguous = true;
+                extrinsicAnalysis.ambiguityType = item.type;
+
+                extrinsicAnalysis.suggestedMaterials = [
+                  `Second Reading Speech for relevant amending Act (if Victorian legislation)`,
+                  `Explanatory Memorandum addressing "${item.phrase}" requirement`,
+                  `Parliamentary Committee Reports on road safety legislation`,
+                  `Prior judicial interpretation of "${item.phrase}" in Victorian courts`,
+                  `Regulatory Impact Statements for relevant regulations`
+                ];
+
+                extrinsicAnalysis.applicationGuidance = `Per Interpretation Act 1984 (Vic) s.36, extrinsic materials may be considered to: (a) confirm plain meaning; (b) resolve ambiguity; (c) determine Parliament's intention. Materials cannot override clear statutory language but can illuminate meaning of "${item.phrase}".`;
+                break;
+              }
+            }
+
+            return extrinsicAnalysis;
+          };
+
+          /**
+           * Apply Common Law Maxim: Noscitur a sociis (words known by company)
+           * Interprets words in context of surrounding words
+           */
+          const applyNosciturASociis = (phrase, context) => {
+            const analysis = {
+              phrase: phrase,
+              surroundingContext: '',
+              interpretation: '',
+              application: ''
+            };
+
+            if (phrase.includes('reason to believe')) {
+              analysis.surroundingContext = 'Within s.49, "reason to believe" appears alongside requirements for preliminary testing, indications of alcohol consumption, and observation requirements';
+              analysis.interpretation = 'Must be interpreted in context of other s.49 requirements - objective basis required, not mere suspicion';
+              analysis.application = 'Officer must articulate specific facts constituting "reason to believe" consistent with other evidentiary requirements in s.49';
+            } else if (phrase.includes('in accordance with')) {
+              analysis.surroundingContext = 'Appears with "directions", "approved device", and procedural requirements';
+              analysis.interpretation = 'Strict compliance interpretation - must follow directions precisely as the surrounding procedural language requires exactitude';
+              analysis.application = 'Deviations from directions may vitiate test validity, as phrase appears in procedural compliance context';
+            } else if (phrase.includes('directions')) {
+              analysis.surroundingContext = 'Used with "oral or written", "given by", and "approved device"';
+              analysis.interpretation = 'Directions must be clear, communicated (oral or written), and relate to approved device operation';
+              analysis.application = 'Vague or uncommunicated instructions cannot constitute "directions" in this statutory context';
+            } else {
+              analysis.surroundingContext = context || 'Analyze within immediate statutory context';
+              analysis.interpretation = 'Interpret term by reference to associated words and phrases';
+              analysis.application = 'Apply noscitur a sociis to derive meaning from statutory company';
+            }
+
+            return analysis;
+          };
+
+          /**
+           * Apply Common Law Maxim: Expressio unius est exclusio alterius
+           * Express mention of specific things excludes others not mentioned
+           */
+          const applyExpressioUnius = (listProvision) => {
+            const analysis = {
+              expresslyIncluded: [],
+              impliedlyExcluded: '',
+              legalConsequence: '',
+              example: ''
+            };
+
+            if (listProvision.includes('s.49(1)') || listProvision.includes('section 49(1)')) {
+              analysis.expresslyIncluded = [
+                's.49(1)(a) - Driving or in charge of motor vehicle',
+                's.49(1)(b) - Consumed intoxicating liquor',
+                's.49(1)(c) - Accident involving injury/death',
+                's.49(1)(d) - Involved in accident',
+                's.49(1)(e) - Committed traffic offence',
+                's.49(1)(f) - Driving in manner dangerous',
+                's.49(1)(g) - Subject to alcohol interlock condition',
+                's.49(1)(h) - Random breath testing'
+              ];
+              analysis.impliedlyExcluded = 'Any circumstances NOT listed in s.49(1)(a)-(h) do NOT authorize preliminary breath test';
+              analysis.legalConsequence = 'If test conducted outside listed circumstances, test is unauthorized and potentially inadmissible';
+              analysis.example = 'Example: If officer lacks "reason to believe" under (b) and no other subsection applies, test is unauthorized';
+            } else if (listProvision.includes('approved') || listProvision.includes('prescribed')) {
+              analysis.expresslyIncluded = ['Specifically approved/prescribed items per regulation'];
+              analysis.impliedlyExcluded = 'Non-approved or non-prescribed items/procedures are excluded';
+              analysis.legalConsequence = 'Use of non-approved device or non-prescribed procedure renders test invalid';
+              analysis.example = 'Example: Only breath testing devices specifically approved may be used - substitutes excluded';
+            } else {
+              analysis.expresslyIncluded = ['Items explicitly listed in provision'];
+              analysis.impliedlyExcluded = 'Items not listed are implicitly excluded';
+              analysis.legalConsequence = 'Express list limits scope of provision';
+              analysis.example = 'Apply expressio unius to statutory lists';
+            }
+
+            return analysis;
+          };
+
+          /**
+           * Apply Common Law Maxim: Generalia specialibus non derogant
+           * Specific provisions override general provisions
+           */
+          const applyGeneraliaSpecialibus = (generalProvision, specificProvision) => {
+            const analysis = {
+              generalProvision: generalProvision,
+              specificProvision: specificProvision,
+              whichPrevails: '',
+              reasoning: '',
+              practicalEffect: ''
+            };
+
+            if (specificProvision.includes('s.55D') || specificProvision.includes('s.55E')) {
+              analysis.specificProvision = 'RSA 1986 ss.55D-55E (specific breath test direction requirements)';
+              analysis.generalProvision = generalProvision || 'General testing provisions under RSA Part 5';
+              analysis.whichPrevails = 'Specific provisions in ss.55D-55E prevail';
+              analysis.reasoning = 'Sections 55D-55E contain detailed, specific requirements for breath test directions and procedures. These override general testing provisions.';
+              analysis.practicalEffect = 'Must comply with specific s.55D requirements (directions, timing) even if general provisions might allow broader discretion';
+            } else if (specificProvision.includes('s.49')) {
+              analysis.specificProvision = 's.49 RSA (specific preliminary test requirements)';
+              analysis.generalProvision = generalProvision || 'General police powers';
+              analysis.whichPrevails = 'Specific s.49 requirements prevail';
+              analysis.reasoning = 's.49 lists specific circumstances authorizing preliminary tests - these specific requirements override general police discretion';
+              analysis.practicalEffect = 'Cannot rely on general police powers to conduct test outside s.49(1)(a)-(h) circumstances';
+            } else {
+              analysis.whichPrevails = 'Specific provision prevails over general';
+              analysis.reasoning = 'Where specific and general provisions conflict, specific controls per generalia specialibus non derogant';
+              analysis.practicalEffect = 'Apply specific statutory requirements strictly';
+            }
+
+            return analysis;
+          };
+
+          /**
+           * Apply Common Law Maxim: Ejusdem generis (of the same kind)
+           * General words following specific words are interpreted consistently
+           */
+          const applyEjusdemGeneris = (specificList, generalTerm) => {
+            const analysis = {
+              specificItems: specificList,
+              generalTerm: generalTerm,
+              interpretation: '',
+              limitation: ''
+            };
+
+            if (generalTerm.includes('other') || generalTerm.includes('similar')) {
+              analysis.interpretation = `General term "${generalTerm}" must be interpreted ejusdem generis - of the same kind as the specific items listed`;
+              analysis.limitation = `"${generalTerm}" is limited to items sharing characteristics of: ${specificList.join(', ')}`;
+            } else {
+              analysis.interpretation = 'Interpret general terms following specific lists as being of the same kind';
+              analysis.limitation = 'General language constrained by nature of specific examples';
+            }
+
+            return analysis;
+          };
+
+          /**
+           * COMPREHENSIVE AMBIGUITY RESOLVER
+           * Provides literal, contextual, and purposive interpretations for ambiguous phrases
+           */
+          const resolveAmbiguity = (ambiguousPhrase, documentContext, statutoryContext) => {
+            const resolution = {
+              ambiguousPhrase: ambiguousPhrase,
+              literalInterpretation: {
+                meaning: '',
+                analysis: '',
+                strengths: '',
+                weaknesses: ''
+              },
+              contextualInterpretation: {
+                meaning: '',
+                analysis: '',
+                statutoryScheme: '',
+                strengths: '',
+                weaknesses: ''
+              },
+              purposiveInterpretation: {
+                meaning: '',
+                analysis: '',
+                legislativePurpose: '',
+                mischiefRule: '',
+                strengths: '',
+                weaknesses: ''
+              },
+              victorianCourtPreference: '',
+              recommendedInterpretation: '',
+              caseLawPrinciples: []
+            };
+
+            // Analyze "reason to believe"
+            if (ambiguousPhrase.toLowerCase().includes('reason to believe')) {
+              resolution.literalInterpretation = {
+                meaning: 'Plain English: A reason (cause, ground) to believe (accept as true)',
+                analysis: 'Ordinary meaning suggests some factual basis for belief, but does not specify objective or subjective standard',
+                strengths: 'Simple, accessible interpretation aligned with common usage',
+                weaknesses: 'Ambiguous whether purely subjective belief sufficient or objective reasonableness required'
+              };
+
+              resolution.contextualInterpretation = {
+                meaning: 'Within s.49 statutory context: Objective factual basis for belief that person consumed intoxicating liquor',
+                analysis: 's.49 is a police power provision requiring justification for interference with liberty. Context suggests objective standard.',
+                statutoryScheme: 's.49 part of graduated testing regime (preliminary → evidentiary). Each stage requires objective basis. Context demands "reason" be objectively verifiable.',
+                strengths: 'Consistent with other s.49 requirements; protects against arbitrary testing; aligns with rule of law',
+                weaknesses: 'More demanding than plain text might suggest'
+              };
+
+              resolution.purposiveInterpretation = {
+                meaning: 'Objectively reasonable grounds based on observable facts to believe alcohol consumed',
+                analysis: 'Legislative purpose balances road safety with individual rights. Requires articulable, objective basis.',
+                legislativePurpose: 'Parliament intended to authorize testing while preventing arbitrary exercises of power. Purpose advanced by objective standard.',
+                mischiefRule: 'Mischief addressed: impaired driving detection. But also addresses mischief of arbitrary state power. Requires objective reasonableness.',
+                strengths: 'Advances legislative purpose of balanced enforcement; consistent with Interpretation Act 1984 (Vic) s.35(a)',
+                weaknesses: 'Imposes requirements not explicit in text'
+              };
+
+              resolution.victorianCourtPreference = 'Victorian courts would prefer PURPOSIVE/CONTEXTUAL interpretation requiring objective reasonableness';
+              resolution.recommendedInterpretation = 'Adopt objective standard: "reason to believe" requires articulable, objectively reasonable grounds based on observable facts. Purely subjective belief insufficient.';
+              resolution.caseLawPrinciples = [
+                'Modern statutory interpretation favors purposive approach (Interpretation Act 1984 (Vic) s.35(a))',
+                'Police power provisions interpreted with attention to rights protection',
+                'Ambiguity in penal/quasi-penal statutes resolved in favor of subject',
+                'Context and purpose trump literalism where ambiguity exists'
+              ];
+            }
+            // Analyze "in accordance with directions"
+            else if (ambiguousPhrase.toLowerCase().includes('in accordance with')) {
+              resolution.literalInterpretation = {
+                meaning: 'Plain meaning: In conformity with; following; complying with',
+                analysis: 'Suggests requirement for compliance, but does not specify degree of exactitude required',
+                strengths: 'Clear requirement for some form of compliance',
+                weaknesses: 'Does not specify whether substantial compliance sufficient or strict compliance required'
+              };
+
+              resolution.contextualInterpretation = {
+                meaning: 'Within s.55D context: Strict compliance with directions for breath test procedure',
+                analysis: 's.55D creates procedural safeguards for evidentiary testing. Context suggests strict compliance.',
+                statutoryScheme: 'Breath test results are scientific evidence affecting liberty. Statutory scheme requires precision in procedure. "In accordance with" in this context means strict compliance.',
+                strengths: 'Protects evidentiary integrity; ensures procedural fairness; consistent with scientific testing requirements',
+                weaknesses: 'May invalidate tests for minor, non-prejudicial deviations'
+              };
+
+              resolution.purposiveInterpretation = {
+                meaning: 'Strict compliance with directions required to ensure test validity and procedural fairness',
+                analysis: 'Purpose of s.55D: ensure reliable, procedurally sound breath testing. Requires strict compliance.',
+                legislativePurpose: 'Parliament intended to ensure breath tests conducted properly with clear procedures. Purpose demands strict interpretation.',
+                mischiefRule: 'Addresses mischief of unreliable or procedurally flawed breath testing. Strict compliance advances this purpose.',
+                strengths: 'Advances legislative purpose; protects accused from procedural irregularities; ensures evidence reliability',
+                weaknesses: 'Strict approach may exclude otherwise reliable evidence'
+              };
+
+              resolution.victorianCourtPreference = 'Victorian courts would prefer STRICT COMPLIANCE interpretation given evidentiary and liberty interests';
+              resolution.recommendedInterpretation = '"In accordance with directions" requires strict compliance. Material deviations from directions vitiate test validity. Minor, non-prejudicial variations may be excused if no unfairness results.';
+              resolution.caseLawPrinciples = [
+                'Evidentiary provisions in criminal/traffic matters require strict construction',
+                'Procedural safeguards must be observed to protect accused',
+                'Scientific evidence requires procedural integrity',
+                'Purposive interpretation favors strict compliance where liberty interests engaged'
+              ];
+            }
+            // Analyze "directions"
+            else if (ambiguousPhrase.toLowerCase().includes('directions') || ambiguousPhrase.toLowerCase().includes('direction')) {
+              resolution.literalInterpretation = {
+                meaning: 'Plain meaning: Instructions or orders about how to do something',
+                analysis: 'Ordinary meaning suggests communication of instructions, but does not specify form, content, or detail required',
+                strengths: 'Flexible interpretation allowing various forms of instruction',
+                weaknesses: 'Ambiguous as to whether oral suffices, how specific directions must be, whether understanding required'
+              };
+
+              resolution.contextualInterpretation = {
+                meaning: 'Within RSA context: Clear, communicated instructions (oral or written) about breath test procedure',
+                analysis: 's.55D(2) explicitly allows "oral or written" directions, indicating communication is essential. Context requires clarity.',
+                statutoryScheme: 'Directions serve to ensure person understands procedure and can comply. Must be sufficiently clear and communicated. Statutory context suggests directions must be comprehensible and actually given.',
+                strengths: 'Ensures procedural fairness; person knows what is required; enables compliance',
+                weaknesses: 'May exclude tests where directions unclear or not proven'
+              };
+
+              resolution.purposiveInterpretation = {
+                meaning: 'Clear, communicated instructions enabling subject to understand and comply with breath test procedure',
+                analysis: 'Purpose: ensure person tested understands procedure and can meaningfully comply. Requires actual communication.',
+                legislativePurpose: 'Parliament intended directions to safeguard procedural fairness and enable informed compliance. Purpose requires actual, clear communication.',
+                mischiefRule: 'Addresses mischief of procedurally unfair testing where person does not understand requirements. Demands clear, communicated directions.',
+                strengths: 'Protects procedural rights; ensures fairness; advances purpose of informed compliance',
+                weaknesses: 'May require proof of actual communication and understanding'
+              };
+
+              resolution.victorianCourtPreference = 'Victorian courts would require CLEAR, COMMUNICATED directions with proof of actual communication';
+              resolution.recommendedInterpretation = '"Directions" requires proof that clear instructions were actually communicated (orally or in writing) to the subject. Mere device operation without communicated directions insufficient.';
+              resolution.caseLawPrinciples = [
+                'Procedural requirements in testing regimes must be strictly observed',
+                'Directions imply communication - unspoken intentions insufficient',
+                'Purposive interpretation requires directions serve their protective function',
+                'Ambiguity resolved to protect procedural rights of accused'
+              ];
+            }
+            // Default analysis for other ambiguous phrases
+            else {
+              resolution.literalInterpretation = {
+                meaning: `Plain, ordinary meaning of "${ambiguousPhrase}"`,
+                analysis: 'Interpret words in natural, ordinary sense unless context demands otherwise',
+                strengths: 'Accessible, predictable interpretation',
+                weaknesses: 'May not capture legislative intent or statutory purpose'
+              };
+
+              resolution.contextualInterpretation = {
+                meaning: `"${ambiguousPhrase}" interpreted within statutory context and legislative scheme`,
+                analysis: 'Consider surrounding provisions, relationship to other sections, overall statutory purpose',
+                statutoryScheme: 'Examine how phrase fits within broader legislative framework',
+                strengths: 'Harmonizes with legislative scheme; considers broader context',
+                weaknesses: 'May depart from plain meaning'
+              };
+
+              resolution.purposiveInterpretation = {
+                meaning: `"${ambiguousPhrase}" interpreted to advance legislative purpose`,
+                analysis: 'Interpretation that promotes purpose of legislation preferred per Interpretation Act 1984 (Vic) s.35(a)',
+                legislativePurpose: 'Determine Parliament\'s intention and mischief addressed',
+                mischiefRule: 'Consider problem provision designed to remedy',
+                strengths: 'Advances legislative purpose; consistent with modern interpretation principles',
+                weaknesses: 'Requires identification of purpose, which may be contested'
+              };
+
+              resolution.victorianCourtPreference = 'Victorian courts favor PURPOSIVE interpretation per Interpretation Act 1984 (Vic) s.35(a)';
+              resolution.recommendedInterpretation = 'Apply modern purposive approach: examine text, context, and legislative purpose. Prefer interpretation advancing statutory purpose.';
+              resolution.caseLawPrinciples = [
+                'Interpretation Act 1984 (Vic) s.35(a) mandates purposive construction',
+                'Text, context, and purpose analyzed together',
+                'Extrinsic materials may be consulted per s.36',
+                'Ambiguity in penal provisions resolved favorably to accused'
+              ];
+            }
+
+            return resolution;
+          };
+
+          /**
+           * HARMONIZATION ANALYZER
+           * Reconciles conflicts between documents using interpretation principles
+           */
+          const harmonizeConflicts = (conflicts, phaseAResults, phaseBResults) => {
+            const harmonizations = [];
+
+            conflicts.forEach(conflict => {
+              const harmonization = {
+                conflict: conflict.description || conflict.element || conflict.type,
+                fileAPosition: '',
+                fileBPosition: '',
+                reconciliationAttempt: '',
+                isReconcilable: false,
+                whichPrevails: '',
+                statutorySupport: '',
+                legalConsequence: '',
+                argumentApproach: ''
+              };
+
+              // Extract positions from documents
+              harmonization.fileAPosition = `File A: ${conflict.status?.includes('File A') ? conflict.element : 'Position stated in File A'}`;
+              harmonization.fileBPosition = `File B: ${conflict.status?.includes('File B') ? conflict.element : 'Position stated in File B'}`;
+
+              // Attempt reconciliation using interpretation principles
+              if (conflict.type === 'Statutory Reference' || conflict.element?.toLowerCase().includes('s.') || conflict.element?.toLowerCase().includes('section')) {
+                // Statutory reference conflict
+                harmonization.reconciliationAttempt = 'Apply harmonious construction principle: attempt to read both documents together to give effect to all provisions. If both documents purport to describe same event, reconcile by examining whether references are complementary or contradictory.';
+
+                if (conflict.status?.includes('only in File A')) {
+                  harmonization.isReconcilable = false;
+                  harmonization.whichPrevails = 'File A contains statutory reference absent from File B';
+                  harmonization.statutorySupport = 'File A has express statutory support; File B lacks this support';
+                  harmonization.legalConsequence = 'File B may be deficient if statutory reference is material to facts. File A position preferred if statutory basis required.';
+                  harmonization.argumentApproach = 'ARGUMENT: File B omits material statutory reference present in File A. Where statutory authority required, File A account prevails. Omission in File B raises question of procedural compliance.';
+                } else if (conflict.status?.includes('only in File B')) {
+                  harmonization.isReconcilable = false;
+                  harmonization.whichPrevails = 'File B contains statutory reference absent from File A';
+                  harmonization.statutorySupport = 'File B has express statutory support; File A lacks this support';
+                  harmonization.legalConsequence = 'File A may be deficient if statutory reference is material. File B position preferred if statutory grounding required.';
+                  harmonization.argumentApproach = 'ARGUMENT: File A omits statutory reference present in File B. Question whether File A actions had statutory foundation. File B reference may reveal procedural defect in File A account.';
+                } else {
+                  harmonization.isReconcilable = true;
+                  harmonization.whichPrevails = 'Documents can be read harmoniously';
+                  harmonization.statutorySupport = 'Both documents reference relevant statutory provisions';
+                  harmonization.legalConsequence = 'No conflict - documents consistent on statutory framework';
+                  harmonization.argumentApproach = 'Documents align on statutory basis - no interpretative issue';
+                }
+              } else if (conflict.type === 'Document Comprehensiveness' || conflict.description?.includes('terminology density')) {
+                // Comprehensiveness conflict
+                harmonization.reconciliationAttempt = 'Differences in detail or terminology density do not necessarily create irreconcilable conflict. Apply principle that more detailed account may supplement (not contradict) less detailed account.';
+                harmonization.isReconcilable = true;
+                harmonization.whichPrevails = 'More comprehensive document provides fuller account';
+                harmonization.statutorySupport = 'No direct statutory conflict - difference in detail level';
+                harmonization.legalConsequence = 'More detailed document may reveal omissions in less detailed document. Not necessarily contradictory.';
+                harmonization.argumentApproach = 'ARGUMENT: Difference in comprehensiveness suggests one document more complete. Question which is contemporaneous and which is reconstruction. More detailed document may be preferred if created closer to events.';
+              } else {
+                // General conflict
+                harmonization.reconciliationAttempt = 'Attempt harmonious construction: can documents be read together without contradiction? If irreconcilable, determine which has better statutory foundation and contemporaneous reliability.';
+                harmonization.isReconcilable = false;
+                harmonization.whichPrevails = 'Depends on statutory support, contemporaneous creation, and procedural context';
+                harmonization.statutorySupport = 'Analyze which document has express statutory grounding';
+                harmonization.legalConsequence = 'Irreconcilable conflict raises credibility and reliability issues. May constitute evidence defect.';
+                harmonization.argumentApproach = 'ARGUMENT: Where documents irreconcilable, prefer document with (1) statutory foundation, (2) contemporaneous creation, (3) procedural safeguards. Conflict itself may be evidence of unreliability.';
+              }
+
+              harmonizations.push(harmonization);
+            });
+
+            return harmonizations;
+          };
+
+          /**
+           * STATUTORY PROVISION INTERPRETATION REPORT GENERATOR
+           * Generates detailed interpretation reports for key provisions
+           */
+          const generateProvisionReport = (provision, documentText, findings) => {
+            const report = {
+              provision: provision,
+              plainText: '',
+              applicationToFacts: '',
+              requirementsSatisfied: null,
+              deficiencies: [],
+              legalConsequences: [],
+              recommendedArgument: ''
+            };
+
+            // Generate report for s.49 RSA (Preliminary Breath Test)
+            if (provision.includes('s.49') || provision.includes('section 49') || provision.includes('s 49')) {
+              report.plainText = 'Road Safety Act 1986 (Vic) s.49 - Preliminary Breath Test. Requires: (1) Person driving/in charge of motor vehicle; (2) Officer has reason to believe person consumed intoxicating liquor [s.49(1)(b)] OR other circumstances in s.49(1)(a)-(h); (3) Officer may require preliminary breath test; (4) Person must comply with requirement.';
+
+              report.applicationToFacts = `Analyzing documents for s.49 compliance:\n`;
+
+              // Check for "reason to believe"
+              const hasReasonToBelieve = documentText.toLowerCase().includes('reason to believe') ||
+                                        documentText.toLowerCase().includes('believed') ||
+                                        documentText.toLowerCase().includes('appeared');
+
+              const hasObservations = documentText.toLowerCase().includes('smell') ||
+                                      documentText.toLowerCase().includes('odour') ||
+                                      documentText.toLowerCase().includes('alcohol') ||
+                                      documentText.toLowerCase().includes('intoxicated');
+
+              if (hasReasonToBelieve && hasObservations) {
+                report.applicationToFacts += '- Document contains reference to belief/observations regarding alcohol consumption\n';
+                report.applicationToFacts += '- Observable facts may constitute "reason to believe" under s.49(1)(b)\n';
+                report.requirementsSatisfied = 'POTENTIALLY - requires verification of objective basis';
+              } else if (hasReasonToBelieve && !hasObservations) {
+                report.applicationToFacts += '- Document mentions belief but lacks specific observable facts\n';
+                report.applicationToFacts += '- Insufficient detail to assess whether objective "reason to believe" established\n';
+                report.requirementsSatisfied = 'UNCLEAR - insufficient factual detail';
+                report.deficiencies.push('No specific observable facts articulated to establish "reason to believe"');
+              } else {
+                report.applicationToFacts += '- No express reference to "reason to believe" alcohol consumed\n';
+                report.applicationToFacts += '- Document does not establish s.49(1)(b) basis for preliminary test\n';
+                report.requirementsSatisfied = 'NOT SATISFIED - no reason to believe established';
+                report.deficiencies.push('CRITICAL: No evidence of "reason to believe" person consumed intoxicating liquor per s.49(1)(b)');
+              }
+
+              // Analyze deficiencies
+              if (report.deficiencies.length > 0) {
+                report.legalConsequences.push('Preliminary breath test may be unauthorized if s.49 requirements not satisfied');
+                report.legalConsequences.push('Unauthorized preliminary test may affect admissibility of subsequent evidentiary test');
+                report.legalConsequences.push('Lack of statutory authority for initial stop/test may vitiate entire procedure');
+              }
+
+              // Recommended argument
+              if (report.requirementsSatisfied === 'NOT SATISFIED') {
+                report.recommendedArgument = 'LITERAL INTERPRETATION ARGUMENT: s.49 expressly requires "reason to believe" person consumed intoxicating liquor. Document lacks any evidence of this prerequisite. Per expressio unius principle, circumstances listed in s.49(1)(a)-(h) are exhaustive - test outside these circumstances is unauthorized. Preliminary test was unlawful, vitiating subsequent evidentiary procedure.';
+              } else if (report.requirementsSatisfied === 'UNCLEAR') {
+                report.recommendedArgument = 'PURPOSIVE INTERPRETATION ARGUMENT: s.49 "reason to believe" requires objective, articulable basis per Interpretation Act 1984 (Vic) s.35(a). Document fails to articulate specific observable facts. Mere conclusory assertion of belief insufficient. Legislative purpose of protecting against arbitrary testing requires objective basis - not present here.';
+              } else {
+                report.recommendedArgument = 'VERIFY: While document references observations, confirm they constitute objectively reasonable grounds for belief of alcohol consumption. Apply contextual interpretation of "reason to believe" - requires more than subjective suspicion.';
+              }
+            }
+
+            // Generate report for s.55D RSA (Breath Test Directions)
+            else if (provision.includes('s.55D') || provision.includes('section 55D') || provision.includes('s.55') || provision.includes('s 55')) {
+              report.plainText = 'Road Safety Act 1986 (Vic) s.55D - Breath Test Directions. Requires: (1) Test must be "in accordance with the directions" of person conducting test; (2) Directions may be oral or written; (3) Person must be given opportunity to comply; (4) Procedure must follow approved device requirements.';
+
+              report.applicationToFacts = `Analyzing documents for s.55D compliance:\n`;
+
+              // Check for directions evidence
+              const hasDirections = documentText.toLowerCase().includes('directions') ||
+                                   documentText.toLowerCase().includes('directed') ||
+                                   documentText.toLowerCase().includes('instructed') ||
+                                   documentText.toLowerCase().includes('told');
+
+              const hasSpecificDirections = documentText.toLowerCase().includes('blow') ||
+                                           documentText.toLowerCase().includes('breathe') ||
+                                           documentText.toLowerCase().includes('provide');
+
+              if (hasDirections && hasSpecificDirections) {
+                report.applicationToFacts += '- Document contains reference to directions/instructions\n';
+                report.applicationToFacts += '- Some evidence of directions regarding breath sample provision\n';
+                report.requirementsSatisfied = 'PARTIALLY - requires verification of full compliance';
+              } else if (hasDirections && !hasSpecificDirections) {
+                report.applicationToFacts += '- Document mentions directions but lacks specific content\n';
+                report.applicationToFacts += '- Insufficient detail about what directions were actually given\n';
+                report.requirementsSatisfied = 'UNCLEAR - direction content not established';
+                report.deficiencies.push('No evidence of specific directions content as required by s.55D');
+              } else {
+                report.applicationToFacts += '- No reference to directions being given\n';
+                report.applicationToFacts += '- Document does not establish s.55D directions requirement\n';
+                report.requirementsSatisfied = 'NOT SATISFIED - no evidence directions given';
+                report.deficiencies.push('CRITICAL: No evidence that directions were given per s.55D(1) requirement');
+              }
+
+              // Check for "in accordance with" compliance
+              const hasDeviceMention = documentText.toLowerCase().includes('device') ||
+                                      documentText.toLowerCase().includes('machine') ||
+                                      documentText.toLowerCase().includes('approved');
+
+              if (!hasDeviceMention) {
+                report.deficiencies.push('No mention of approved device - cannot assess "in accordance with directions" compliance');
+              }
+
+              // Analyze deficiencies
+              if (report.deficiencies.length > 0) {
+                report.legalConsequences.push('Breath test result potentially inadmissible if not conducted "in accordance with directions"');
+                report.legalConsequences.push('s.55D is mandatory procedural requirement - non-compliance vitiates test validity');
+                report.legalConsequences.push('Lack of proof that directions given is evidentiary deficiency');
+              }
+
+              // Recommended argument
+              if (report.requirementsSatisfied === 'NOT SATISFIED') {
+                report.recommendedArgument = 'LITERAL/STRICT COMPLIANCE ARGUMENT: s.55D(1) expressly requires test be "in accordance with the directions" of person conducting test. Document contains NO evidence that any directions were actually given. Cannot have test "in accordance with" non-existent directions. This is mandatory procedural requirement - strict compliance required. Breath test result inadmissible.';
+              } else if (report.requirementsSatisfied === 'UNCLEAR') {
+                report.recommendedArgument = 'PURPOSIVE INTERPRETATION ARGUMENT: s.55D serves protective purpose - ensures person understands procedure and can meaningfully comply. Purpose requires proof that clear directions were actually communicated. Document fails to establish what directions were given or that subject understood them. Per Interpretation Act s.35(a), purposive construction requires actual communication - not present here.';
+              } else {
+                report.recommendedArgument = 'VERIFY STRICT COMPLIANCE: s.55D requires strict compliance with directions. Confirm: (1) directions actually given (oral or written); (2) directions were clear and comprehensible; (3) test conducted exactly in accordance with directions; (4) approved device used. Any material deviation may vitiate test.';
+              }
+            }
+
+            // Generate report for Road Safety Act generally
+            else if (provision.toLowerCase().includes('road safety act') || provision.toLowerCase().includes('rsa')) {
+              report.plainText = 'Road Safety Act 1986 (Vic) - Comprehensive traffic and road safety legislation governing driving offences, testing procedures, and evidentiary requirements.';
+              report.applicationToFacts = 'Road Safety Act provides statutory framework for breath testing regime. Key provisions: Part 5 (drink and drug driving), ss.49-56 (testing procedures), evidentiary provisions.';
+              report.requirementsSatisfied = 'REQUIRES ANALYSIS - multiple provisions may apply';
+              report.recommendedArgument = 'Apply purposive construction per Interpretation Act 1984 (Vic) s.35(a). RSA balances road safety objectives with procedural protections for accused. Strict compliance with testing procedures required to advance protective purpose.';
+            }
+
+            // Default report for other provisions
+            else {
+              report.plainText = `Statutory provision: ${provision}`;
+              report.applicationToFacts = 'Analyze how provision applies to facts in documents. Determine whether statutory requirements satisfied.';
+              report.requirementsSatisfied = 'REQUIRES DETAILED ANALYSIS';
+              report.recommendedArgument = 'Apply modern interpretative approach: examine text (literal meaning), context (statutory scheme), and purpose (legislative intention). Prefer interpretation advancing statutory purpose.';
+            }
+
+            return report;
+          };
+
+          /**
+           * MAIN STATUTORY INTERPRETATION FUNCTION - PHASE C
+           * Orchestrates all interpretation analyses
+           */
           const performStatutoryInterpretation = (phaseAResults, phaseBResults) => {
+            // Extract key statutory provisions from both phases
+            const allStatutoryRefs = [];
+
+            phaseAResults.fileA.forEach(analysis => {
+              analysis.findings.legalReferences.forEach(ref => {
+                if (ref.type === 'Act Citation' || ref.type === 'Section Reference') {
+                  allStatutoryRefs.push({ ref: ref.text, source: 'File A' });
+                }
+              });
+            });
+
+            phaseAResults.fileB.forEach(analysis => {
+              analysis.findings.legalReferences.forEach(ref => {
+                if (ref.type === 'Act Citation' || ref.type === 'Section Reference') {
+                  allStatutoryRefs.push({ ref: ref.text, source: 'File B' });
+                }
+              });
+            });
+
+            // Apply Interpretation Act 1984 (Vic) rules
+            const interpretationActAnalysis = {
+              section35aPurposive: allStatutoryRefs.slice(0, 5).map(item =>
+                applyPurposiveConstruction(item.ref, `Found in ${item.source}`)
+              ),
+              section36ExtrinsicMaterials: []
+            };
+
+            // Identify ambiguous provisions needing extrinsic materials
+            const ambiguousPhrases = ['reason to believe', 'in accordance with', 'directions', 'as soon as practicable', 'satisfied that'];
+            ambiguousPhrases.forEach(phrase => {
+              const extrinsicAnalysis = identifyExtrinsicMaterialsNeeded(
+                allStatutoryRefs[0]?.ref || 'Road Safety Act provisions',
+                phrase
+              );
+              if (extrinsicAnalysis.isAmbiguous) {
+                interpretationActAnalysis.section36ExtrinsicMaterials.push(extrinsicAnalysis);
+              }
+            });
+
+            // Apply common law maxims
+            const commonLawMaxims = {
+              nosciturASociis: [
+                applyNosciturASociis('reason to believe', 's.49 RSA context'),
+                applyNosciturASociis('in accordance with', 's.55D RSA context'),
+                applyNosciturASociis('directions', 's.55D RSA context')
+              ],
+              expressioUnius: [
+                applyExpressioUnius('s.49(1)(a)-(h) RSA - circumstances authorizing preliminary breath test'),
+                applyExpressioUnius('approved devices and prescribed procedures')
+              ],
+              generaliaSpecialibus: [
+                applyGeneraliaSpecialibus('General police testing powers', 's.49 RSA specific preliminary test requirements'),
+                applyGeneraliaSpecialibus('General testing provisions', 's.55D-55E RSA specific breath test directions')
+              ],
+              ejusdemGeneris: [
+                applyEjusdemGeneris(['driving', 'in charge of', 'operating'], 'other similar control of vehicle')
+              ]
+            };
+
+            // Build comprehensive ambiguity resolver
+            const ambiguityResolutions = [
+              resolveAmbiguity('reason to believe', fileContents.fileA + fileContents.fileB, 's.49 Road Safety Act'),
+              resolveAmbiguity('in accordance with directions', fileContents.fileA + fileContents.fileB, 's.55D Road Safety Act'),
+              resolveAmbiguity('directions', fileContents.fileA + fileContents.fileB, 's.55D(2) Road Safety Act')
+            ];
+
+            // Create harmonization analysis for conflicts
+            const conflicts = [
+              ...phaseBResults.discrepancies,
+              ...phaseBResults.omissions
+            ];
+            const harmonizationAnalysis = harmonizeConflicts(conflicts, phaseAResults, phaseBResults);
+
+            // Generate detailed provision reports
+            const provisionReports = [
+              generateProvisionReport('s.49 Road Safety Act 1986 (Vic)', fileContents.fileA, phaseAResults.fileA),
+              generateProvisionReport('s.55D Road Safety Act 1986 (Vic)', fileContents.fileA, phaseAResults.fileA),
+              generateProvisionReport('s.49 Road Safety Act 1986 (Vic)', fileContents.fileB, phaseAResults.fileB),
+              generateProvisionReport('s.55D Road Safety Act 1986 (Vic)', fileContents.fileB, phaseAResults.fileB)
+            ];
+
             return {
+              interpretationAct1984: interpretationActAnalysis,
+              commonLawMaxims: commonLawMaxims,
+              ambiguityResolver: ambiguityResolutions,
+              harmonization: harmonizationAnalysis,
+              provisionReports: provisionReports,
+
+              // Legacy compatibility - keep existing structure
               literalInterpretation: {
                 approach: 'Textualist/Literal Analysis',
-                findings: 'Analysis focuses on the plain, ordinary meaning of words as they appear in both documents. Words must be interpreted in their natural sense unless context demands otherwise.'
+                findings: 'Plain meaning interpretation applied. See detailed provision reports for literal interpretation of key requirements.'
               },
               contextualInterpretation: {
                 approach: 'Contextual Analysis',
-                findings: 'Words interpreted within their statutory context - considering surrounding provisions, the scheme of the legislation, and the relationship between documents.'
+                findings: 'Provisions interpreted within statutory context. See common law maxims (noscitur a sociis) for contextual analysis.'
               },
               purposiveInterpretation: {
-                approach: 'Purposive/Mischief Rule',
-                findings: 'Interpretation seeks to advance the legislative purpose and remedy the mischief the statute was designed to address. Requires consideration of extrinsic materials where ambiguity exists.'
-              },
-              harmonization: {
-                approach: 'Harmonious Construction',
-                findings: 'Provisions must be read together to give effect to all parts. Inconsistencies between File A and File B require reconciliation using established interpretative principles.'
+                approach: 'Interpretation Act 1984 (Vic) s.35(a) - Purposive Construction',
+                findings: 'Legislative purpose analyzed for each provision. See Section 35(a) analysis for detailed purposive interpretation.'
               },
               extrinsicAids: {
-                availableAids: [
-                  'Second reading speeches (for Commonwealth legislation)',
-                  'Explanatory memoranda',
-                  'Parliamentary debates (Hansard)',
-                  'Prior judicial interpretation',
-                  'Legislative history and amendments'
-                ],
-                application: 'Extrinsic materials may be consulted to confirm meaning or resolve ambiguity, but cannot override clear statutory language.'
+                availableAids: interpretationActAnalysis.section36ExtrinsicMaterials.length > 0
+                  ? interpretationActAnalysis.section36ExtrinsicMaterials[0].suggestedMaterials
+                  : ['Second reading speeches', 'Explanatory memoranda', 'Parliamentary debates', 'Prior judicial interpretation'],
+                application: 'Per Interpretation Act 1984 (Vic) s.36, extrinsic materials may be consulted to confirm meaning or resolve ambiguity.'
               },
               interpretativePrinciples: [
-                {
-                  principle: 'Acts Interpretation Act 1901 (Cth) s 15AA',
-                  application: 'Interpretation that promotes the purpose of the legislation is preferred'
-                },
-                {
-                  principle: 'Generalia specialibus non derogant',
-                  application: 'Specific provisions prevail over general provisions'
-                },
-                {
-                  principle: 'Expressio unius est exclusio alterius',
-                  application: 'Express mention of one thing excludes others'
-                },
-                {
-                  principle: 'Noscitur a sociis',
-                  application: 'Words are known by their associates - interpret terms by their context'
-                }
-              ],
-              resolutionOfAmbiguity: generateAmbiguityResolution(phaseBResults)
+                { principle: 'Interpretation Act 1984 (Vic) s.35(a)', application: 'Purposive construction - interpretation advancing legislative purpose preferred' },
+                { principle: 'Interpretation Act 1984 (Vic) s.36', application: 'Extrinsic materials may be used to resolve ambiguity' },
+                { principle: 'Noscitur a sociis', application: 'Words known by their company - interpret in context' },
+                { principle: 'Expressio unius est exclusio alterius', application: 'Express mention excludes others' },
+                { principle: 'Generalia specialibus non derogant', application: 'Specific provisions prevail over general' },
+                { principle: 'Ejusdem generis', application: 'General words limited by specific examples' }
+              ]
             };
-          };
-
-          const generateAmbiguityResolution = (phaseBResults) => {
-            const resolutions = [];
-            
-            phaseBResults.discrepancies.forEach(discrepancy => {
-              resolutions.push({
-                ambiguity: discrepancy.description,
-                resolutionMethod: 'Apply modern purposive approach: examine text, context, and legislative purpose',
-                recommendation: 'Seek extrinsic materials if ambiguity persists after textual and contextual analysis'
-              });
-            });
-            
-            if (resolutions.length === 0) {
-              resolutions.push({
-                ambiguity: 'No significant ambiguities identified',
-                resolutionMethod: 'Plain meaning approach sufficient',
-                recommendation: 'Proceed with literal interpretation absent contrary indicators'
-              });
-            }
-            
-            return resolutions;
           };
 
           const generateExecutiveSummary = (phaseA, phaseB, phaseC) => {
@@ -4778,6 +5438,772 @@
 
                     <AnalysisSection title="Phase C: Statutory Interpretation & Legislative Purpose" sectionId="phaseC">
                       <div style={{ marginTop: '16px' }}>
+
+                        {/* INTERPRETATION ACT 1984 (VIC) ANALYSIS */}
+                        {analysisResults.phaseC.interpretationAct1984 && (
+                          <div style={{
+                            backgroundColor: '#dcfce7',
+                            border: '2px solid #16a34a',
+                            padding: '16px',
+                            borderRadius: '8px',
+                            marginBottom: '16px'
+                          }}>
+                            <h4 style={{
+                              fontWeight: '700',
+                              color: '#14532d',
+                              marginBottom: '16px',
+                              fontSize: '16px'
+                            }}>⚖️ INTERPRETATION ACT 1984 (VIC) - VICTORIAN STATUTORY INTERPRETATION</h4>
+
+                            {/* Section 35(a) - Purposive Construction */}
+                            <div style={{
+                              backgroundColor: 'white',
+                              padding: '14px',
+                              borderRadius: '6px',
+                              marginBottom: '12px',
+                              borderLeft: '4px solid #16a34a'
+                            }}>
+                              <h5 style={{
+                                fontWeight: '600',
+                                color: '#166534',
+                                marginBottom: '12px'
+                              }}>Section 35(a) - Purposive Construction Analysis</h5>
+                              {analysisResults.phaseC.interpretationAct1984.section35aPurposive.map((analysis, idx) => (
+                                <div key={idx} style={{
+                                  backgroundColor: '#f9fafb',
+                                  padding: '12px',
+                                  borderRadius: '4px',
+                                  marginBottom: '10px',
+                                  fontSize: '13px'
+                                }}>
+                                  <p style={{ fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+                                    📋 Provision: {analysis.provision}
+                                  </p>
+                                  <div style={{ marginLeft: '12px' }}>
+                                    <p style={{ marginBottom: '6px' }}>
+                                      <strong style={{ color: '#1e40af' }}>Parliamentary Intention:</strong><br/>
+                                      <span style={{ color: '#374151' }}>{analysis.parliamentaryIntention}</span>
+                                    </p>
+                                    <p style={{ marginBottom: '6px' }}>
+                                      <strong style={{ color: '#7c2d12' }}>Mischief Addressed:</strong><br/>
+                                      <span style={{ color: '#374151' }}>{analysis.mischiefAddressed}</span>
+                                    </p>
+                                    <p style={{ marginBottom: '6px' }}>
+                                      <strong style={{ color: '#166534' }}>Purpose Advanced:</strong><br/>
+                                      <span style={{ color: '#374151' }}>{analysis.purposeAdvanced}</span>
+                                    </p>
+                                    <p style={{
+                                      backgroundColor: '#fef3c7',
+                                      padding: '8px',
+                                      borderRadius: '4px',
+                                      marginTop: '8px'
+                                    }}>
+                                      <strong style={{ color: '#78350f' }}>⚡ Recommendation:</strong><br/>
+                                      <span style={{ color: '#78350f' }}>{analysis.recommendation}</span>
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Section 36 - Extrinsic Materials */}
+                            {analysisResults.phaseC.interpretationAct1984.section36ExtrinsicMaterials.length > 0 && (
+                              <div style={{
+                                backgroundColor: 'white',
+                                padding: '14px',
+                                borderRadius: '6px',
+                                borderLeft: '4px solid #7c3aed'
+                              }}>
+                                <h5 style={{
+                                  fontWeight: '600',
+                                  color: '#5b21b6',
+                                  marginBottom: '12px'
+                                }}>Section 36 - Extrinsic Materials Analysis</h5>
+                                {analysisResults.phaseC.interpretationAct1984.section36ExtrinsicMaterials.map((ext, idx) => (
+                                  <div key={idx} style={{
+                                    backgroundColor: '#f5f3ff',
+                                    padding: '12px',
+                                    borderRadius: '4px',
+                                    marginBottom: '10px',
+                                    fontSize: '13px'
+                                  }}>
+                                    <p style={{ fontWeight: '600', color: '#6b21a8', marginBottom: '6px' }}>
+                                      🔍 Ambiguous Phrase: "{ext.provision}"
+                                    </p>
+                                    <p style={{ marginBottom: '6px' }}>
+                                      <strong>Ambiguity Type:</strong> <Badge variant="warning" size="sm">{ext.ambiguityType}</Badge>
+                                    </p>
+                                    <p style={{ marginBottom: '8px', color: '#374151' }}>
+                                      <strong>Application Guidance:</strong><br/>
+                                      {ext.applicationGuidance}
+                                    </p>
+                                    <div style={{
+                                      backgroundColor: 'white',
+                                      padding: '10px',
+                                      borderRadius: '4px'
+                                    }}>
+                                      <p style={{ fontWeight: '600', marginBottom: '6px', fontSize: '12px' }}>
+                                        📚 Suggested Extrinsic Materials:
+                                      </p>
+                                      <ul style={{ paddingLeft: '20px', fontSize: '12px', color: '#6b7280' }}>
+                                        {ext.suggestedMaterials.map((mat, midx) => (
+                                          <li key={midx} style={{ marginBottom: '4px' }}>{mat}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* COMMON LAW MAXIMS */}
+                        {analysisResults.phaseC.commonLawMaxims && (
+                          <div style={{
+                            backgroundColor: '#fef3c7',
+                            border: '2px solid #f59e0b',
+                            padding: '16px',
+                            borderRadius: '8px',
+                            marginBottom: '16px'
+                          }}>
+                            <h4 style={{
+                              fontWeight: '700',
+                              color: '#78350f',
+                              marginBottom: '16px',
+                              fontSize: '16px'
+                            }}>📚 COMMON LAW INTERPRETATION MAXIMS APPLIED</h4>
+
+                            {/* Noscitur a sociis */}
+                            <div style={{
+                              backgroundColor: 'white',
+                              padding: '14px',
+                              borderRadius: '6px',
+                              marginBottom: '12px'
+                            }}>
+                              <h5 style={{
+                                fontWeight: '600',
+                                color: '#92400e',
+                                marginBottom: '10px'
+                              }}>Noscitur a sociis (Words Known by Company)</h5>
+                              {analysisResults.phaseC.commonLawMaxims.nosciturASociis.map((maxim, idx) => (
+                                <div key={idx} style={{
+                                  backgroundColor: '#fefce8',
+                                  padding: '10px',
+                                  borderRadius: '4px',
+                                  marginBottom: '8px',
+                                  fontSize: '13px'
+                                }}>
+                                  <p style={{ fontWeight: '600', color: '#854d0e' }}>"{maxim.phrase}"</p>
+                                  <p style={{ marginTop: '6px', color: '#374151' }}>
+                                    <strong>Context:</strong> {maxim.surroundingContext}
+                                  </p>
+                                  <p style={{ marginTop: '4px', color: '#374151' }}>
+                                    <strong>Interpretation:</strong> {maxim.interpretation}
+                                  </p>
+                                  <p style={{
+                                    marginTop: '6px',
+                                    padding: '6px',
+                                    backgroundColor: 'white',
+                                    borderRadius: '4px',
+                                    color: '#78350f'
+                                  }}>
+                                    <strong>⚖️ Application:</strong> {maxim.application}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Expressio unius est exclusio alterius */}
+                            <div style={{
+                              backgroundColor: 'white',
+                              padding: '14px',
+                              borderRadius: '6px',
+                              marginBottom: '12px'
+                            }}>
+                              <h5 style={{
+                                fontWeight: '600',
+                                color: '#92400e',
+                                marginBottom: '10px'
+                              }}>Expressio unius est exclusio alterius (Express Mention Excludes Others)</h5>
+                              {analysisResults.phaseC.commonLawMaxims.expressioUnius.map((maxim, idx) => (
+                                <div key={idx} style={{
+                                  backgroundColor: '#fef2f2',
+                                  padding: '10px',
+                                  borderRadius: '4px',
+                                  marginBottom: '8px',
+                                  fontSize: '13px'
+                                }}>
+                                  <p style={{ fontWeight: '600', color: '#991b1b', marginBottom: '8px' }}>
+                                    ✅ Expressly Included:
+                                  </p>
+                                  <ul style={{ paddingLeft: '20px', marginBottom: '8px', fontSize: '12px' }}>
+                                    {maxim.expresslyIncluded.map((item, iidx) => (
+                                      <li key={iidx} style={{ color: '#374151', marginBottom: '3px' }}>{item}</li>
+                                    ))}
+                                  </ul>
+                                  <p style={{ fontWeight: '600', color: '#991b1b', marginBottom: '4px' }}>
+                                    ❌ Impliedly Excluded:
+                                  </p>
+                                  <p style={{ color: '#374151', marginBottom: '8px', fontStyle: 'italic' }}>
+                                    {maxim.impliedlyExcluded}
+                                  </p>
+                                  <p style={{
+                                    backgroundColor: '#fee2e2',
+                                    padding: '6px',
+                                    borderRadius: '4px',
+                                    color: '#7f1d1d'
+                                  }}>
+                                    <strong>⚠️ Legal Consequence:</strong> {maxim.legalConsequence}
+                                  </p>
+                                  <p style={{ marginTop: '6px', fontSize: '12px', color: '#6b7280' }}>
+                                    {maxim.example}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Generalia specialibus non derogant */}
+                            <div style={{
+                              backgroundColor: 'white',
+                              padding: '14px',
+                              borderRadius: '6px',
+                              marginBottom: '12px'
+                            }}>
+                              <h5 style={{
+                                fontWeight: '600',
+                                color: '#92400e',
+                                marginBottom: '10px'
+                              }}>Generalia specialibus non derogant (Specific Prevails Over General)</h5>
+                              {analysisResults.phaseC.commonLawMaxims.generaliaSpecialibus.map((maxim, idx) => (
+                                <div key={idx} style={{
+                                  backgroundColor: '#eff6ff',
+                                  padding: '10px',
+                                  borderRadius: '4px',
+                                  fontSize: '13px'
+                                }}>
+                                  <p style={{ color: '#374151', marginBottom: '6px' }}>
+                                    <strong>General Provision:</strong> {maxim.generalProvision}
+                                  </p>
+                                  <p style={{ color: '#374151', marginBottom: '6px' }}>
+                                    <strong>Specific Provision:</strong> {maxim.specificProvision}
+                                  </p>
+                                  <p style={{
+                                    backgroundColor: '#dbeafe',
+                                    padding: '8px',
+                                    borderRadius: '4px',
+                                    fontWeight: '600',
+                                    color: '#1e40af',
+                                    marginBottom: '6px'
+                                  }}>
+                                    ⚖️ Which Prevails: {maxim.whichPrevails}
+                                  </p>
+                                  <p style={{ color: '#374151', marginBottom: '6px' }}>
+                                    <strong>Reasoning:</strong> {maxim.reasoning}
+                                  </p>
+                                  <p style={{ color: '#374151' }}>
+                                    <strong>Practical Effect:</strong> {maxim.practicalEffect}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Ejusdem generis */}
+                            <div style={{
+                              backgroundColor: 'white',
+                              padding: '14px',
+                              borderRadius: '6px'
+                            }}>
+                              <h5 style={{
+                                fontWeight: '600',
+                                color: '#92400e',
+                                marginBottom: '10px'
+                              }}>Ejusdem generis (Of the Same Kind)</h5>
+                              {analysisResults.phaseC.commonLawMaxims.ejusdemGeneris.map((maxim, idx) => (
+                                <div key={idx} style={{
+                                  backgroundColor: '#f0fdf4',
+                                  padding: '10px',
+                                  borderRadius: '4px',
+                                  fontSize: '13px'
+                                }}>
+                                  <p style={{ color: '#374151', marginBottom: '6px' }}>
+                                    <strong>Specific Items:</strong> {maxim.specificItems.join(', ')}
+                                  </p>
+                                  <p style={{ color: '#374151', marginBottom: '6px' }}>
+                                    <strong>General Term:</strong> {maxim.generalTerm}
+                                  </p>
+                                  <p style={{ color: '#166534', fontWeight: '500' }}>
+                                    {maxim.interpretation}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* COMPREHENSIVE AMBIGUITY RESOLVER */}
+                        {analysisResults.phaseC.ambiguityResolver && analysisResults.phaseC.ambiguityResolver.length > 0 && (
+                          <div style={{
+                            backgroundColor: '#f0f9ff',
+                            border: '2px solid #0284c7',
+                            padding: '16px',
+                            borderRadius: '8px',
+                            marginBottom: '16px'
+                          }}>
+                            <h4 style={{
+                              fontWeight: '700',
+                              color: '#075985',
+                              marginBottom: '16px',
+                              fontSize: '16px'
+                            }}>🔍 COMPREHENSIVE AMBIGUITY RESOLUTION</h4>
+
+                            {analysisResults.phaseC.ambiguityResolver.map((resolution, idx) => (
+                              <div key={idx} style={{
+                                backgroundColor: 'white',
+                                padding: '16px',
+                                borderRadius: '8px',
+                                marginBottom: '14px',
+                                border: '1px solid #bae6fd'
+                              }}>
+                                <h5 style={{
+                                  fontWeight: '700',
+                                  color: '#0c4a6e',
+                                  marginBottom: '14px',
+                                  fontSize: '15px',
+                                  backgroundColor: '#e0f2fe',
+                                  padding: '10px',
+                                  borderRadius: '6px'
+                                }}>
+                                  🎯 Ambiguous Phrase: "{resolution.ambiguousPhrase}"
+                                </h5>
+
+                                {/* Three Interpretations */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', marginBottom: '14px' }}>
+
+                                  {/* Literal Interpretation */}
+                                  <div style={{
+                                    backgroundColor: '#eff6ff',
+                                    padding: '12px',
+                                    borderRadius: '6px',
+                                    borderLeft: '4px solid #2563eb'
+                                  }}>
+                                    <h6 style={{ fontWeight: '600', color: '#1e40af', marginBottom: '8px' }}>
+                                      📖 Literal Interpretation
+                                    </h6>
+                                    <p style={{ fontSize: '13px', marginBottom: '6px' }}>
+                                      <strong>Meaning:</strong> {resolution.literalInterpretation.meaning}
+                                    </p>
+                                    <p style={{ fontSize: '13px', marginBottom: '6px' }}>
+                                      <strong>Analysis:</strong> {resolution.literalInterpretation.analysis}
+                                    </p>
+                                    <p style={{ fontSize: '12px', color: '#16a34a', marginBottom: '4px' }}>
+                                      ✅ <strong>Strengths:</strong> {resolution.literalInterpretation.strengths}
+                                    </p>
+                                    <p style={{ fontSize: '12px', color: '#dc2626' }}>
+                                      ❌ <strong>Weaknesses:</strong> {resolution.literalInterpretation.weaknesses}
+                                    </p>
+                                  </div>
+
+                                  {/* Contextual Interpretation */}
+                                  <div style={{
+                                    backgroundColor: '#f5f3ff',
+                                    padding: '12px',
+                                    borderRadius: '6px',
+                                    borderLeft: '4px solid #7c3aed'
+                                  }}>
+                                    <h6 style={{ fontWeight: '600', color: '#5b21b6', marginBottom: '8px' }}>
+                                      🔗 Contextual Interpretation
+                                    </h6>
+                                    <p style={{ fontSize: '13px', marginBottom: '6px' }}>
+                                      <strong>Meaning:</strong> {resolution.contextualInterpretation.meaning}
+                                    </p>
+                                    <p style={{ fontSize: '13px', marginBottom: '6px' }}>
+                                      <strong>Analysis:</strong> {resolution.contextualInterpretation.analysis}
+                                    </p>
+                                    <p style={{ fontSize: '13px', marginBottom: '6px', backgroundColor: 'white', padding: '8px', borderRadius: '4px' }}>
+                                      <strong>Statutory Scheme:</strong> {resolution.contextualInterpretation.statutoryScheme}
+                                    </p>
+                                    <p style={{ fontSize: '12px', color: '#16a34a', marginBottom: '4px' }}>
+                                      ✅ <strong>Strengths:</strong> {resolution.contextualInterpretation.strengths}
+                                    </p>
+                                    <p style={{ fontSize: '12px', color: '#dc2626' }}>
+                                      ❌ <strong>Weaknesses:</strong> {resolution.contextualInterpretation.weaknesses}
+                                    </p>
+                                  </div>
+
+                                  {/* Purposive Interpretation */}
+                                  <div style={{
+                                    backgroundColor: '#f0fdf4',
+                                    padding: '12px',
+                                    borderRadius: '6px',
+                                    borderLeft: '4px solid #16a34a'
+                                  }}>
+                                    <h6 style={{ fontWeight: '600', color: '#166534', marginBottom: '8px' }}>
+                                      🎯 Purposive Interpretation (Vic s.35a)
+                                    </h6>
+                                    <p style={{ fontSize: '13px', marginBottom: '6px' }}>
+                                      <strong>Meaning:</strong> {resolution.purposiveInterpretation.meaning}
+                                    </p>
+                                    <p style={{ fontSize: '13px', marginBottom: '6px' }}>
+                                      <strong>Analysis:</strong> {resolution.purposiveInterpretation.analysis}
+                                    </p>
+                                    <p style={{ fontSize: '13px', marginBottom: '6px', backgroundColor: 'white', padding: '8px', borderRadius: '4px' }}>
+                                      <strong>Legislative Purpose:</strong> {resolution.purposiveInterpretation.legislativePurpose}
+                                    </p>
+                                    <p style={{ fontSize: '13px', marginBottom: '6px', backgroundColor: 'white', padding: '8px', borderRadius: '4px' }}>
+                                      <strong>Mischief Rule:</strong> {resolution.purposiveInterpretation.mischiefRule}
+                                    </p>
+                                    <p style={{ fontSize: '12px', color: '#16a34a', marginBottom: '4px' }}>
+                                      ✅ <strong>Strengths:</strong> {resolution.purposiveInterpretation.strengths}
+                                    </p>
+                                    <p style={{ fontSize: '12px', color: '#dc2626' }}>
+                                      ❌ <strong>Weaknesses:</strong> {resolution.purposiveInterpretation.weaknesses}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* Court Preference and Recommendation */}
+                                <div style={{
+                                  backgroundColor: '#fef3c7',
+                                  padding: '12px',
+                                  borderRadius: '6px',
+                                  marginBottom: '10px'
+                                }}>
+                                  <p style={{ fontWeight: '700', color: '#78350f', marginBottom: '6px' }}>
+                                    ⚖️ Victorian Court Preference:
+                                  </p>
+                                  <p style={{ fontSize: '14px', color: '#92400e' }}>
+                                    {resolution.victorianCourtPreference}
+                                  </p>
+                                </div>
+
+                                <div style={{
+                                  backgroundColor: '#dcfce7',
+                                  padding: '12px',
+                                  borderRadius: '6px',
+                                  marginBottom: '10px',
+                                  border: '2px solid #16a34a'
+                                }}>
+                                  <p style={{ fontWeight: '700', color: '#166534', marginBottom: '6px' }}>
+                                    ✅ RECOMMENDED INTERPRETATION:
+                                  </p>
+                                  <p style={{ fontSize: '14px', color: '#14532d' }}>
+                                    {resolution.recommendedInterpretation}
+                                  </p>
+                                </div>
+
+                                {/* Case Law Principles */}
+                                <div style={{
+                                  backgroundColor: '#f9fafb',
+                                  padding: '10px',
+                                  borderRadius: '6px'
+                                }}>
+                                  <p style={{ fontWeight: '600', fontSize: '13px', marginBottom: '6px', color: '#374151' }}>
+                                    📚 Applicable Case Law Principles:
+                                  </p>
+                                  <ul style={{ paddingLeft: '20px', fontSize: '12px', color: '#6b7280' }}>
+                                    {resolution.caseLawPrinciples.map((principle, pidx) => (
+                                      <li key={pidx} style={{ marginBottom: '4px' }}>{principle}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* HARMONIZATION ANALYSIS */}
+                        {analysisResults.phaseC.harmonization && analysisResults.phaseC.harmonization.length > 0 && (
+                          <div style={{
+                            backgroundColor: '#fef2f2',
+                            border: '2px solid #dc2626',
+                            padding: '16px',
+                            borderRadius: '8px',
+                            marginBottom: '16px'
+                          }}>
+                            <h4 style={{
+                              fontWeight: '700',
+                              color: '#991b1b',
+                              marginBottom: '16px',
+                              fontSize: '16px'
+                            }}>⚔️ DOCUMENT HARMONIZATION & CONFLICT RESOLUTION</h4>
+
+                            {analysisResults.phaseC.harmonization.map((harm, idx) => (
+                              <div key={idx} style={{
+                                backgroundColor: 'white',
+                                padding: '14px',
+                                borderRadius: '8px',
+                                marginBottom: '12px',
+                                border: '1px solid #fecaca'
+                              }}>
+                                <h5 style={{
+                                  fontWeight: '600',
+                                  color: '#7f1d1d',
+                                  marginBottom: '12px',
+                                  backgroundColor: '#fee2e2',
+                                  padding: '10px',
+                                  borderRadius: '6px'
+                                }}>
+                                  ⚠️ Conflict: {harm.conflict}
+                                </h5>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                  <div style={{
+                                    backgroundColor: '#dbeafe',
+                                    padding: '10px',
+                                    borderRadius: '6px',
+                                    fontSize: '13px'
+                                  }}>
+                                    <p style={{ fontWeight: '600', color: '#1e40af', marginBottom: '6px' }}>
+                                      📄 File A Position:
+                                    </p>
+                                    <p style={{ color: '#374151' }}>{harm.fileAPosition}</p>
+                                  </div>
+                                  <div style={{
+                                    backgroundColor: '#f3e8ff',
+                                    padding: '10px',
+                                    borderRadius: '6px',
+                                    fontSize: '13px'
+                                  }}>
+                                    <p style={{ fontWeight: '600', color: '#6b21a8', marginBottom: '6px' }}>
+                                      📄 File B Position:
+                                    </p>
+                                    <p style={{ color: '#374151' }}>{harm.fileBPosition}</p>
+                                  </div>
+                                </div>
+
+                                <div style={{
+                                  backgroundColor: '#f9fafb',
+                                  padding: '12px',
+                                  borderRadius: '6px',
+                                  marginBottom: '10px',
+                                  fontSize: '13px'
+                                }}>
+                                  <p style={{ fontWeight: '600', color: '#111827', marginBottom: '6px' }}>
+                                    🔄 Reconciliation Attempt:
+                                  </p>
+                                  <p style={{ color: '#374151' }}>{harm.reconciliationAttempt}</p>
+                                </div>
+
+                                <div style={{ marginBottom: '10px' }}>
+                                  <Badge variant={harm.isReconcilable ? 'success' : 'error'}>
+                                    {harm.isReconcilable ? '✅ Reconcilable' : '❌ Irreconcilable Conflict'}
+                                  </Badge>
+                                </div>
+
+                                <div style={{
+                                  backgroundColor: '#fffbeb',
+                                  padding: '12px',
+                                  borderRadius: '6px',
+                                  marginBottom: '10px',
+                                  fontSize: '13px'
+                                }}>
+                                  <p style={{ fontWeight: '600', color: '#78350f', marginBottom: '6px' }}>
+                                    ⚖️ Which Prevails:
+                                  </p>
+                                  <p style={{ color: '#92400e' }}>{harm.whichPrevails}</p>
+                                </div>
+
+                                <div style={{
+                                  backgroundColor: '#f0f9ff',
+                                  padding: '12px',
+                                  borderRadius: '6px',
+                                  marginBottom: '10px',
+                                  fontSize: '13px'
+                                }}>
+                                  <p style={{ fontWeight: '600', color: '#075985', marginBottom: '6px' }}>
+                                    📋 Statutory Support:
+                                  </p>
+                                  <p style={{ color: '#374151' }}>{harm.statutorySupport}</p>
+                                </div>
+
+                                <div style={{
+                                  backgroundColor: '#fee2e2',
+                                  padding: '12px',
+                                  borderRadius: '6px',
+                                  marginBottom: '10px',
+                                  fontSize: '13px'
+                                }}>
+                                  <p style={{ fontWeight: '600', color: '#991b1b', marginBottom: '6px' }}>
+                                    ⚠️ Legal Consequence:
+                                  </p>
+                                  <p style={{ color: '#7f1d1d' }}>{harm.legalConsequence}</p>
+                                </div>
+
+                                <div style={{
+                                  backgroundColor: '#dcfce7',
+                                  padding: '12px',
+                                  borderRadius: '6px',
+                                  border: '2px solid #16a34a',
+                                  fontSize: '13px'
+                                }}>
+                                  <p style={{ fontWeight: '700', color: '#166534', marginBottom: '6px' }}>
+                                    💼 ARGUMENT APPROACH:
+                                  </p>
+                                  <p style={{ color: '#14532d', fontWeight: '500' }}>{harm.argumentApproach}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* STATUTORY PROVISION REPORTS */}
+                        {analysisResults.phaseC.provisionReports && analysisResults.phaseC.provisionReports.length > 0 && (
+                          <div style={{
+                            backgroundColor: '#f0fdf4',
+                            border: '2px solid #16a34a',
+                            padding: '16px',
+                            borderRadius: '8px',
+                            marginBottom: '16px'
+                          }}>
+                            <h4 style={{
+                              fontWeight: '700',
+                              color: '#166534',
+                              marginBottom: '16px',
+                              fontSize: '16px'
+                            }}>📋 DETAILED STATUTORY PROVISION INTERPRETATION REPORTS</h4>
+
+                            {analysisResults.phaseC.provisionReports.map((report, idx) => (
+                              <div key={idx} style={{
+                                backgroundColor: 'white',
+                                padding: '16px',
+                                borderRadius: '8px',
+                                marginBottom: '14px',
+                                border: '2px solid #bbf7d0'
+                              }}>
+                                <h5 style={{
+                                  fontWeight: '700',
+                                  color: '#14532d',
+                                  marginBottom: '14px',
+                                  fontSize: '15px',
+                                  backgroundColor: '#dcfce7',
+                                  padding: '12px',
+                                  borderRadius: '6px'
+                                }}>
+                                  ⚖️ {report.provision}
+                                </h5>
+
+                                <div style={{
+                                  backgroundColor: '#f9fafb',
+                                  padding: '12px',
+                                  borderRadius: '6px',
+                                  marginBottom: '12px',
+                                  fontSize: '13px',
+                                  fontFamily: 'monospace'
+                                }}>
+                                  <p style={{ fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+                                    📜 Plain Text of Provision:
+                                  </p>
+                                  <p style={{ color: '#374151', lineHeight: '1.6' }}>{report.plainText}</p>
+                                </div>
+
+                                <div style={{
+                                  backgroundColor: '#eff6ff',
+                                  padding: '12px',
+                                  borderRadius: '6px',
+                                  marginBottom: '12px',
+                                  fontSize: '13px'
+                                }}>
+                                  <p style={{ fontWeight: '600', color: '#1e40af', marginBottom: '8px' }}>
+                                    🔍 Application to Facts in Documents:
+                                  </p>
+                                  <pre style={{
+                                    color: '#374151',
+                                    whiteSpace: 'pre-wrap',
+                                    fontFamily: 'inherit',
+                                    margin: 0
+                                  }}>{report.applicationToFacts}</pre>
+                                </div>
+
+                                <div style={{
+                                  backgroundColor: report.requirementsSatisfied?.includes('NOT SATISFIED') ? '#fee2e2' :
+                                                   report.requirementsSatisfied?.includes('UNCLEAR') ? '#fef3c7' :
+                                                   report.requirementsSatisfied?.includes('POTENTIALLY') ? '#e0f2fe' :
+                                                   '#dcfce7',
+                                  padding: '12px',
+                                  borderRadius: '6px',
+                                  marginBottom: '12px',
+                                  border: '2px solid ' + (
+                                    report.requirementsSatisfied?.includes('NOT SATISFIED') ? '#dc2626' :
+                                    report.requirementsSatisfied?.includes('UNCLEAR') ? '#f59e0b' :
+                                    '#16a34a'
+                                  )
+                                }}>
+                                  <p style={{
+                                    fontWeight: '700',
+                                    color: report.requirementsSatisfied?.includes('NOT SATISFIED') ? '#991b1b' :
+                                           report.requirementsSatisfied?.includes('UNCLEAR') ? '#78350f' :
+                                           '#166534',
+                                    fontSize: '14px'
+                                  }}>
+                                    {report.requirementsSatisfied?.includes('NOT SATISFIED') ? '❌' :
+                                     report.requirementsSatisfied?.includes('UNCLEAR') ? '⚠️' :
+                                     report.requirementsSatisfied?.includes('POTENTIALLY') ? '⚠️' : '✅'}
+                                    {' '}Requirements Satisfied: {report.requirementsSatisfied || 'UNKNOWN'}
+                                  </p>
+                                </div>
+
+                                {report.deficiencies && report.deficiencies.length > 0 && (
+                                  <div style={{
+                                    backgroundColor: '#fee2e2',
+                                    padding: '12px',
+                                    borderRadius: '6px',
+                                    marginBottom: '12px',
+                                    border: '2px solid #dc2626'
+                                  }}>
+                                    <p style={{ fontWeight: '700', color: '#991b1b', marginBottom: '8px', fontSize: '14px' }}>
+                                      🚨 Deficiencies Identified:
+                                    </p>
+                                    <ul style={{ paddingLeft: '20px', fontSize: '13px', color: '#7f1d1d' }}>
+                                      {report.deficiencies.map((def, didx) => (
+                                        <li key={didx} style={{ marginBottom: '6px', fontWeight: '500' }}>{def}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {report.legalConsequences && report.legalConsequences.length > 0 && (
+                                  <div style={{
+                                    backgroundColor: '#fef3c7',
+                                    padding: '12px',
+                                    borderRadius: '6px',
+                                    marginBottom: '12px'
+                                  }}>
+                                    <p style={{ fontWeight: '700', color: '#78350f', marginBottom: '8px', fontSize: '14px' }}>
+                                      ⚖️ Legal Consequences:
+                                    </p>
+                                    <ul style={{ paddingLeft: '20px', fontSize: '13px', color: '#92400e' }}>
+                                      {report.legalConsequences.map((cons, cidx) => (
+                                        <li key={cidx} style={{ marginBottom: '6px' }}>{cons}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                <div style={{
+                                  backgroundColor: '#dcfce7',
+                                  padding: '14px',
+                                  borderRadius: '6px',
+                                  border: '3px solid #16a34a'
+                                }}>
+                                  <p style={{ fontWeight: '700', color: '#166534', marginBottom: '10px', fontSize: '14px' }}>
+                                    💼 RECOMMENDED ARGUMENT APPROACH:
+                                  </p>
+                                  <p style={{
+                                    color: '#14532d',
+                                    fontSize: '14px',
+                                    lineHeight: '1.6',
+                                    fontWeight: '500'
+                                  }}>
+                                    {report.recommendedArgument}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* LEGACY INTERPRETATION SUMMARY (for backward compatibility) */}
                         <div style={{
                           backgroundColor: '#f9fafb',
                           padding: '16px',
@@ -4788,169 +6214,71 @@
                             fontWeight: '600',
                             color: '#111827',
                             marginBottom: '12px'
-                          }}>Interpretive Approaches Applied</h4>
-                          
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                          }}>Summary of Interpretive Approaches</h4>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <div style={{
                               backgroundColor: 'white',
-                              padding: '16px',
+                              padding: '12px',
                               borderRadius: '4px',
-                              borderLeft: '4px solid #2563eb'
+                              borderLeft: '4px solid #2563eb',
+                              fontSize: '13px'
                             }}>
-                              <h5 style={{
-                                fontWeight: '500',
-                                color: '#1e40af',
-                                marginBottom: '8px'
-                              }}>{analysisResults.phaseC.literalInterpretation.approach}</h5>
-                              <p style={{
-                                fontSize: '14px',
-                                color: '#374151'
-                              }}>{analysisResults.phaseC.literalInterpretation.findings}</p>
+                              <h5 style={{ fontWeight: '500', color: '#1e40af', marginBottom: '6px' }}>
+                                {analysisResults.phaseC.literalInterpretation.approach}
+                              </h5>
+                              <p style={{ color: '#374151' }}>{analysisResults.phaseC.literalInterpretation.findings}</p>
                             </div>
 
                             <div style={{
                               backgroundColor: 'white',
-                              padding: '16px',
+                              padding: '12px',
                               borderRadius: '4px',
-                              borderLeft: '4px solid #7c3aed'
+                              borderLeft: '4px solid #7c3aed',
+                              fontSize: '13px'
                             }}>
-                              <h5 style={{
-                                fontWeight: '500',
-                                color: '#5b21b6',
-                                marginBottom: '8px'
-                              }}>{analysisResults.phaseC.contextualInterpretation.approach}</h5>
-                              <p style={{
-                                fontSize: '14px',
-                                color: '#374151'
-                              }}>{analysisResults.phaseC.contextualInterpretation.findings}</p>
+                              <h5 style={{ fontWeight: '500', color: '#5b21b6', marginBottom: '6px' }}>
+                                {analysisResults.phaseC.contextualInterpretation.approach}
+                              </h5>
+                              <p style={{ color: '#374151' }}>{analysisResults.phaseC.contextualInterpretation.findings}</p>
                             </div>
 
                             <div style={{
                               backgroundColor: 'white',
-                              padding: '16px',
+                              padding: '12px',
                               borderRadius: '4px',
-                              borderLeft: '4px solid #16a34a'
+                              borderLeft: '4px solid #16a34a',
+                              fontSize: '13px'
                             }}>
-                              <h5 style={{
-                                fontWeight: '500',
-                                color: '#14532d',
-                                marginBottom: '8px'
-                              }}>{analysisResults.phaseC.purposiveInterpretation.approach}</h5>
-                              <p style={{
-                                fontSize: '14px',
-                                color: '#374151'
-                              }}>{analysisResults.phaseC.purposiveInterpretation.findings}</p>
-                            </div>
-
-                            <div style={{
-                              backgroundColor: 'white',
-                              padding: '16px',
-                              borderRadius: '4px',
-                              borderLeft: '4px solid #f59e0b'
-                            }}>
-                              <h5 style={{
-                                fontWeight: '500',
-                                color: '#78350f',
-                                marginBottom: '8px'
-                              }}>{analysisResults.phaseC.harmonization.approach}</h5>
-                              <p style={{
-                                fontSize: '14px',
-                                color: '#374151'
-                              }}>{analysisResults.phaseC.harmonization.findings}</p>
+                              <h5 style={{ fontWeight: '500', color: '#14532d', marginBottom: '6px' }}>
+                                {analysisResults.phaseC.purposiveInterpretation.approach}
+                              </h5>
+                              <p style={{ color: '#374151' }}>{analysisResults.phaseC.purposiveInterpretation.findings}</p>
                             </div>
                           </div>
                         </div>
 
+                        {/* INTERPRETIVE PRINCIPLES */}
                         <div style={{
                           backgroundColor: '#eff6ff',
-                          padding: '16px',
-                          borderRadius: '8px',
-                          marginBottom: '16px'
-                        }}>
-                          <h4 style={{
-                            fontWeight: '600',
-                            color: '#1e40af',
-                            marginBottom: '12px'
-                          }}>Interpretive Principles Applied</h4>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {analysisResults.phaseC.interpretativePrinciples.map((principle, idx) => (
-                              <div key={idx} style={{
-                                backgroundColor: 'white',
-                                padding: '12px',
-                                borderRadius: '4px',
-                                fontSize: '14px'
-                              }}>
-                                <p style={{
-                                  fontWeight: '500',
-                                  color: '#111827'
-                                }}>{principle.principle}</p>
-                                <p style={{
-                                  color: '#6b7280',
-                                  marginTop: '4px'
-                                }}>{principle.application}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div style={{
-                          backgroundColor: '#f5f3ff',
-                          padding: '16px',
-                          borderRadius: '8px',
-                          marginBottom: '16px'
-                        }}>
-                          <h4 style={{
-                            fontWeight: '600',
-                            color: '#5b21b6',
-                            marginBottom: '12px'
-                          }}>Extrinsic Aids Available</h4>
-                          <p style={{
-                            fontSize: '14px',
-                            color: '#6b21a8',
-                            marginBottom: '8px'
-                          }}>{analysisResults.phaseC.extrinsicAids.application}</p>
-                          <ul style={{
-                            fontSize: '14px',
-                            color: '#6b21a8',
-                            paddingLeft: '20px'
-                          }}>
-                            {analysisResults.phaseC.extrinsicAids.availableAids.map((aid, idx) => (
-                              <li key={idx} style={{ marginBottom: '4px' }}>{aid}</li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <div style={{
-                          backgroundColor: '#f9fafb',
                           padding: '16px',
                           borderRadius: '8px'
                         }}>
                           <h4 style={{
                             fontWeight: '600',
-                            color: '#111827',
+                            color: '#1e40af',
                             marginBottom: '12px'
-                          }}>Ambiguity Resolution</h4>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {analysisResults.phaseC.resolutionOfAmbiguity.map((resolution, idx) => (
+                          }}>All Interpretive Principles Applied</h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {analysisResults.phaseC.interpretativePrinciples.map((principle, idx) => (
                               <div key={idx} style={{
                                 backgroundColor: 'white',
-                                padding: '12px',
+                                padding: '10px',
                                 borderRadius: '4px',
-                                fontSize: '14px',
-                                borderLeft: '4px solid #9ca3af'
+                                fontSize: '13px'
                               }}>
-                                <p style={{
-                                  fontWeight: '500',
-                                  color: '#111827',
-                                  marginBottom: '4px'
-                                }}>Ambiguity: {resolution.ambiguity}</p>
-                                <p style={{
-                                  color: '#374151',
-                                  marginBottom: '4px'
-                                }}><strong>Method:</strong> {resolution.resolutionMethod}</p>
-                                <p style={{ color: '#374151' }}>
-                                  <strong>Recommendation:</strong> {resolution.recommendation}
-                                </p>
+                                <p style={{ fontWeight: '500', color: '#111827' }}>{principle.principle}</p>
+                                <p style={{ color: '#6b7280', marginTop: '4px', fontSize: '12px' }}>{principle.application}</p>
                               </div>
                             ))}
                           </div>
