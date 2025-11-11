@@ -7,6 +7,15 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- OCR and PDF Processing Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      // Configure PDF.js worker
+      if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    </script>
     <style>
         /* CSS Custom Properties for Theme System */
         :root {
@@ -1331,54 +1340,197 @@
             return framework;
           };
 
+          // OCR Text Extraction Function
+          const extractTextWithOCR = async (file, fileKey, onProgress) => {
+            return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+
+              reader.onload = async (e) => {
+                try {
+                  console.log(`Starting OCR processing for ${file.name}...`);
+
+                  const { data: { text } } = await Tesseract.recognize(
+                    e.target.result,
+                    'eng',
+                    {
+                      logger: (m) => {
+                        if (m.status === 'recognizing text') {
+                          const progress = Math.round(m.progress * 100);
+                          if (onProgress) {
+                            onProgress(progress);
+                          }
+                          console.log(`OCR Progress: ${progress}%`);
+                        }
+                      }
+                    }
+                  );
+
+                  console.log(`OCR completed for ${file.name}. Extracted ${text.length} characters.`);
+                  resolve(text);
+                } catch (error) {
+                  console.error('OCR extraction failed:', error);
+                  reject(error);
+                }
+              };
+
+              reader.onerror = () => reject(new Error('Failed to read file'));
+              reader.readAsDataURL(file);
+            });
+          };
+
+          // PDF Text Extraction Function
+          const extractTextFromPDF = async (file, fileKey, onProgress) => {
+            return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+
+              reader.onload = async (e) => {
+                try {
+                  console.log(`Starting PDF text extraction for ${file.name}...`);
+                  const typedArray = new Uint8Array(e.target.result);
+
+                  const loadingTask = pdfjsLib.getDocument(typedArray);
+                  const pdf = await loadingTask.promise;
+
+                  const numPages = pdf.numPages;
+                  console.log(`PDF has ${numPages} pages`);
+
+                  let fullText = '';
+
+                  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + '\n\n';
+
+                    const progress = Math.round((pageNum / numPages) * 100);
+                    if (onProgress) {
+                      onProgress(progress);
+                    }
+                    console.log(`Processed page ${pageNum}/${numPages} (${progress}%)`);
+                  }
+
+                  console.log(`PDF extraction completed. Extracted ${fullText.length} characters from ${numPages} pages.`);
+                  resolve(fullText);
+                } catch (error) {
+                  console.error('PDF extraction failed:', error);
+                  reject(error);
+                }
+              };
+
+              reader.onerror = () => reject(new Error('Failed to read PDF file'));
+              reader.readAsArrayBuffer(file);
+            });
+          };
+
           const handleFileUpload = async (file, fileKey) => {
             if (!file) return;
 
             setIsUploading(prev => ({ ...prev, [fileKey]: true }));
             setUploadProgress(prev => ({ ...prev, [fileKey]: 0 }));
 
-            const reader = new FileReader();
+            try {
+              let content = '';
+              const fileType = file.type;
+              const fileName = file.name.toLowerCase();
 
-            reader.onprogress = (e) => {
-              if (e.lengthComputable) {
-                const progress = Math.round((e.loaded / e.total) * 100);
-                setUploadProgress(prev => ({ ...prev, [fileKey]: progress }));
+              // PHASE 1: OCR and Text Extraction (happens FIRST before any analysis)
+              console.log(`Starting text extraction for ${file.name}...`);
+              console.log(`File type: ${fileType}`);
+
+              // Determine extraction method based on file type
+              if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+                // PDF files: Extract text using PDF.js
+                console.log('Detected PDF file - using PDF text extraction');
+                setUploadProgress(prev => ({ ...prev, [fileKey]: 5 }));
+
+                content = await extractTextFromPDF(file, fileKey, (progress) => {
+                  // Map PDF extraction progress to 5-70% of overall progress
+                  const mappedProgress = 5 + Math.round(progress * 0.65);
+                  setUploadProgress(prev => ({ ...prev, [fileKey]: mappedProgress }));
+                });
+
+              } else if (fileType.startsWith('image/') ||
+                         fileName.endsWith('.png') ||
+                         fileName.endsWith('.jpg') ||
+                         fileName.endsWith('.jpeg') ||
+                         fileName.endsWith('.gif') ||
+                         fileName.endsWith('.bmp') ||
+                         fileName.endsWith('.tiff')) {
+                // Image files: Extract text using OCR (Tesseract.js)
+                console.log('Detected image file - using OCR text extraction');
+                setUploadProgress(prev => ({ ...prev, [fileKey]: 5 }));
+
+                content = await extractTextWithOCR(file, fileKey, (progress) => {
+                  // Map OCR progress to 5-70% of overall progress
+                  const mappedProgress = 5 + Math.round(progress * 0.65);
+                  setUploadProgress(prev => ({ ...prev, [fileKey]: mappedProgress }));
+                });
+
+              } else {
+                // Plain text files: Read directly
+                console.log('Detected text file - reading as plain text');
+                content = await new Promise((resolve, reject) => {
+                  const reader = new FileReader();
+
+                  reader.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                      const progress = 5 + Math.round((e.loaded / e.total) * 65);
+                      setUploadProgress(prev => ({ ...prev, [fileKey]: progress }));
+                    }
+                  };
+
+                  reader.onload = (e) => resolve(e.target.result);
+                  reader.onerror = () => reject(new Error('Failed to read text file'));
+                  reader.readAsText(file);
+                });
               }
-            };
 
-            reader.onload = (e) => {
-              const content = e.target.result;
+              // Verify we got content
+              if (!content || content.trim().length === 0) {
+                throw new Error('No text could be extracted from the file. The file may be empty or the format is not supported.');
+              }
 
-              // Classify document and identify framework
+              console.log(`Text extraction completed. Extracted ${content.length} characters.`);
+              setUploadProgress(prev => ({ ...prev, [fileKey]: 75 }));
+
+              // PHASE 2: Document Classification and Framework Identification
+              console.log('Classifying document and identifying legal framework...');
               const documentType = classifyDocumentType(file.name, content);
               const framework = identifyVictorianFramework(content, documentType);
 
-              // Enhanced file metadata
+              setUploadProgress(prev => ({ ...prev, [fileKey]: 90 }));
+
+              // PHASE 3: Store Results
               const enhancedFile = {
                 ...file,
                 documentType: documentType,
                 framework: framework,
-                uploadTimestamp: new Date().toISOString()
+                uploadTimestamp: new Date().toISOString(),
+                extractionMethod: fileType === 'application/pdf' ? 'PDF Extraction' :
+                                 fileType.startsWith('image/') ? 'OCR (Tesseract)' : 'Plain Text'
               };
 
               setFiles(prev => ({ ...prev, [fileKey]: enhancedFile }));
               setFileContents(prev => ({ ...prev, [fileKey]: content }));
               setUploadProgress(prev => ({ ...prev, [fileKey]: 100 }));
 
+              console.log(`File ${fileKey} processed successfully:`);
+              console.log(`- Classification: ${documentType}`);
+              console.log(`- Extraction Method: ${enhancedFile.extractionMethod}`);
+              console.log(`- Text Length: ${content.length} characters`);
+              console.log(`- Governing Framework:`, framework);
+
               setTimeout(() => {
                 setIsUploading(prev => ({ ...prev, [fileKey]: false }));
               }, 300);
 
-              console.log(`File ${fileKey} classified as: ${documentType}`);
-              console.log(`Governing framework:`, framework);
-            };
+            } catch (error) {
+              console.error(`Error processing file ${file.name}:`, error);
+              alert(`Failed to process file: ${error.message}\n\nSupported formats:\n- PDF documents (.pdf)\n- Images (.png, .jpg, .jpeg, .gif, .bmp, .tiff) - OCR will be performed\n- Text files (.txt, .doc, .docx)`);
 
-            reader.onerror = () => {
               setIsUploading(prev => ({ ...prev, [fileKey]: false }));
               setUploadProgress(prev => ({ ...prev, [fileKey]: 0 }));
-            };
-
-            reader.readAsText(file);
+            }
           };
 
           const handleUrlUpload = async (url, fileKey) => {
@@ -2946,7 +3098,17 @@
                     >
                       ⬆️ Choose File
                     </button>
-                    
+
+                    <p style={{
+                      fontSize: '11px',
+                      color: '#6b7280',
+                      textAlign: 'center',
+                      marginBottom: '8px',
+                      lineHeight: '1.4'
+                    }}>
+                      Supports: PDF, Images (OCR), Text files
+                    </p>
+
                     <div style={{ marginTop: '16px' }}>
                       <input
                         type="text"
@@ -2971,7 +3133,7 @@
                       ref={fileKey === 'fileA' ? fileInputA : fileInputB}
                       onChange={(e) => handleFileUpload(e.target.files[0], fileKey)}
                       style={{ display: 'none' }}
-                      accept=".txt,.doc,.docx,.pdf"
+                      accept=".txt,.doc,.docx,.pdf,.png,.jpg,.jpeg,.gif,.bmp,.tiff,image/*"
                     />
                   </>
                 ) : (
