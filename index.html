@@ -1577,7 +1577,7 @@
             };
 
             setAnalysisProgress(40);
-            setCurrentPhase('Phase B: Statutory Framework Identification & Cross-Reference Analysis');
+            setCurrentPhase('Phase B: Victorian Criminal Compliance & Statutory Cross-Reference Analysis');
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             const phaseBResults = performCrossReference(phaseAResults);
@@ -2260,63 +2260,318 @@
             };
           };
 
-          // Victorian Law Statutory Compliance Checker
+          // Enhanced Victorian Law Statutory Compliance Checker for Criminal Summary Matters
           const checkVictorianStatutoryCompliance = (content, documentType, legalReferences) => {
             const complianceIssues = [];
 
-            // Criminal Procedure Act 2009 compliance checks
+            // ====================================================================================
+            // PART 1: DISCLOSURE REQUIREMENTS - Criminal Procedure Act 2009 Part 3.3
+            // ====================================================================================
+
             if (documentType === 'Disclosure Document' || documentType === 'Statement') {
-              if (!legalReferences.some(ref => /Criminal\s+Procedure\s+Act\s+2009/i.test(ref.text))) {
+              // Check 1.1: Informant's statement present
+              if (!/informant[\'']?s?\s+statement/i.test(content)) {
                 complianceIssues.push({
-                  severity: 'high',
+                  severity: 'critical',
                   statute: 'Criminal Procedure Act 2009',
-                  section: 'General Compliance',
-                  defect: 'Disclosure documents must reference Criminal Procedure Act 2009',
+                  section: 'Part 3.3 - s.186 Disclosure Requirements',
+                  defect: 'Missing informant\'s statement in disclosure',
                   compliance: 'non-compliant',
-                  remediation: 'Add reference to governing legislation - Criminal Procedure Act 2009'
+                  remediation: 'Include informant\'s statement as required by CPA 2009 s.186(1)(a)'
                 });
               }
 
-              // Check for disclosure timeline compliance
-              if (!/within\s+\d+\s+(days?|weeks?|months?)/i.test(content)) {
+              // Check 1.2: Witness statements
+              const witnessStatementMatch = content.match(/witness\s+statement/gi);
+              if (!witnessStatementMatch || witnessStatementMatch.length === 0) {
                 complianceIssues.push({
                   severity: 'high',
                   statute: 'Criminal Procedure Act 2009',
-                  section: 'Part 5.2 - Disclosure timing',
-                  defect: 'No specific timeframe for disclosure identified',
+                  section: 'Part 3.3 - s.186 Witness Statements',
+                  defect: 'No witness statements identified',
+                  compliance: 'unclear',
+                  remediation: 'Verify all witness statements are disclosed per s.186(1)(b)'
+                });
+              }
+
+              // Check 1.3: Prior convictions disclosed
+              if (!/prior\s+(conviction|record|history)|criminal\s+(history|record)/i.test(content)) {
+                complianceIssues.push({
+                  severity: 'medium',
+                  statute: 'Criminal Procedure Act 2009',
+                  section: 'Part 3.3 - s.186 Prior Convictions',
+                  defect: 'No reference to prior convictions or criminal history',
+                  compliance: 'unclear',
+                  remediation: 'Disclose any prior convictions relevant to the case (s.186(1)(c))'
+                });
+              }
+
+              // Check 1.4: Physical evidence list
+              if (!/evidence\s+(list|schedule|inventory)|exhibit\s+(list|schedule|inventory)|physical\s+evidence/i.test(content)) {
+                complianceIssues.push({
+                  severity: 'high',
+                  statute: 'Criminal Procedure Act 2009',
+                  section: 'Part 3.3 - s.186 Physical Evidence',
+                  defect: 'No physical evidence list or exhibit schedule identified',
+                  compliance: 'non-compliant',
+                  remediation: 'Provide list of all physical evidence per s.186(1)(d)'
+                });
+              }
+
+              // Check 1.5: Statements signed and dated
+              const hasSignature = /signed|signature/i.test(content);
+              const hasDate = /dated|date\s*:/i.test(content);
+              if (!hasSignature) {
+                complianceIssues.push({
+                  severity: 'critical',
+                  statute: 'Criminal Procedure Act 2009',
+                  section: 'Part 3.3 - Statement Formalities',
+                  defect: 'No indication that statements are signed',
+                  compliance: 'non-compliant',
+                  remediation: 'All statements must be signed by declarant'
+                });
+              }
+              if (!hasDate) {
+                complianceIssues.push({
+                  severity: 'high',
+                  statute: 'Criminal Procedure Act 2009',
+                  section: 'Part 3.3 - Statement Formalities',
+                  defect: 'No indication that statements are dated',
+                  compliance: 'non-compliant',
+                  remediation: 'All statements must be dated to establish timeline'
+                });
+              }
+
+              // Check 1.6: s.186 timeframe compliance
+              if (!/within\s+\d+\s+(days?|weeks?|months?)|disclosure\s+deadline/i.test(content)) {
+                complianceIssues.push({
+                  severity: 'high',
+                  statute: 'Criminal Procedure Act 2009',
+                  section: 's.186 - Disclosure Timing',
+                  defect: 'No specific disclosure timeframe identified',
                   compliance: 'potentially non-compliant',
-                  remediation: 'Specify disclosure timeline as required by CPA 2009 Part 5.2'
+                  remediation: 'Ensure disclosure meets s.186 mandatory timeframes'
+                });
+              }
+
+              // Check 1.7: Exhibits properly identified
+              const exhibitReferences = content.match(/exhibit\s+[A-Z0-9]+/gi);
+              if (exhibitReferences && exhibitReferences.length > 0) {
+                const properIdentification = /exhibit\s+[A-Z0-9]+:\s*[\w\s]+/i.test(content);
+                if (!properIdentification) {
+                  complianceIssues.push({
+                    severity: 'medium',
+                    statute: 'Criminal Procedure Act 2009',
+                    section: 'Part 3.3 - Exhibit Identification',
+                    defect: 'Exhibits referenced but may lack proper descriptions',
+                    compliance: 'unclear',
+                    remediation: 'Each exhibit must have unique identifier and description'
+                  });
+                }
+              }
+            }
+
+            // ====================================================================================
+            // PART 2: PRELIMINARY TEST REQUIREMENTS - Road Safety Act 1986
+            // ====================================================================================
+
+            const isPreliminaryTest = /preliminary\s+(test|breath|drug)|roadside\s+test|screening\s+test/i.test(content);
+
+            if (isPreliminaryTest) {
+              // Check 2.1: Section 49(1) - "reason to believe"
+              const hasReasonToBelieve = /reason\s+to\s+(believe|suspect)|reasonable\s+(belief|suspicion)|believed|suspected/i.test(content);
+              if (!hasReasonToBelieve) {
+                complianceIssues.push({
+                  severity: 'critical',
+                  statute: 'Road Safety Act 1986',
+                  section: 's.49(1) - Reason to Believe',
+                  defect: 'No evidence that officer had "reason to believe" as required by s.49(1)',
+                  compliance: 'non-compliant',
+                  remediation: 'Document must show officer\'s subjective belief that driver had consumed alcohol/drugs'
+                });
+              }
+
+              // Check 2.2: Section 55D(1) - test "in accordance with directions"
+              const hasDirections = /in\s+accordance\s+with\s+directions?|directions?\s+(given|provided|issued)|followed\s+directions?/i.test(content);
+              if (!hasDirections) {
+                complianceIssues.push({
+                  severity: 'critical',
+                  statute: 'Road Safety Act 1986',
+                  section: 's.55D(1) - Accordance with Directions',
+                  defect: 'No evidence test was conducted "in accordance with directions"',
+                  compliance: 'non-compliant',
+                  remediation: 'Must specify that test was conducted in accordance with s.55D(1) directions'
+                });
+              }
+
+              // Check 2.3: Section 55D(2) - oral directions if literate
+              const hasOralDirections = /oral\s+directions?|verbal\s+(?:directions?|instructions?)|spoken\s+to|told\s+to|instructed\s+(?:to|that)/i.test(content);
+              const hasLiteracyRef = /literate|able\s+to\s+read|read\s+and\s+understand/i.test(content);
+              if (!hasOralDirections && !hasLiteracyRef) {
+                complianceIssues.push({
+                  severity: 'high',
+                  statute: 'Road Safety Act 1986',
+                  section: 's.55D(2) - Oral Directions',
+                  defect: 'No indication that oral directions were given if person literate',
+                  compliance: 'unclear',
+                  remediation: 'If person literate, oral directions must be given per s.55D(2)'
+                });
+              }
+
+              // Check 2.4: Section 55E - "proper performance" indicators
+              const properPerformanceIndicators = [
+                /device\s+approval|approved\s+device|approved\s+(?:by|under)/i,
+                /calibrat(?:ed|ion)|maintain(?:ed|ance)|servic(?:ed|ing)/i,
+                /proper\s+(?:working\s+)?(?:order|condition|performance)/i,
+                /tested\s+and\s+(?:certified|approved)/i
+              ];
+              const hasProperPerformance = properPerformanceIndicators.some(pattern => pattern.test(content));
+              if (!hasProperPerformance) {
+                complianceIssues.push({
+                  severity: 'critical',
+                  statute: 'Road Safety Act 1986',
+                  section: 's.55E - Proper Performance',
+                  defect: 'No indicators of device "proper performance" as required by s.55E',
+                  compliance: 'non-compliant',
+                  remediation: 'Must document: device approval number, calibration/maintenance records'
+                });
+              }
+
+              // Check 2.5: Device approval number
+              const hasApprovalNumber = /approval\s+(?:number|no\.?|#)\s*:?\s*[\w\d\-]+|device\s+(?:number|no\.?|#)\s*:?\s*[\w\d\-]+/i.test(content);
+              if (!hasApprovalNumber) {
+                complianceIssues.push({
+                  severity: 'high',
+                  statute: 'Road Safety Act 1986',
+                  section: 's.55E - Device Approval',
+                  defect: 'No device approval number specified',
+                  compliance: 'non-compliant',
+                  remediation: 'Must specify approved device number per s.55E proper performance requirements'
+                });
+              }
+
+              // Check 2.6: Calibration/maintenance records
+              const hasMaintenanceRecords = /calibrat(?:ed|ion)\s+(?:on|date|record)|maintenance\s+(?:log|record)|service\s+(?:date|record)/i.test(content);
+              if (!hasMaintenanceRecords) {
+                complianceIssues.push({
+                  severity: 'high',
+                  statute: 'Road Safety Act 1986',
+                  section: 's.55E - Device Maintenance',
+                  defect: 'No calibration or maintenance records referenced',
+                  compliance: 'unclear',
+                  remediation: 'Document calibration/maintenance to establish proper performance'
+                });
+              }
+
+              // Check 2.7: Section 55(1) - evidentiary test compliance
+              const hasEvidentinaryTest = /evidentiary\s+test|evidential\s+(?:test|breath)/i.test(content);
+              if (hasEvidentinaryTest) {
+                const hasCompliance = /complied\s+with|in\s+accordance\s+with|pursuant\s+to.*s(?:ection)?\s*55\(1\)/i.test(content);
+                if (!hasCompliance) {
+                  complianceIssues.push({
+                    severity: 'high',
+                    statute: 'Road Safety Act 1986',
+                    section: 's.55(1) - Evidentiary Test',
+                    defect: 'Evidentiary test mentioned but compliance not documented',
+                    compliance: 'unclear',
+                    remediation: 'Document compliance with s.55(1) evidentiary test requirements'
+                  });
+                }
+              }
+
+              // Check 2.8: Time of test vs time of driving
+              const hasTestTime = /time\s+of\s+test|test\s+conducted\s+at|tested\s+at/i.test(content);
+              const hasDrivingTime = /time\s+of\s+(?:driving|incident|offence)|drove\s+at|driving\s+at/i.test(content);
+              if (hasTestTime && !hasDrivingTime) {
+                complianceIssues.push({
+                  severity: 'medium',
+                  statute: 'Road Safety Act 1986',
+                  section: 'Temporal Requirements',
+                  defect: 'Test time documented but time of driving unclear',
+                  compliance: 'unclear',
+                  remediation: 'Establish temporal link between driving and test administration'
                 });
               }
             }
 
-            // Evidence Act 2008 compliance checks
-            if (documentType === 'Evidence Exhibit' || documentType === 'Evidentiary Certificate') {
-              if (!legalReferences.some(ref => /Evidence\s+Act\s+2008/i.test(ref.text))) {
-                complianceIssues.push({
-                  severity: 'high',
-                  statute: 'Evidence Act 2008 (Vic)',
-                  section: 'General Compliance',
-                  defect: 'Evidentiary materials must reference Evidence Act 2008',
-                  compliance: 'non-compliant',
-                  remediation: 'Add reference to Evidence Act 2008 (Vic)'
-                });
-              }
+            // ====================================================================================
+            // PART 3: EVIDENCE ACT 2008 COMPLIANCE
+            // ====================================================================================
 
-              // Check for certificate requirements under Evidence Act
-              if (documentType === 'Evidentiary Certificate' && !/certificate\s+under\s+section\s+\d+/i.test(content)) {
+            // Check 3.1: Hearsay issues (s.59)
+            const hearsayIndicators = /(?:he|she|they)\s+(?:said|told|stated)|told\s+(?:me|us|the\s+officer)|stated\s+that|informed\s+(?:me|us)|reported\s+that/i;
+            const hasHearsay = hearsayIndicators.test(content);
+            if (hasHearsay) {
+              complianceIssues.push({
+                severity: 'high',
+                statute: 'Evidence Act 2008 (Vic)',
+                section: 's.59 - Hearsay Rule',
+                defect: 'Potential hearsay evidence identified',
+                compliance: 'unclear',
+                remediation: 'Verify hearsay is admissible under exception (s.60-69) or consider s.59 exclusion'
+              });
+
+              // Check 3.2: If hearsay, is exception claimed? (s.60-69)
+              const hearsayExceptions = /s(?:ection)?\s*(?:60|61|62|63|64|65|66|67|68|69)|exception\s+to\s+hearsay|business\s+records|contemporaneous\s+statement/i;
+              if (!hearsayExceptions.test(content)) {
                 complianceIssues.push({
                   severity: 'critical',
                   statute: 'Evidence Act 2008 (Vic)',
-                  section: 'Certificate provisions',
-                  defect: 'Certificate must specify authorizing section',
+                  section: 's.60-69 - Hearsay Exceptions',
+                  defect: 'Hearsay evidence present but no exception claimed',
                   compliance: 'non-compliant',
-                  remediation: 'Add "Certificate under section [X] of the Evidence Act 2008"'
+                  remediation: 'Identify applicable hearsay exception under s.60-69 or exclude evidence'
                 });
+              }
+
+              // Check 3.3: Business records exception (s.69)
+              const businessRecords = /business\s+records?|s(?:ection)?\s*69|records?\s+(?:kept|made)\s+in\s+(?:the\s+)?course\s+of.*business/i;
+              if (businessRecords.test(content)) {
+                const hasFoundation = /person\s+with\s+knowledge|made\s+(?:by|at)|kept\s+in\s+(?:the\s+)?ordinary\s+course/i.test(content);
+                if (!hasFoundation) {
+                  complianceIssues.push({
+                    severity: 'high',
+                    statute: 'Evidence Act 2008 (Vic)',
+                    section: 's.69 - Business Records',
+                    defect: 'Business records exception invoked but foundation not established',
+                    compliance: 'unclear',
+                    remediation: 'Establish s.69 requirements: record made by competent person, in ordinary course'
+                  });
+                }
               }
             }
 
-            // Victoria Police Act 2013 compliance checks
+            // Check 3.4: Section 137 - probative vs prejudicial
+            const highlyPrejudicial = /prior\s+(?:conviction|offence)|bad\s+character|previous\s+(?:criminal|bad)\s+(?:conduct|behaviour)|prejudicial/i;
+            if (highlyPrejudicial.test(content)) {
+              complianceIssues.push({
+                severity: 'medium',
+                statute: 'Evidence Act 2008 (Vic)',
+                section: 's.137 - Probative vs Prejudicial',
+                defect: 'Potentially prejudicial evidence - probative value may be outweighed',
+                compliance: 'consider-exclusion',
+                remediation: 'Court discretion under s.137: exclude if probative value < unfair prejudice'
+              });
+            }
+
+            // Check 3.5: Section 138 - improperly obtained evidence
+            const improperlyObtained = /obtained\s+(?:illegally|unlawfully|improperly)|breach\s+of|violated|without\s+(?:warrant|authority|consent)|unlawful\s+(?:search|seizure)/i;
+            if (improperlyObtained.test(content)) {
+              complianceIssues.push({
+                severity: 'critical',
+                statute: 'Evidence Act 2008 (Vic)',
+                section: 's.138 - Improperly Obtained Evidence',
+                defect: 'Evidence may have been improperly or illegally obtained',
+                compliance: 'non-compliant',
+                remediation: 'Court must consider s.138 discretionary exclusion for improperly obtained evidence'
+              });
+            }
+
+            // ====================================================================================
+            // PART 4: GENERAL VICTORIAN COMPLIANCE CHECKS
+            // ====================================================================================
+
+            // Check 4.1: Victoria Police Act 2013 compliance
             if (documentType === 'Victoria Police Manual' || /victoria\s+police/i.test(content)) {
               if (!/Victoria\s+Police\s+Act\s+2013/i.test(content)) {
                 complianceIssues.push({
@@ -2330,7 +2585,7 @@
               }
             }
 
-            // Charter of Human Rights compliance checks
+            // Check 4.2: Charter of Human Rights compliance
             const humanRightsIndicators = /rights?|fairness|natural justice|discrimination|equality/i;
             if (humanRightsIndicators.test(content)) {
               if (!/Charter\s+of\s+Human\s+Rights/i.test(content)) {
@@ -2345,7 +2600,7 @@
               }
             }
 
-            // Court-specific compliance checks
+            // Check 4.3: Court-specific compliance
             if (documentType === 'Court Order' || documentType === 'Court Documentation') {
               const hasCourtRef = /Supreme\s+Court|County\s+Court|Magistrates/i.test(content);
               const hasFullCourtName = /Supreme\s+Court\s+of\s+Victoria|County\s+Court\s+of\s+Victoria|Magistrates[\'']?\s+Court\s+of\s+Victoria/i.test(content);
@@ -2632,6 +2887,314 @@
             return mapping.sort((a, b) => a.sequenceNumber - b.sequenceNumber);
           };
 
+          // Generate Comprehensive Omissions Report - Doc A vs Doc B
+          const generateOmissionsReport = (contentA, contentB, phaseAResults) => {
+            const report = {
+              statutoryReferences: {
+                inANotInB: [],
+                inBNotInA: []
+              },
+              proceduralElements: {
+                inANotInB: [],
+                inBNotInA: []
+              },
+              factsAndAssertions: {
+                inANotInB: [],
+                inBNotInA: []
+              },
+              criticalOmissions: {
+                victorianCriminalRequirements: []
+              }
+            };
+
+            // Extract statutory references
+            const refsA = new Set(phaseAResults.fileA[0].findings.legalReferences.map(r => r.text));
+            const refsB = new Set(phaseAResults.fileB[0].findings.legalReferences.map(r => r.text));
+
+            refsA.forEach(ref => {
+              if (!refsB.has(ref)) {
+                report.statutoryReferences.inANotInB.push({
+                  element: ref,
+                  category: 'Statutory Reference',
+                  severity: 'high',
+                  impact: 'Legal authority present in Doc A but not referenced in Doc B'
+                });
+              }
+            });
+
+            refsB.forEach(ref => {
+              if (!refsA.has(ref)) {
+                report.statutoryReferences.inBNotInA.push({
+                  element: ref,
+                  category: 'Statutory Reference',
+                  severity: 'high',
+                  impact: 'Legal authority present in Doc B but not referenced in Doc A'
+                });
+              }
+            });
+
+            // Extract procedural elements
+            const proceduralA = phaseAResults.fileA[0].findings.proceduralElements || [];
+            const proceduralB = phaseAResults.fileB[0].findings.proceduralElements || [];
+
+            const procTypesA = new Set(proceduralA.map(p => p.type));
+            const procTypesB = new Set(proceduralB.map(p => p.type));
+
+            procTypesA.forEach(type => {
+              if (!procTypesB.has(type)) {
+                const examples = proceduralA.find(p => p.type === type)?.examples || [];
+                report.proceduralElements.inANotInB.push({
+                  element: type,
+                  category: 'Procedural Element',
+                  severity: 'medium',
+                  examples: examples.slice(0, 2),
+                  impact: 'Procedural step described in Doc A but omitted from Doc B'
+                });
+              }
+            });
+
+            procTypesB.forEach(type => {
+              if (!procTypesA.has(type)) {
+                const examples = proceduralB.find(p => p.type === type)?.examples || [];
+                report.proceduralElements.inBNotInA.push({
+                  element: type,
+                  category: 'Procedural Element',
+                  severity: 'medium',
+                  examples: examples.slice(0, 2),
+                  impact: 'Procedural step described in Doc B but omitted from Doc A'
+                });
+              }
+            });
+
+            // Critical Victorian Criminal Matter Omissions
+
+            // Check: "in accordance with directions" language (s.55D RSA 1986)
+            const hasDirectionsA = /in\s+accordance\s+with\s+directions?/i.test(contentA);
+            const hasDirectionsB = /in\s+accordance\s+with\s+directions?/i.test(contentB);
+            if (hasDirectionsA && !hasDirectionsB) {
+              report.criticalOmissions.victorianCriminalRequirements.push({
+                element: '"In accordance with directions" language',
+                statute: 'Road Safety Act 1986 s.55D(1)',
+                severity: 'critical',
+                inDocument: 'Doc A',
+                omittedFrom: 'Doc B',
+                impact: 'Critical RSA 1986 s.55D(1) compliance requirement missing from Doc B'
+              });
+            }
+            if (hasDirectionsB && !hasDirectionsA) {
+              report.criticalOmissions.victorianCriminalRequirements.push({
+                element: '"In accordance with directions" language',
+                statute: 'Road Safety Act 1986 s.55D(1)',
+                severity: 'critical',
+                inDocument: 'Doc B',
+                omittedFrom: 'Doc A',
+                impact: 'Critical RSA 1986 s.55D(1) compliance requirement missing from Doc A'
+              });
+            }
+
+            // Check: Officer's subjective belief formation (s.49 RSA 1986)
+            const hasReasonToBelieveA = /reason\s+to\s+(believe|suspect)|reasonable\s+(belief|suspicion)/i.test(contentA);
+            const hasReasonToBelieveB = /reason\s+to\s+(believe|suspect)|reasonable\s+(belief|suspicion)/i.test(contentB);
+            if (hasReasonToBelieveA && !hasReasonToBelieveB) {
+              report.criticalOmissions.victorianCriminalRequirements.push({
+                element: 'Officer\'s "reason to believe" formation',
+                statute: 'Road Safety Act 1986 s.49(1)',
+                severity: 'critical',
+                inDocument: 'Doc A',
+                omittedFrom: 'Doc B',
+                impact: 'Critical s.49(1) requirement - officer\'s subjective belief not documented in Doc B'
+              });
+            }
+            if (hasReasonToBelieveB && !hasReasonToBelieveA) {
+              report.criticalOmissions.victorianCriminalRequirements.push({
+                element: 'Officer\'s "reason to believe" formation',
+                statute: 'Road Safety Act 1986 s.49(1)',
+                severity: 'critical',
+                inDocument: 'Doc B',
+                omittedFrom: 'Doc A',
+                impact: 'Critical s.49(1) requirement - officer\'s subjective belief not documented in Doc A'
+              });
+            }
+
+            // Check: Device approval number (s.55E RSA 1986)
+            const hasApprovalA = /approval\s+(?:number|no\.?|#)|device\s+(?:number|no\.?|#)/i.test(contentA);
+            const hasApprovalB = /approval\s+(?:number|no\.?|#)|device\s+(?:number|no\.?|#)/i.test(contentB);
+            if (hasApprovalA && !hasApprovalB) {
+              report.criticalOmissions.victorianCriminalRequirements.push({
+                element: 'Device approval number',
+                statute: 'Road Safety Act 1986 s.55E',
+                severity: 'high',
+                inDocument: 'Doc A',
+                omittedFrom: 'Doc B',
+                impact: 'Device approval number (s.55E proper performance) missing from Doc B'
+              });
+            }
+
+            // Check: Calibration/maintenance records (s.55E proper performance)
+            const hasCalibrationA = /calibrat(?:ed|ion)|maintenance|service/i.test(contentA);
+            const hasCalibrationB = /calibrat(?:ed|ion)|maintenance|service/i.test(contentB);
+            if (hasCalibrationA && !hasCalibrationB) {
+              report.criticalOmissions.victorianCriminalRequirements.push({
+                element: 'Calibration/maintenance records',
+                statute: 'Road Safety Act 1986 s.55E',
+                severity: 'high',
+                inDocument: 'Doc A',
+                omittedFrom: 'Doc B',
+                impact: 'Proper performance indicators (s.55E) - calibration/maintenance omitted from Doc B'
+              });
+            }
+
+            // Check: Time of test vs time of driving
+            const hasTestTimeA = /time\s+of\s+test|test\s+(?:conducted|administered)\s+at/i.test(contentA);
+            const hasTestTimeB = /time\s+of\s+test|test\s+(?:conducted|administered)\s+at/i.test(contentB);
+            const hasDrivingTimeA = /time\s+of\s+(?:driving|incident|offence)/i.test(contentA);
+            const hasDrivingTimeB = /time\s+of\s+(?:driving|incident|offence)/i.test(contentB);
+
+            if (hasTestTimeA && !hasTestTimeB) {
+              report.criticalOmissions.victorianCriminalRequirements.push({
+                element: 'Time of test administration',
+                statute: 'Road Safety Act 1986 - Temporal Requirements',
+                severity: 'medium',
+                inDocument: 'Doc A',
+                omittedFrom: 'Doc B',
+                impact: 'Test timing documented in Doc A but omitted from Doc B'
+              });
+            }
+
+            if (hasDrivingTimeA && !hasDrivingTimeB) {
+              report.criticalOmissions.victorianCriminalRequirements.push({
+                element: 'Time of driving/incident',
+                statute: 'Road Safety Act 1986 - Temporal Requirements',
+                severity: 'high',
+                inDocument: 'Doc A',
+                omittedFrom: 'Doc B',
+                impact: 'Critical temporal element - driving time in Doc A but omitted from Doc B'
+              });
+            }
+
+            // Check: Hearsay exceptions
+            const hasHearsayExceptionA = /s(?:ection)?\s*(?:60|61|62|63|64|65|66|67|68|69)|exception\s+to\s+hearsay/i.test(contentA);
+            const hasHearsayExceptionB = /s(?:ection)?\s*(?:60|61|62|63|64|65|66|67|68|69)|exception\s+to\s+hearsay/i.test(contentB);
+            if (hasHearsayExceptionA && !hasHearsayExceptionB) {
+              report.criticalOmissions.victorianCriminalRequirements.push({
+                element: 'Hearsay exception claim',
+                statute: 'Evidence Act 2008 (Vic) s.60-69',
+                severity: 'high',
+                inDocument: 'Doc A',
+                omittedFrom: 'Doc B',
+                impact: 'Hearsay exception basis in Doc A but not asserted in Doc B'
+              });
+            }
+
+            return report;
+          };
+
+          // Build Enhanced Cross-Reference Matrix with Doc A vs Doc B Compliance
+          const buildComplianceMatrix = (phaseAResults, complianceA, complianceB) => {
+            const matrix = [];
+
+            // Build a comprehensive list of all statutory provisions mentioned
+            const provisionsMap = new Map();
+
+            // Add provisions from Victorian compliance checks
+            [...complianceA, ...complianceB].forEach(issue => {
+              const key = `${issue.statute}|${issue.section}`;
+              if (!provisionsMap.has(key)) {
+                provisionsMap.set(key, {
+                  provision: `${issue.statute} - ${issue.section}`,
+                  statute: issue.statute,
+                  section: issue.section,
+                  docACompliance: null,
+                  docBCompliance: null,
+                  docAIssues: [],
+                  docBIssues: [],
+                  discrepancies: []
+                });
+              }
+            });
+
+            // Populate Doc A compliance
+            complianceA.forEach(issue => {
+              const key = `${issue.statute}|${issue.section}`;
+              const provision = provisionsMap.get(key);
+              if (provision) {
+                provision.docAIssues.push(issue);
+                // Determine compliance status
+                if (issue.compliance === 'compliant') {
+                  provision.docACompliance = 'compliant';
+                } else if (issue.compliance === 'non-compliant') {
+                  provision.docACompliance = 'non-compliant';
+                } else {
+                  provision.docACompliance = 'unclear';
+                }
+              }
+            });
+
+            // Populate Doc B compliance
+            complianceB.forEach(issue => {
+              const key = `${issue.statute}|${issue.section}`;
+              const provision = provisionsMap.get(key);
+              if (provision) {
+                provision.docBIssues.push(issue);
+                // Determine compliance status
+                if (issue.compliance === 'compliant') {
+                  provision.docBCompliance = 'compliant';
+                } else if (issue.compliance === 'non-compliant') {
+                  provision.docBCompliance = 'non-compliant';
+                } else {
+                  provision.docBCompliance = 'unclear';
+                }
+              }
+            });
+
+            // Identify discrepancies and determine actions
+            provisionsMap.forEach((provision, key) => {
+              // Default to compliant if no issues found
+              if (provision.docACompliance === null && provision.docAIssues.length === 0) {
+                provision.docACompliance = 'compliant';
+              }
+              if (provision.docBCompliance === null && provision.docBIssues.length === 0) {
+                provision.docBCompliance = 'compliant';
+              }
+
+              // Identify discrepancies
+              if (provision.docACompliance !== provision.docBCompliance) {
+                provision.discrepancies.push(`Doc A is ${provision.docACompliance || 'unknown'} but Doc B is ${provision.docBCompliance || 'unknown'}`);
+              }
+
+              // Determine action required based on compliance
+              const highSeverityA = provision.docAIssues.filter(i => i.severity === 'critical' || i.severity === 'high');
+              const highSeverityB = provision.docBIssues.filter(i => i.severity === 'critical' || i.severity === 'high');
+
+              if (highSeverityA.length > 0 || highSeverityB.length > 0) {
+                provision.actionRequired = 'URGENT: Address critical/high severity issues immediately';
+              } else if (provision.docAIssues.length > 0 || provision.docBIssues.length > 0) {
+                provision.actionRequired = 'Review and remediate medium/low severity issues';
+              } else {
+                provision.actionRequired = 'No action required - monitoring';
+              }
+
+              matrix.push(provision);
+            });
+
+            // Sort by severity (critical issues first)
+            matrix.sort((a, b) => {
+              const aHasCritical = [...a.docAIssues, ...a.docBIssues].some(i => i.severity === 'critical');
+              const bHasCritical = [...b.docAIssues, ...b.docBIssues].some(i => i.severity === 'critical');
+              if (aHasCritical && !bHasCritical) return -1;
+              if (!aHasCritical && bHasCritical) return 1;
+
+              const aHasHigh = [...a.docAIssues, ...a.docBIssues].some(i => i.severity === 'high');
+              const bHasHigh = [...b.docAIssues, ...b.docBIssues].some(i => i.severity === 'high');
+              if (aHasHigh && !bHasHigh) return -1;
+              if (!aHasHigh && bHasHigh) return 1;
+
+              return 0;
+            });
+
+            return matrix;
+          };
+
           const performCrossReference = (phaseAResults) => {
             const discrepancies = [];
             const consistencies = [];
@@ -2687,10 +3250,26 @@
               files.fileB
             );
 
+            // Generate comprehensive omissions report
+            const omissionsReport = generateOmissionsReport(
+              fileContents.fileA,
+              fileContents.fileB,
+              phaseAResults
+            );
+
+            // Build enhanced compliance matrix
+            const complianceMatrix = buildComplianceMatrix(
+              phaseAResults,
+              complianceA,
+              complianceB
+            );
+
             return {
               discrepancies,
               consistencies: consistencies.slice(0, 10),
               omissions: omissions.slice(0, 10),
+              omissionsReport: omissionsReport,
+              complianceMatrix: complianceMatrix,
               governingFramework: identifyGoverningFramework(phaseAResults),
               complianceAssessment: assessCompliance(phaseAResults),
               victorianCompliance: {
@@ -3667,7 +4246,7 @@
                       </div>
                     </AnalysisSection>
 
-                    <AnalysisSection title="Phase B: Statutory Framework & Cross-Reference Analysis" sectionId="phaseB">
+                    <AnalysisSection title="Phase B: Victorian Criminal Compliance & Statutory Cross-Reference Analysis" sectionId="phaseB">
                       <div style={{ marginTop: '16px' }}>
                         <div style={{
                           backgroundColor: '#eff6ff',
@@ -3765,7 +4344,8 @@
                             backgroundColor: '#f0fdf4',
                             padding: '16px',
                             borderRadius: '8px',
-                            borderLeft: '4px solid #16a34a'
+                            borderLeft: '4px solid #16a34a',
+                            marginBottom: '16px'
                           }}>
                             <h4 style={{
                               fontWeight: '600',
@@ -3783,6 +4363,410 @@
                                 </li>
                               ))}
                             </ul>
+                          </div>
+                        )}
+
+                        {/* Victorian Criminal Summary Matters Compliance */}
+                        {analysisResults.phaseB.victorianCompliance && (
+                          <div style={{
+                            backgroundColor: '#f5f3ff',
+                            padding: '16px',
+                            borderRadius: '8px',
+                            borderLeft: '4px solid #7c3aed',
+                            marginBottom: '16px'
+                          }}>
+                            <h4 style={{
+                              fontWeight: '600',
+                              color: '#5b21b6',
+                              marginBottom: '12px'
+                            }}>Victorian Criminal Summary Matters Compliance</h4>
+                            <p style={{
+                              fontSize: '13px',
+                              color: '#6b21a8',
+                              marginBottom: '16px',
+                              fontStyle: 'italic'
+                            }}>
+                              Comprehensive checks for CPA 2009 Part 3.3, RSA 1986, and Evidence Act 2008 (Vic)
+                            </p>
+
+                            {/* Document A Compliance */}
+                            <div style={{ marginBottom: '16px' }}>
+                              <h5 style={{
+                                fontWeight: '600',
+                                color: '#1e40af',
+                                fontSize: '14px',
+                                marginBottom: '8px'
+                              }}>Document A Compliance Issues</h5>
+                              {analysisResults.phaseB.victorianCompliance.fileA.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  {analysisResults.phaseB.victorianCompliance.fileA.map((issue, idx) => (
+                                    <div key={idx} style={{
+                                      backgroundColor: 'white',
+                                      padding: '12px',
+                                      borderRadius: '4px',
+                                      borderLeft: `4px solid ${
+                                        issue.severity === 'critical' ? '#dc2626' :
+                                        issue.severity === 'high' ? '#ea580c' :
+                                        issue.severity === 'medium' ? '#f59e0b' : '#84cc16'
+                                      }`
+                                    }}>
+                                      <p style={{
+                                        fontSize: '13px',
+                                        fontWeight: '600',
+                                        color: issue.severity === 'critical' ? '#7f1d1d' :
+                                               issue.severity === 'high' ? '#9a3412' :
+                                               issue.severity === 'medium' ? '#78350f' : '#365314',
+                                        marginBottom: '4px'
+                                      }}>
+                                        [{issue.severity.toUpperCase()}] {issue.statute}
+                                      </p>
+                                      <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                                        <strong>Section:</strong> {issue.section}
+                                      </p>
+                                      <p style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
+                                        <strong>Defect:</strong> {issue.defect}
+                                      </p>
+                                      <p style={{ fontSize: '12px', color: '#4b5563' }}>
+                                        <strong>Remediation:</strong> {issue.remediation}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p style={{ fontSize: '13px', color: '#10b981' }}>
+                                  ✅ No compliance issues detected in Document A
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Document B Compliance */}
+                            <div>
+                              <h5 style={{
+                                fontWeight: '600',
+                                color: '#1e40af',
+                                fontSize: '14px',
+                                marginBottom: '8px'
+                              }}>Document B Compliance Issues</h5>
+                              {analysisResults.phaseB.victorianCompliance.fileB.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  {analysisResults.phaseB.victorianCompliance.fileB.map((issue, idx) => (
+                                    <div key={idx} style={{
+                                      backgroundColor: 'white',
+                                      padding: '12px',
+                                      borderRadius: '4px',
+                                      borderLeft: `4px solid ${
+                                        issue.severity === 'critical' ? '#dc2626' :
+                                        issue.severity === 'high' ? '#ea580c' :
+                                        issue.severity === 'medium' ? '#f59e0b' : '#84cc16'
+                                      }`
+                                    }}>
+                                      <p style={{
+                                        fontSize: '13px',
+                                        fontWeight: '600',
+                                        color: issue.severity === 'critical' ? '#7f1d1d' :
+                                               issue.severity === 'high' ? '#9a3412' :
+                                               issue.severity === 'medium' ? '#78350f' : '#365314',
+                                        marginBottom: '4px'
+                                      }}>
+                                        [{issue.severity.toUpperCase()}] {issue.statute}
+                                      </p>
+                                      <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                                        <strong>Section:</strong> {issue.section}
+                                      </p>
+                                      <p style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
+                                        <strong>Defect:</strong> {issue.defect}
+                                      </p>
+                                      <p style={{ fontSize: '12px', color: '#4b5563' }}>
+                                        <strong>Remediation:</strong> {issue.remediation}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p style={{ fontSize: '13px', color: '#10b981' }}>
+                                  ✅ No compliance issues detected in Document B
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Enhanced Omissions Report */}
+                        {analysisResults.phaseB.omissionsReport && (
+                          <div style={{
+                            backgroundColor: '#fff7ed',
+                            padding: '16px',
+                            borderRadius: '8px',
+                            borderLeft: '4px solid #ea580c',
+                            marginBottom: '16px'
+                          }}>
+                            <h4 style={{
+                              fontWeight: '600',
+                              color: '#9a3412',
+                              marginBottom: '12px'
+                            }}>Comprehensive Omissions Report: Doc A vs Doc B</h4>
+
+                            {/* Critical Victorian Criminal Requirements Omissions */}
+                            {analysisResults.phaseB.omissionsReport.criticalOmissions.victorianCriminalRequirements.length > 0 && (
+                              <div style={{ marginBottom: '16px' }}>
+                                <h5 style={{
+                                  fontWeight: '600',
+                                  color: '#dc2626',
+                                  fontSize: '14px',
+                                  marginBottom: '8px'
+                                }}>🔴 CRITICAL: Victorian Criminal Requirements</h5>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  {analysisResults.phaseB.omissionsReport.criticalOmissions.victorianCriminalRequirements.map((omission, idx) => (
+                                    <div key={idx} style={{
+                                      backgroundColor: 'white',
+                                      padding: '12px',
+                                      borderRadius: '4px',
+                                      borderLeft: '4px solid #dc2626'
+                                    }}>
+                                      <p style={{ fontSize: '13px', fontWeight: '600', color: '#7f1d1d', marginBottom: '4px' }}>
+                                        {omission.element}
+                                      </p>
+                                      <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                                        <strong>Statute:</strong> {omission.statute}
+                                      </p>
+                                      <p style={{ fontSize: '12px', color: '#374151', marginBottom: '4px' }}>
+                                        <strong>Present in:</strong> {omission.inDocument} | <strong>Omitted from:</strong> {omission.omittedFrom}
+                                      </p>
+                                      <p style={{ fontSize: '12px', color: '#991b1b' }}>
+                                        <strong>Impact:</strong> {omission.impact}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Statutory References Omissions */}
+                            {(analysisResults.phaseB.omissionsReport.statutoryReferences.inANotInB.length > 0 ||
+                              analysisResults.phaseB.omissionsReport.statutoryReferences.inBNotInA.length > 0) && (
+                              <div style={{ marginBottom: '16px' }}>
+                                <h5 style={{
+                                  fontWeight: '600',
+                                  color: '#ea580c',
+                                  fontSize: '14px',
+                                  marginBottom: '8px'
+                                }}>📋 Statutory References</h5>
+
+                                {analysisResults.phaseB.omissionsReport.statutoryReferences.inANotInB.length > 0 && (
+                                  <div style={{ marginBottom: '8px' }}>
+                                    <p style={{ fontSize: '12px', fontWeight: '600', color: '#78350f', marginBottom: '4px' }}>
+                                      In Doc A but not Doc B:
+                                    </p>
+                                    <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                                      {analysisResults.phaseB.omissionsReport.statutoryReferences.inANotInB.map((ref, idx) => (
+                                        <li key={idx} style={{ fontSize: '12px', color: '#92400e', marginBottom: '2px' }}>
+                                          {ref.element}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {analysisResults.phaseB.omissionsReport.statutoryReferences.inBNotInA.length > 0 && (
+                                  <div>
+                                    <p style={{ fontSize: '12px', fontWeight: '600', color: '#78350f', marginBottom: '4px' }}>
+                                      In Doc B but not Doc A:
+                                    </p>
+                                    <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                                      {analysisResults.phaseB.omissionsReport.statutoryReferences.inBNotInA.map((ref, idx) => (
+                                        <li key={idx} style={{ fontSize: '12px', color: '#92400e', marginBottom: '2px' }}>
+                                          {ref.element}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Procedural Elements Omissions */}
+                            {(analysisResults.phaseB.omissionsReport.proceduralElements.inANotInB.length > 0 ||
+                              analysisResults.phaseB.omissionsReport.proceduralElements.inBNotInA.length > 0) && (
+                              <div>
+                                <h5 style={{
+                                  fontWeight: '600',
+                                  color: '#ea580c',
+                                  fontSize: '14px',
+                                  marginBottom: '8px'
+                                }}>⚖️ Procedural Elements</h5>
+
+                                {analysisResults.phaseB.omissionsReport.proceduralElements.inANotInB.length > 0 && (
+                                  <div style={{ marginBottom: '8px' }}>
+                                    <p style={{ fontSize: '12px', fontWeight: '600', color: '#78350f', marginBottom: '4px' }}>
+                                      In Doc A but not Doc B:
+                                    </p>
+                                    <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                                      {analysisResults.phaseB.omissionsReport.proceduralElements.inANotInB.map((elem, idx) => (
+                                        <li key={idx} style={{ fontSize: '12px', color: '#92400e', marginBottom: '2px' }}>
+                                          {elem.element}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {analysisResults.phaseB.omissionsReport.proceduralElements.inBNotInA.length > 0 && (
+                                  <div>
+                                    <p style={{ fontSize: '12px', fontWeight: '600', color: '#78350f', marginBottom: '4px' }}>
+                                      In Doc B but not Doc A:
+                                    </p>
+                                    <ul style={{ paddingLeft: '20px', margin: 0 }}>
+                                      {analysisResults.phaseB.omissionsReport.proceduralElements.inBNotInA.map((elem, idx) => (
+                                        <li key={idx} style={{ fontSize: '12px', color: '#92400e', marginBottom: '2px' }}>
+                                          {elem.element}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Compliance Matrix Table */}
+                        {analysisResults.phaseB.complianceMatrix && analysisResults.phaseB.complianceMatrix.length > 0 && (
+                          <div style={{
+                            backgroundColor: 'white',
+                            padding: '16px',
+                            borderRadius: '8px',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+                            marginBottom: '16px'
+                          }}>
+                            <h4 style={{
+                              fontWeight: '600',
+                              color: '#111827',
+                              marginBottom: '12px'
+                            }}>📊 Statutory Compliance Matrix: Doc A vs Doc B</h4>
+                            <p style={{
+                              fontSize: '13px',
+                              color: '#6b7280',
+                              marginBottom: '12px'
+                            }}>
+                              <span style={{
+                                display: 'inline-block',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                backgroundColor: '#d1fae5',
+                                color: '#065f46',
+                                marginRight: '8px',
+                                fontSize: '11px'
+                              }}>GREEN = Compliant</span>
+                              <span style={{
+                                display: 'inline-block',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                backgroundColor: '#fef3c7',
+                                color: '#78350f',
+                                marginRight: '8px',
+                                fontSize: '11px'
+                              }}>YELLOW = Unclear</span>
+                              <span style={{
+                                display: 'inline-block',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                backgroundColor: '#fee2e2',
+                                color: '#991b1b',
+                                fontSize: '11px'
+                              }}>RED = Non-Compliant</span>
+                            </p>
+
+                            <div style={{ overflowX: 'auto' }}>
+                              <table style={{
+                                width: '100%',
+                                borderCollapse: 'collapse',
+                                fontSize: '13px'
+                              }}>
+                                <thead>
+                                  <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
+                                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>
+                                      Statutory Provision
+                                    </th>
+                                    <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600' }}>
+                                      Doc A Compliance
+                                    </th>
+                                    <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600' }}>
+                                      Doc B Compliance
+                                    </th>
+                                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>
+                                      Discrepancies
+                                    </th>
+                                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>
+                                      Action Required
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {analysisResults.phaseB.complianceMatrix.map((row, idx) => (
+                                    <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                      <td style={{ padding: '12px', verticalAlign: 'top' }}>
+                                        <strong>{row.statute}</strong>
+                                        <br />
+                                        <span style={{ fontSize: '11px', color: '#6b7280' }}>
+                                          {row.section}
+                                        </span>
+                                      </td>
+                                      <td style={{ padding: '12px', textAlign: 'center', verticalAlign: 'top' }}>
+                                        <span style={{
+                                          display: 'inline-block',
+                                          padding: '4px 12px',
+                                          borderRadius: '12px',
+                                          fontSize: '11px',
+                                          fontWeight: '600',
+                                          backgroundColor: row.docACompliance === 'compliant' ? '#d1fae5' :
+                                                          row.docACompliance === 'unclear' ? '#fef3c7' : '#fee2e2',
+                                          color: row.docACompliance === 'compliant' ? '#065f46' :
+                                                 row.docACompliance === 'unclear' ? '#78350f' : '#991b1b'
+                                        }}>
+                                          {row.docACompliance === 'compliant' ? '✅ Compliant' :
+                                           row.docACompliance === 'unclear' ? '⚠️ Unclear' : '❌ Non-Compliant'}
+                                        </span>
+                                      </td>
+                                      <td style={{ padding: '12px', textAlign: 'center', verticalAlign: 'top' }}>
+                                        <span style={{
+                                          display: 'inline-block',
+                                          padding: '4px 12px',
+                                          borderRadius: '12px',
+                                          fontSize: '11px',
+                                          fontWeight: '600',
+                                          backgroundColor: row.docBCompliance === 'compliant' ? '#d1fae5' :
+                                                          row.docBCompliance === 'unclear' ? '#fef3c7' : '#fee2e2',
+                                          color: row.docBCompliance === 'compliant' ? '#065f46' :
+                                                 row.docBCompliance === 'unclear' ? '#78350f' : '#991b1b'
+                                        }}>
+                                          {row.docBCompliance === 'compliant' ? '✅ Compliant' :
+                                           row.docBCompliance === 'unclear' ? '⚠️ Unclear' : '❌ Non-Compliant'}
+                                        </span>
+                                      </td>
+                                      <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '12px', color: '#374151' }}>
+                                        {row.discrepancies.length > 0 ? (
+                                          row.discrepancies.map((disc, dIdx) => (
+                                            <div key={dIdx} style={{ marginBottom: '4px' }}>
+                                              ⚠️ {disc}
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <span style={{ color: '#6b7280' }}>No discrepancies</span>
+                                        )}
+                                      </td>
+                                      <td style={{ padding: '12px', verticalAlign: 'top', fontSize: '12px' }}>
+                                        <span style={{
+                                          color: row.actionRequired.includes('URGENT') ? '#991b1b' :
+                                                 row.actionRequired.includes('Review') ? '#92400e' : '#166534'
+                                        }}>
+                                          {row.actionRequired}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
                         )}
                       </div>
