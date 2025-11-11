@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forensic Legal Analyzer - Modular v2.0</title>
+
+    <!-- External Dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- OCR and PDF Processing -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <!-- Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <script>
+        // Configure PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+
+    <style>
+        /* Modern UI Styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .status-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .status-value.ready {
+            color: #48bb78;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .upload-area {
+            border: 3px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+
+        .upload-area.dragover {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #4a5568;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #a0aec0;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .preset-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-checkbox:hover {
+            background: #edf2f7;
+        }
+
+        .preset-checkbox input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .preset-checkbox label {
+            cursor: pointer;
+            font-size: 13px;
+            color: #2d3748;
+        }
+
+        .results-area {
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+
+        .result-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #cbd5e0;
+        }
+
+        .result-item.critical {
+            border-left-color: #f56565;
+            background: #fff5f5;
+        }
+
+        .result-item.high {
+            border-left-color: #ed8936;
+            background: #fffaf0;
+        }
+
+        .result-item.medium {
+            border-left-color: #ecc94b;
+            background: #fffff0;
+        }
+
+        .result-item.low {
+            border-left-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .result-type {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .result-severity {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-right: 8px;
+        }
+
+        .result-severity.critical { background: #feb2b2; color: #742a2a; }
+        .result-severity.high { background: #fbd38d; color: #7c2d12; }
+        .result-severity.medium { background: #faf089; color: #744210; }
+        .result-severity.low { background: #9ae6b4; color: #22543d; }
+
+        .result-description {
+            color: #4a5568;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .loading-spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .module-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .module-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .module-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .module-status.loaded {
+            background: #48bb78;
+        }
+
+        .module-status.error {
+            background: #f56565;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .export-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                🔬 Forensic Legal Analyzer
+                <span class="version-badge">v2.0 MODULAR</span>
+            </h1>
+            <p class="subtitle">
+                Victorian Legal Document Analysis System • Powered by Modular ES6 Architecture
+            </p>
+        </div>
+
+        <div class="status-bar" id="statusBar">
+            <div class="status-item">
+                <div class="status-label">System Status</div>
+                <div class="status-value" id="systemStatus">Initializing...</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Modules Loaded</div>
+                <div class="status-value" id="modulesLoaded">0/13</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Statutes in DB</div>
+                <div class="status-value" id="statuteCount">0</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Documents Analyzed</div>
+                <div class="status-value" id="docsAnalyzed">0</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Left Column: Input -->
+            <div>
+                <div class="card">
+                    <h2 class="card-title">📤 Upload Document</h2>
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-icon">📄</div>
+                        <div class="upload-text">Drag & drop file here</div>
+                        <div class="upload-hint">or click to browse</div>
+                        <div class="upload-hint" style="margin-top: 10px;">
+                            Supports: PDF, DOCX, TXT, PNG, JPG
+                        </div>
+                        <input type="file" id="fileInput" style="display: none;"
+                               accept=".pdf,.docx,.txt,.png,.jpg,.jpeg">
+                    </div>
+
+                    <h3 class="card-title" style="margin-top: 30px;">⚙️ Select Analysis Presets</h3>
+                    <div class="preset-grid" id="presetGrid">
+                        <!-- Presets will be populated by JavaScript -->
+                    </div>
+
+                    <button class="btn" id="analyzeBtn" disabled style="width: 100%;">
+                        Analyze Document
+                    </button>
+                </div>
+
+                <div class="card" style="margin-top: 20px;">
+                    <h2 class="card-title">🧩 Loaded Modules</h2>
+                    <div class="module-list" id="moduleList">
+                        <!-- Module status will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div>
+                <div class="card">
+                    <h2 class="card-title">📊 Analysis Results</h2>
+
+                    <div id="summarySection" style="display: none;">
+                        <div class="summary-grid" id="summaryGrid"></div>
+                    </div>
+
+                    <div class="results-area" id="resultsArea">
+                        <div style="text-align: center; padding: 60px 20px; color: #a0aec0;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
+                            <div style="font-size: 16px;">Upload a document to begin analysis</div>
+                            <div style="font-size: 14px; margin-top: 10px;">
+                                The modular analyzer will check statutory compliance,<br>
+                                identify legal issues, and generate recommendations.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="export-buttons" id="exportButtons" style="display: none;">
+                        <button class="btn export-btn" onclick="exportResults('pdf')">Export PDF</button>
+                        <button class="btn export-btn" onclick="exportResults('docx')">Export DOCX</button>
+                        <button class="btn export-btn" onclick="exportResults('json')">Export JSON</button>
+                        <button class="btn export-btn" onclick="exportResults('csv')">Export CSV</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modular Application Script -->
+    <script type="module">
+        // Import all modules
+        import ForensicAnalyzer from './src/main.jsx';
+
+        // Global state
+        let currentDocument = null;
+        let currentAnalysis = null;
+        let selectedPresets = [1, 2, 3, 4, 5, 6, 7, 8];
+
+        // Module tracking
+        const modules = [
+            { name: 'VictorianStatuteAnalyzer', loaded: false },
+            { name: 'PresetAnalyzers', loaded: false },
+            { name: 'CrossReferenceEngine', loaded: false },
+            { name: 'InterpretationEngine', loaded: false },
+            { name: 'AnalysisDatabase', loaded: false },
+            { name: 'PatternDetector', loaded: false },
+            { name: 'TimelineManager', loaded: false },
+            { name: 'TextExtractor', loaded: false },
+            { name: 'StatuteParser', loaded: false },
+            { name: 'DefectClassifier', loaded: false },
+            { name: 'ExportManager', loaded: false },
+            { name: 'Victorian Statutes DB', loaded: false },
+            { name: 'Main Application', loaded: false }
+        ];
+
+        // Initialize application
+        async function initApp() {
+            console.log('🚀 Initializing Forensic Legal Analyzer v2.0...');
+
+            try {
+                // Wait for app to initialize
+                const status = ForensicAnalyzer.getStatus();
+
+                if (status.initialized) {
+                    console.log('✅ Application initialized successfully');
+
+                    // Mark all modules as loaded
+                    modules.forEach(m => m.loaded = true);
+                    updateModuleStatus();
+
+                    // Update UI
+                    document.getElementById('systemStatus').textContent = 'Ready';
+                    document.getElementById('systemStatus').classList.add('ready');
+                    document.getElementById('modulesLoaded').textContent = '13/13';
+
+                    // Load presets
+                    loadPresets();
+
+                    // Get statute count
+                    try {
+                        const statuteResponse = await fetch('/src/data/victorianStatutes.json');
+                        const statutes = await statuteResponse.json();
+                        const count = Object.keys(statutes).filter(k => k !== 'metadata').length;
+                        document.getElementById('statuteCount').textContent = count;
+                    } catch (e) {
+                        console.error('Could not load statute count:', e);
+                    }
+                } else {
+                    throw new Error('Application not initialized');
+                }
+            } catch (error) {
+                console.error('❌ Initialization failed:', error);
+                document.getElementById('systemStatus').textContent = 'Error';
+                document.getElementById('systemStatus').style.color = '#f56565';
+            }
+        }
+
+        // Load available presets
+        function loadPresets() {
+            const presets = ForensicAnalyzer.getPresets();
+            const grid = document.getElementById('presetGrid');
+            grid.innerHTML = '';
+
+            presets.forEach(preset => {
+                const div = document.createElement('div');
+                div.className = 'preset-checkbox';
+                div.innerHTML = `
+                    <input type="checkbox" id="preset${preset.id}" value="${preset.id}" checked>
+                    <label for="preset${preset.id}">${preset.id}. ${preset.name}</label>
+                `;
+
+                div.querySelector('input').addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        selectedPresets.push(preset.id);
+                    } else {
+                        selectedPresets = selectedPresets.filter(id => id !== preset.id);
+                    }
+                });
+
+                grid.appendChild(div);
+            });
+        }
+
+        // Update module status display
+        function updateModuleStatus() {
+            const list = document.getElementById('moduleList');
+            list.innerHTML = '';
+
+            modules.forEach(module => {
+                const div = document.createElement('div');
+                div.className = 'module-item';
+                div.innerHTML = `
+                    <div class="module-status ${module.loaded ? 'loaded' : 'error'}"></div>
+                    <span>${module.name}</span>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+
+            const file = e.dataTransfer.files[0];
+            if (file) await processFile(file);
+        });
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) await processFile(file);
+        });
+
+        // Process uploaded file
+        async function processFile(file) {
+            console.log('📄 Processing file:', file.name);
+
+            uploadArea.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Extracting text from ${file.name}...</div>
+                </div>
+            `;
+
+            try {
+                const result = await ForensicAnalyzer.processFile(file);
+                currentDocument = result.document;
+
+                uploadArea.innerHTML = `
+                    <div class="upload-icon">✅</div>
+                    <div class="upload-text">File processed successfully!</div>
+                    <div class="upload-hint">${file.name} (${result.textLength} characters)</div>
+                `;
+
+                document.getElementById('analyzeBtn').disabled = false;
+            } catch (error) {
+                console.error('❌ File processing error:', error);
+                uploadArea.innerHTML = `
+                    <div class="upload-icon">❌</div>
+                    <div class="upload-text" style="color: #f56565;">Error processing file</div>
+                    <div class="upload-hint">${error.message}</div>
+                `;
+            }
+        }
+
+        // Analyze document
+        document.getElementById('analyzeBtn').addEventListener('click', async () => {
+            if (!currentDocument) return;
+
+            console.log('🔬 Starting analysis...');
+
+            const resultsArea = document.getElementById('resultsArea');
+            resultsArea.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Analyzing document with ${selectedPresets.length} presets...</div>
+                    <div style="font-size: 13px; margin-top: 10px; color: #a0aec0;">
+                        This may take a few moments
+                    </div>
+                </div>
+            `;
+
+            try {
+                currentAnalysis = await ForensicAnalyzer.analyzeDocument(
+                    currentDocument.text,
+                    { presets: selectedPresets }
+                );
+
+                console.log('✅ Analysis complete:', currentAnalysis);
+                displayResults(currentAnalysis);
+
+                // Update document count
+                const count = parseInt(document.getElementById('docsAnalyzed').textContent) + 1;
+                document.getElementById('docsAnalyzed').textContent = count;
+
+            } catch (error) {
+                console.error('❌ Analysis error:', error);
+                resultsArea.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #f56565;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+                        <div style="font-size: 16px;">Analysis Failed</div>
+                        <div style="font-size: 14px; margin-top: 10px; color: #a0aec0;">
+                            ${error.message}
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        // Display analysis results
+        function displayResults(analysis) {
+            // Show summary
+            const summarySection = document.getElementById('summarySection');
+            const summaryGrid = document.getElementById('summaryGrid');
+            summarySection.style.display = 'block';
+
+            summaryGrid.innerHTML = `
+                <div class="summary-card">
+                    <div class="summary-value">${analysis.summary.totalFindings}</div>
+                    <div class="summary-label">Total Findings</div>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #f56565 0%, #c53030 100%);">
+                    <div class="summary-value">${analysis.summary.criticalIssues}</div>
+                    <div class="summary-label">Critical</div>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #ed8936 0%, #c05621 100%);">
+                    <div class="summary-value">${analysis.summary.highIssues}</div>
+                    <div class="summary-label">High</div>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #ecc94b 0%, #b7791f 100%);">
+                    <div class="summary-value">${analysis.summary.mediumIssues}</div>
+                    <div class="summary-label">Medium</div>
+                </div>
+                <div class="summary-card" style="background: linear-gradient(135deg, #48bb78 0%, #2f855a 100%);">
+                    <div class="summary-value">${analysis.summary.lowIssues}</div>
+                    <div class="summary-label">Low</div>
+                </div>
+            `;
+
+            // Show findings
+            const resultsArea = document.getElementById('resultsArea');
+            resultsArea.innerHTML = '';
+
+            if (analysis.phases.presetAnalysis) {
+                analysis.phases.presetAnalysis.forEach(preset => {
+                    if (preset.findings && preset.findings.length > 0) {
+                        preset.findings.forEach(finding => {
+                            const severity = (finding.severity || 'LOW').toLowerCase();
+                            const div = document.createElement('div');
+                            div.className = `result-item ${severity}`;
+                            div.innerHTML = `
+                                <div class="result-type">
+                                    <span class="result-severity ${severity}">${finding.severity}</span>
+                                    ${finding.type}
+                                </div>
+                                <div class="result-description">${finding.description}</div>
+                            `;
+                            resultsArea.appendChild(div);
+                        });
+                    }
+                });
+            }
+
+            // Show export buttons
+            document.getElementById('exportButtons').style.display = 'flex';
+        }
+
+        // Export results
+        window.exportResults = async function(format) {
+            if (!currentAnalysis) return;
+
+            try {
+                await ForensicAnalyzer.exportAnalysis(format, `forensic-analysis.${format}`);
+                console.log(`✅ Exported as ${format.toUpperCase()}`);
+            } catch (error) {
+                console.error('❌ Export error:', error);
+                alert(`Export failed: ${error.message}`);
+            }
+        };
+
+        // Initialize on load
+        initApp();
+
+        // Make ForensicAnalyzer available globally for debugging
+        window.ForensicAnalyzer = ForensicAnalyzer;
+        console.log('💡 ForensicAnalyzer is available globally for debugging');
+    </script>
+</body>
+</html>

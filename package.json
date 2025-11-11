@@ -1,0 +1,56 @@
+{
+  "name": "forensic-legal-analyzer",
+  "version": "2.0.0",
+  "description": "Victorian Legal Document Analysis System with Modular Architecture",
+  "type": "module",
+  "main": "src/main.jsx",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "serve": "python3 -m http.server 8000",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "legal",
+    "forensic",
+    "analysis",
+    "victorian",
+    "legislation",
+    "compliance",
+    "statute",
+    "analyzer"
+  ],
+  "author": "Forensic Legal Analysis Team",
+  "license": "PROPRIETARY",
+  "jurisdiction": "Victoria, Australia",
+  "dependencies": {},
+  "devDependencies": {},
+  "browser": {
+    "fs": false,
+    "path": false,
+    "os": false
+  },
+  "exports": {
+    ".": "./src/main.jsx",
+    "./analyzers/*": "./src/analyzers/*.js",
+    "./storage/*": "./src/storage/*.js",
+    "./utils/*": "./src/utils/*.js",
+    "./data/*": "./src/data/*.json"
+  },
+  "files": [
+    "src/",
+    "index-modular.html",
+    "MODULAR_ARCHITECTURE_README.md",
+    "INTEGRATION_GUIDE.md"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gtgspot/4rensic.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gtgspot/4rensic/issues"
+  },
+  "homepage": "https://github.com/gtgspot/4rensic#readme"
+}

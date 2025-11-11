@@ -1,412 +1,466 @@
-# Forensic Legal Analyzer - Victorian Law Compliance Checker
+# 🔬 Forensic Legal Analyzer
 
-## Overview
-Forensic Legal Analyzer is a sophisticated document analysis system designed specifically for legal professionals working within Victorian (Australia) legal frameworks. The application performs meticulous word-by-word, line-by-line linguistic inspection of legal documents to identify defects, compliance issues, and narrative inconsistencies without modifying the source documents.
+**Version 2.0.0 - Modular Architecture**
 
-## Purpose
-This tool is designed for uploading two completed legal documents to:
-- **Identify governing infrastructure and architecture** for each file
-- **Inspect linguistics word-by-word and line-by-line** for accuracy and compliance
-- **Evaluate against Victorian statutory requirements** with absolute precision
-- **Detect legal issues, flaws, and defects** in wording, referencing, timeline, and procedure
-- **Cross-evaluate narrative and timeline** consistency between both files
-- **Generate sequential defect mapping** showing exact locations of all issues
+A comprehensive Victorian legal document analysis system with statutory compliance checking, defect detection, and intelligent pattern recognition.
 
-**Important**: This tool does NOT suggest edits or modifications. It identifies legal compliance issues only.
-
-## Supported Document Types
-The system can analyze:
-- Statutory Legislation & Delegated Legislation
-- Victoria Police Manual Documentation
-- Disclosure Files & Evidence Exhibits
-- Statements, Affidavits, & Statutory Declarations
-- Court Orders & Court Documentation
-- Evidentiary Certificates
-- Summons & Charge Sheets
-- Submissions & Depositions
-- Case Law & Legal Citations
-- Legal Narratives & Chronologies
-- Any related Victorian legal documentation
-
-## Features
-
-### Document Classification and Framework Identification
-- Automatically identifies document type upon upload
-- Detects governing Victorian legislation (Criminal Procedure Act 2009, Evidence Act 2008, etc.)
-- Identifies relevant Victoria Police procedures and court jurisdictions
-- Maps subordinate instrumentation and regulatory frameworks
-
-### Word-by-Word Linguistic Inspection Engine
-- **Terminology Accuracy**: Detects Victorian legal terminology errors
-- **Spelling Verification**: Identifies common legal misspellings
-- **Australian Spelling Compliance**: Flags American spellings in Victorian documents
-- **Citation Format Consistency**: Checks statutory reference formatting
-- **Line-Level Grammar**: Detects grammatical defects and structural issues
-
-### Three-Phase Analysis System
-
-**Phase A: Multi-Preset Forensic Examination**
-- Statutory Procedural Analysis
-- Contextual Analysis
-- Jurisprudential Analysis
-- Objective Textual Analysis
-- Subjective Intent Analysis
-- Purposive Analysis
-- Comparative Cross-Reference Analysis
-- Evidentiary Standards Analysis
-- **Enhanced**: Word-by-word linguistic inspection with defect logging
-
-**Phase B: Victorian Statutory Compliance & Cross-Reference**
-- Identifies governing Victorian legislation
-- Checks compliance with:
-  - Criminal Procedure Act 2009
-  - Evidence Act 2008 (Vic)
-  - Victoria Police Act 2013
-  - Charter of Human Rights and Responsibilities Act 2006
-  - Victorian Court Acts and Rules
-- Detects discrepancies between documents
-- Flags omissions and inconsistencies
-- Assesses statutory compliance with Victorian law
-- **Enhanced**: Timeline and narrative cross-evaluation between files
-
-**Phase C: Statutory Interpretation**
-- Applies literal, contextual, and purposive approaches
-- Uses established interpretive principles
-- Provides guidance on extrinsic aids
-- Generates ambiguity resolution strategies
-
-### Cross-File Narrative and Timeline Evaluation
-- **Timeline Discrepancy Detection**: Identifies dates referenced differently across documents
-- **Event Sequence Analysis**: Maps narrative events and detects sequence mismatches
-- **Factual Contradiction Detection**: Flags direct contradictions between files
-- **Sequential Element Mapping**: Creates comprehensive cross-reference map of all elements
-
-### Defect Detection and Sequential Mapping
-Every defect is logged with:
-- **Line number** and **word position** where it occurs
-- **Severity level** (critical, high, medium, low)
-- **Defect type** and detailed description
-- **Compliance status** (compliant/non-compliant/unclear)
-- **Governing statute** and relevant section
-- **Remediation guidance** (informational only - no automatic editing)
-- **Cross-file mapping** showing corresponding elements in other file
-
-## Victorian Law Compliance Framework
-
-### Primary Victorian Legislation Monitored
-The system automatically checks compliance with:
-
-**Criminal Justice**
-- Criminal Procedure Act 2009 (Vic) - disclosure requirements, court procedures
-- Evidence Act 2008 (Vic) - evidentiary requirements, certificate provisions
-- Crimes Act 1958 (Vic) - substantive criminal law
-- Bail Act 1977 (Vic) - bail considerations
-- Sentencing Act 1991 (Vic) - sentencing procedures
-
-**Courts and Procedures**
-- Supreme Court Act 1986 (Vic)
-- County Court Act 1958 (Vic)
-- Magistrates' Court Act 1989 (Vic)
-- Associated court rules and procedures
-
-**Human Rights and Police**
-- Charter of Human Rights and Responsibilities Act 2006 (Vic)
-- Victoria Police Act 2013 (Vic)
-- Victoria Police Manual (VPM) procedures
-
-### Compliance Defect Categories
-
-**Critical Defects** (Immediate attention required)
-- Acknowledged errors or corrections in documents
-- Jurisdictional defects
-- Missing certificate authorizing sections
-- Procedural fairness violations
-
-**High Severity Defects**
-- Missing primary legislation references
-- Incomplete court references
-- Missing mandatory document headers
-- Disclosure timeline non-compliance
-
-**Medium Severity Defects**
-- Vague temporal references
-- Missing specific statutory provisions
-- American spelling in Victorian documents
-- Inconsistent citation formats
-
-**Low Severity Defects**
-- Grammatical inconsistencies
-- Passive voice in procedural documents
-- Oxford comma usage issues
-
-### What the Tool Does NOT Do
-- ❌ Does not modify or edit your documents
-- ❌ Does not suggest specific text changes
-- ❌ Does not provide legal advice
-- ❌ Does not automatically fix defects
-- ✅ **Only identifies and reports issues for your review**
-
-## System Requirements
-
-- macOS 10.13 (High Sierra) or later
-- Python 3.x (pre-installed on most modern macOS systems)
-- Modern web browser (Safari, Chrome, Firefox, or Edge)
-- Minimum 4GB RAM
-- 100MB free disk space
-
-## Installation
-
-1. **Download the Application**
-   - Download `ForensicLegalAnalyzer.app`
-   - Move it to your Applications folder
-
-2. **First Launch**
-   - Double-click `ForensicLegalAnalyzer.app`
-   - If you see a security warning, right-click the app and select "Open"
-   - Click "Open" in the security dialog
-   - The application will launch in your default web browser
-
-3. **Grant Permissions**
-   - If prompted, allow the application to accept incoming network connections
-   - This is required for the local web server functionality
-
-## Usage
-
-### Document Upload and Classification
-
-The application supports three methods for uploading documents:
-
-1. **Drag and Drop**
-   - Drag a file from Finder and drop it into the upload zone
-   - Supported formats: .txt, .doc, .docx, .pdf
-
-2. **File Browser**
-   - Click "Choose File" button
-   - Navigate to your document and select it
-
-3. **URL Upload**
-   - Paste a URL to a publicly accessible document
-   - Press Enter to load the document
-
-**Upon upload, the system automatically**:
-- Classifies the document type (Statement, Disclosure, Court Order, etc.)
-- Identifies governing Victorian legislative framework
-- Detects relevant Victoria Police procedures
-- Maps applicable Victorian court jurisdictions
-
-### Running Compliance Analysis
-
-1. **Upload both Document A and Document B**
-   - System classifies each document independently
-   - Framework identification occurs automatically
-
-2. **Click "Commence Forensic Analysis"**
-   - **Phase A**: Word-by-word, line-by-line linguistic inspection
-     - Checks legal terminology accuracy
-     - Verifies Australian spelling compliance
-     - Logs defects with line/word positions
-
-   - **Phase B**: Victorian statutory compliance check
-     - Validates against Criminal Procedure Act 2009
-     - Checks Evidence Act 2008 requirements
-     - Verifies court reference formatting
-     - Cross-evaluates narrative and timeline between files
-     - Identifies timeline discrepancies and contradictions
-
-   - **Phase C**: Statutory interpretation analysis
-     - Applies Victorian interpretive principles
-     - Generates compliance recommendations
-
-3. **Review Detailed Results**
-   - Expand each section to view findings
-   - Each defect shows:
-     - **Exact location** (File, Line number, Word position)
-     - **Defect type and severity**
-     - **Governing statute and section**
-     - **Compliance status**
-     - **Cross-file mapping** (if applicable)
-
-### Understanding the Report
-
-**Linguistic Inspection Results**
-- Total words and lines analyzed
-- Word accuracy issues with exact positions
-- Grammatical defects by line
-- Legal terminology errors
-- Victorian compliance defects
-
-**Victorian Statutory Compliance**
-- File A compliance issues
-- File B compliance issues
-- Specific statute violations
-- Remediation guidance (informational only)
-
-**Cross-File Narrative Evaluation**
-- Timeline discrepancies between documents
-- Event sequence mismatches
-- Factual contradictions
-- Sequential element mapping
-
-### Exporting Reports
-
-- Click "Export Report" to download analysis as JSON
-- Reports include:
-  - All defects with line/word positions
-  - Victorian compliance findings
-  - Cross-file narrative analysis
-  - Sequential defect mapping
-  - Framework identification details
-- Timestamp included for record-keeping
-
-## Understanding the Analysis
-
-### Key Terminology
-
-**Statutory Interpretation Principles:**
-- **Literalism**: Plain, ordinary meaning of words
-- **Purposive Approach**: Legislative purpose and intent
-- **Contextual Analysis**: Words within their statutory context
-- **Harmonious Construction**: Reading provisions together
-
-**Latin Maxims Applied:**
-- *Noscitur a sociis*: Words known by their associates
-- *Expressio unius est exclusio alterius*: Express mention excludes others
-- *Generalia specialibus non derogant*: Specific prevails over general
-
-### Severity Levels
-
-- **High**: Critical issues requiring immediate attention
-- **Medium**: Significant concerns warranting review
-- **Low**: Minor issues or areas for improvement
-
-## Troubleshooting
-
-### Application Won't Launch
-
-**Problem**: Security warning prevents opening
-**Solution**: 
-1. Right-click the app
-2. Select "Open"
-3. Click "Open" in the dialog
-
-**Problem**: Python not found
-**Solution**: 
-1. Install Python 3 from python.org
-2. Restart the application
-
-### Browser Doesn't Open
-
-**Problem**: Application runs but browser doesn't open
-**Solution**: 
-1. Manually open browser
-2. Navigate to: `http://localhost:8765`
-
-### Port Already in Use
-
-**Problem**: Error message about port 8765
-**Solution**: 
-1. Close other instances of the application
-2. Wait 30 seconds and try again
-3. Restart your computer if problem persists
-
-## Privacy & Security
-
-### Data Handling
-- All processing occurs locally on your machine
-- No data is transmitted to external servers
-- Documents are processed in memory only
-- No persistent storage of uploaded documents
-
-### Network Access
-- The application runs a local web server on port 8765
-- This server is only accessible from your computer
-- No external network access required or used
-
-## Technical Details
-
-### Architecture
-- Native macOS application bundle (.app)
-- Python-based local web server
-- React-based frontend interface
-- Client-side document processing
-
-### File Structure
-```
-ForensicLegalAnalyzer.app/
-├── Contents/
-│   ├── Info.plist          # Application metadata
-│   ├── MacOS/
-│   │   └── ForensicLegalAnalyzer  # Launcher script
-│   └── Resources/
-│       ├── index.html      # Main application
-│       └── AppIcon.icns    # Application icon
-```
-
-## Legal Disclaimer
-
-This application is provided as an analytical tool for legal professionals working with Victorian (Australia) legal documents. **It does not constitute legal advice.**
-
-### Important Limitations
-
-**The tool identifies issues but does not**:
-- Provide legal advice or opinions
-- Replace professional legal review
-- Guarantee compliance with all Victorian laws
-- Modify or correct documents
-- Make legal recommendations or decisions
-
-**Users must**:
-- Independently verify all findings
-- Consult current Victorian legislation and case law
-- Seek professional legal counsel for specific matters
-- Use outputs as supplementary analysis only
-- Review documents for context and nuance
-- Verify the tool's classifications are accurate
-
-**Compliance Note**: While this tool checks against major Victorian statutes, it cannot:
-- Replace comprehensive legal research
-- Account for recent legislative amendments
-- Interpret complex factual scenarios
-- Consider all possible legal issues
-- Replace court or tribunal processes
-
-The application's analysis should not be relied upon as the sole basis for legal decisions, submissions, or court filings. All defects and compliance issues must be independently verified by qualified legal professionals before taking action.
-
-### Jurisdiction-Specific Notice
-This tool is specifically designed for **Victorian (Australia)** legal documents. Documents from other Australian states or Commonwealth jurisdictions may not be fully analyzed or may show false compliance issues. Ensure documents are appropriate for Victorian law analysis.
-
-## Support & Feedback
-
-For issues, questions, or feedback:
-- Report technical issues via your support channel
-- Review analysis methodologies in the application
-- Consult the interpretive principles documentation
-
-## Version History
-
-**Version 1.0.0** (Current)
-- Initial release
-- 8 interpretive presets
-- 3-phase analysis system
-- Export functionality
-- Multi-format document support
-
-## License
-
-This application is provided for professional legal analysis purposes. All rights reserved.
+[![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](package.json)
+[![Jurisdiction](https://img.shields.io/badge/jurisdiction-Victoria%2C%20Australia-green.svg)]()
 
 ---
 
-**Note**: This application requires an active internet connection during first launch to load external dependencies (React, icons). After initial setup, the application can function offline for document analysis.
+## 🎯 Overview
 
-## Quick Start Guide
+The Forensic Legal Analyzer is a sophisticated tool for analyzing legal documents within the Victorian jurisdiction. It performs deep statutory compliance checking, identifies legal defects, and provides actionable recommendations based on Victorian legislation.
 
-1. **Launch**: Double-click ForensicLegalAnalyzer.app
-2. **Upload**: Add two documents (A and B)
-3. **Analyze**: Click "Commence Forensic Analysis"
-4. **Review**: Expand sections to view detailed findings
-5. **Export**: Download report for records
+### ✨ Key Features
 
-The application will open in your default browser at `http://localhost:8765`.
+- **📚 Comprehensive Victorian Statutes Database**
+  - Road Safety Act 1986 (s.49, s.55D, s.55E)
+  - Evidence Act 2008 (s.59, s.69, s.137, s.138)
+  - Criminal Procedure Act 2009 (s.185, s.187)
+  - Charter of Human Rights, Victoria Police Act, Magistrates' Court Act
 
-To quit: Close the browser tab and press Ctrl+C in the terminal window, or quit via the Dock icon.
+- **🔍 8 Specialized Analysis Presets**
+  1. Statutory Procedural Analysis
+  2. Contextual Analysis
+  3. Jurisprudential Analysis
+  4. Objective Textual Analysis
+  5. Subjective Intent Analysis
+  6. Purposive Analysis
+  7. Comparative Cross-Reference
+  8. Evidentiary Standards (Victorian)
+
+- **⚖️ Legal Frameworks**
+  - George v Rockett (1990) reasonable belief test (two-limb framework)
+  - Statutory element compliance checking
+  - Disclosure obligation verification
+  - Hearsay rule and exceptions
+
+- **🤖 Intelligent Features**
+  - Pattern detection and learning
+  - Multi-document cross-reference
+  - Timeline reconstruction
+  - Defect classification (7 categories)
+  - IndexedDB persistent storage
+
+- **📤 Multi-Format Support**
+  - **Input:** PDF, DOCX, TXT, PNG, JPG (via OCR)
+  - **Output:** PDF, DOCX, JSON, CSV
+
+---
+
+## 🚀 Quick Start
+
+### Option 1: Use Modular Version (Recommended)
+
+```bash
+# 1. Clone repository
+git clone https://github.com/gtgspot/4rensic.git
+cd 4rensic
+
+# 2. Start local server (required for ES6 modules)
+python3 serve.py
+# or
+npm start
+
+# 3. Open in browser
+open http://localhost:8000/index-modular.html
+```
+
+### Option 2: Use Standalone Version
+
+```bash
+# Simply open the monolithic HTML file
+open index.html
+```
+
+---
+
+## 📦 Two Versions Available
+
+### 🆕 **Modular Version v2.0** (index-modular.html)
+
+**Benefits:**
+- ✅ Maintainable - Each module has single responsibility
+- ✅ Reusable - Import only what you need
+- ✅ Testable - Unit test individual modules
+- ✅ Scalable - Easy to extend without touching existing code
+- ✅ Performance - Browser caches modules separately
+- ✅ Independence - Update statutes without changing code
+
+**File Structure:**
+```
+/src
+├── /data               - Victorian Statutes Database (JSON)
+├── /analyzers          - Core Analysis Engines
+│   ├── VictorianStatuteAnalyzer.js
+│   ├── PresetAnalyzers.js
+│   ├── CrossReferenceEngine.js
+│   └── InterpretationEngine.js
+├── /storage            - Persistent Storage & Learning
+│   ├── AnalysisDatabase.js
+│   ├── PatternDetector.js
+│   └── TimelineManager.js
+├── /utils              - Reusable Utilities
+│   ├── textExtractor.js
+│   ├── statuteParser.js
+│   ├── defectClassifier.js
+│   └── exportManager.js
+└── main.jsx            - Application Orchestrator
+```
+
+**Usage:**
+```javascript
+import ForensicAnalyzer from './src/main.jsx';
+
+// Process file
+const result = await ForensicAnalyzer.processFile(file);
+
+// Analyze
+const analysis = await ForensicAnalyzer.analyzeDocument(text, {
+  presets: [1, 2, 8]
+});
+
+// Export
+await ForensicAnalyzer.exportAnalysis('pdf', 'report.pdf');
+```
+
+### 📄 **Standalone Version v1.0** (index.html)
+
+**Benefits:**
+- ✅ Zero setup - Just open in browser
+- ✅ Self-contained - All code in one file
+- ✅ Portable - Easy to distribute
+
+**Use Case:** Quick analysis without setup
+
+---
+
+## 📚 Documentation
+
+### Core Documentation
+- **[MODULAR_ARCHITECTURE_README.md](MODULAR_ARCHITECTURE_README.md)** - Complete architecture guide
+- **[INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)** - Integration patterns and examples
+- **[package.json](package.json)** - Module configuration
+
+### Quick Links
+- [Module Import Patterns](#) - How to import and use modules
+- [API Reference](#) - Full API documentation
+- [Statute Database Schema](#) - Database structure
+- [Custom Preset Creation](#) - Adding new analyzers
+- [Troubleshooting](#) - Common issues and solutions
+
+---
+
+## 🎓 Usage Examples
+
+### Basic Analysis
+
+```javascript
+import app from './src/main.jsx';
+
+// Upload and analyze a file
+const file = document.querySelector('input[type="file"]').files[0];
+
+await app.processFile(file);
+const analysis = await app.analyzeDocument(file.text);
+
+console.log('Total findings:', analysis.summary.totalFindings);
+console.log('Critical issues:', analysis.summary.criticalIssues);
+```
+
+### Statute Compliance Check
+
+```javascript
+import { VictorianStatuteAnalyzer } from './src/analyzers/VictorianStatuteAnalyzer.js';
+
+const analyzer = new VictorianStatuteAnalyzer();
+await analyzer.init();
+
+// Check Road Safety Act s.49 compliance
+const s49 = analyzer.checkCompliance(
+  documentText,
+  'Road_Safety_Act_1986',
+  '49'
+);
+
+if (!s49.compliant) {
+  console.log('Missing elements:', s49.missing);
+  s49.missing.forEach(element => {
+    console.log(`- ${element.element}: ${element.consequence}`);
+  });
+}
+```
+
+### Reasonable Belief Test (George v Rockett)
+
+```javascript
+import { VictorianStatuteAnalyzer } from './src/analyzers/VictorianStatuteAnalyzer.js';
+
+const analyzer = new VictorianStatuteAnalyzer();
+await analyzer.init();
+
+const beliefTest = analyzer.analyzeReasonableBeliefTest(documentText);
+
+console.log('Subjective element found:', beliefTest.subjective.found);
+console.log('Objective element found:', beliefTest.objective.found);
+console.log('Test compliant:', beliefTest.compliant);
+
+if (!beliefTest.compliant) {
+  beliefTest.issues.forEach(issue => {
+    console.log(`${issue.severity}: ${issue.description}`);
+  });
+}
+```
+
+### Multi-Document Comparison
+
+```javascript
+import { CrossReferenceEngine } from './src/analyzers/CrossReferenceEngine.js';
+
+const engine = new CrossReferenceEngine();
+
+engine.addDocument({ name: 'Police Statement', text: policeText });
+engine.addDocument({ name: 'Defence Statement', text: defenceText });
+
+const crossRef = engine.analyze();
+
+if (crossRef.dateDiscrepancies.length > 0) {
+  console.log('⚠️ Date discrepancies detected:');
+  crossRef.dateDiscrepancies.forEach(d => console.log(`  - ${d.description}`));
+}
+```
+
+### Custom Analysis
+
+```javascript
+import { runAnalysis } from './src/analyzers/PresetAnalyzers.js';
+
+// Run specific presets
+const results = await runAnalysis(documentText, [1, 8]);  // Statutory + Evidentiary
+
+results.forEach(preset => {
+  console.log(`\n${preset.presetName}:`);
+  console.log(`  Findings: ${preset.findings.length}`);
+
+  preset.findings.forEach(f => {
+    if (f.severity === 'CRITICAL' || f.severity === 'HIGH') {
+      console.log(`  [${f.severity}] ${f.type}: ${f.description}`);
+    }
+  });
+});
+```
+
+---
+
+## 🔧 Configuration
+
+### Customize Statute Database
+
+Edit `/src/data/victorianStatutes.json`:
+
+```json
+{
+  "Your_Custom_Act_2025": {
+    "fullName": "Your Custom Act 2025 (Vic)",
+    "sections": {
+      "1": {
+        "title": "Your Section",
+        "subsections": {
+          "1": {
+            "elements": [
+              {
+                "name": "element_name",
+                "keywords": ["keyword1", "keyword2"],
+                "required": true,
+                "absence_consequence": "What happens if missing"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Add Custom Preset
+
+See [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md#add-new-preset-analyzer) for detailed instructions.
+
+---
+
+## 🏗️ Architecture
+
+### Three-Phase Analysis System
+
+#### Phase A: Preset Analysis
+- 8 specialized analyzers
+- Pattern detection
+- Timeline extraction
+
+#### Phase B: Cross-Reference (Multi-Document)
+- Date/time/location comparison
+- Event sequence analysis
+- Discrepancy detection
+
+#### Phase C: Legal Interpretation
+- Statutory interpretation principles
+- Legal issue identification
+- Compliance assessment
+- Recommendation generation
+
+### Storage Layer
+
+- **IndexedDB** - Persistent analysis storage
+- **Pattern Detector** - Machine learning-like pattern recognition
+- **Timeline Manager** - Chronological event tracking
+
+---
+
+## 📊 Statute Database
+
+### Current Coverage
+
+| Act | Sections | Elements | Test Frameworks |
+|-----|----------|----------|-----------------|
+| Road Safety Act 1986 | s.49, s.55D, s.55E | 15+ | George v Rockett |
+| Evidence Act 2008 | s.59, s.69, s.137, s.138 | 12+ | Hearsay exceptions |
+| Criminal Procedure Act 2009 | s.185, s.187 | 8+ | Disclosure obligations |
+| Charter of HR 2006 | s.24, s.25 | 6+ | Fair hearing rights |
+| Magistrates' Court Act 1989 | Jurisdiction | 3+ | - |
+| Victoria Police Act 2013 | Powers | 2+ | - |
+
+### Database Features
+
+- ✅ Full section text
+- ✅ Element breakdown
+- ✅ Required keywords
+- ✅ Absence consequences
+- ✅ Test frameworks
+- ✅ Subsection hierarchy
+- ✅ Cross-references
+
+---
+
+## 🧪 Testing
+
+### Run Local Server
+
+```bash
+python3 serve.py
+```
+
+### Test Module Loading
+
+```javascript
+// Open browser console on http://localhost:8000/index-modular.html
+console.log(ForensicAnalyzer.getStatus());
+// Should show: { initialized: true, ... }
+```
+
+### Verify Statute Database
+
+```javascript
+const response = await fetch('/src/data/victorianStatutes.json');
+const statutes = await response.json();
+console.log('Loaded acts:', Object.keys(statutes).filter(k => k !== 'metadata'));
+```
+
+---
+
+## 🤝 Contributing
+
+### Adding New Statutes
+
+1. Edit `/src/data/victorianStatutes.json`
+2. Follow existing structure
+3. Include all required fields
+4. Test with VictorianStatuteAnalyzer
+5. Update documentation
+
+### Adding New Presets
+
+1. Edit `/src/analyzers/PresetAnalyzers.js`
+2. Create new preset object
+3. Implement `analyze(documentText)` method
+4. Add to `getAllPresets()`
+5. Document in README
+
+### Reporting Issues
+
+Please report issues with:
+- Statute database inaccuracies
+- Analysis defects
+- Integration problems
+- Documentation gaps
+
+---
+
+## 📄 License
+
+**Proprietary License**
+
+Copyright © 2025 Forensic Legal Analysis Team
+
+This software is licensed for use in Victorian legal practice. Unauthorized reproduction or distribution is prohibited.
+
+---
+
+## 🎯 Roadmap
+
+### v2.1.0 (Planned)
+- [ ] React UI components
+- [ ] Additional Victorian statutes
+- [ ] Advanced ML pattern detection
+- [ ] API endpoints for remote analysis
+
+### v2.2.0 (Planned)
+- [ ] Real-time collaborative analysis
+- [ ] Mobile app (using same modules)
+- [ ] Cloud storage integration
+- [ ] Automated reporting templates
+
+### v3.0.0 (Future)
+- [ ] AI-powered legal reasoning
+- [ ] Predictive compliance checking
+- [ ] Multi-jurisdiction support
+- [ ] Integration with case law databases
+
+---
+
+## 📞 Support
+
+For technical support or questions:
+
+- 📧 Email: [support@forensicanalyzer.com](mailto:support@forensicanalyzer.com)
+- 📚 Documentation: [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)
+- 🐛 Issues: [GitHub Issues](https://github.com/gtgspot/4rensic/issues)
+
+---
+
+## 🙏 Acknowledgments
+
+- Victorian Government - Legislative database sources
+- George v Rockett (1990) 170 CLR 104 - Reasonable belief framework
+- Open source libraries: React, PDF.js, Tesseract.js, jsPDF, Mammoth
+
+---
+
+## 📈 Statistics
+
+- **Lines of Code:** 5,142+ (modular), 11,834 (standalone)
+- **Modules:** 13
+- **Statutes:** 6+ Acts
+- **Presets:** 8 specialized analyzers
+- **Test Frameworks:** 3 (reasonable belief, disclosure, hearsay)
+- **Defect Categories:** 7
+- **Export Formats:** 4 (PDF, DOCX, JSON, CSV)
+
+---
+
+**Built with ❤️ for Victorian Legal Practice**
+
+**Version:** 2.0.0 | **Updated:** 2025-11-11 | **Jurisdiction:** Victoria, Australia
