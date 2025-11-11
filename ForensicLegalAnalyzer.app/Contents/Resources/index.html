@@ -38,7 +38,193 @@
     <div id="root"></div>
     
     <script type="text/babel">
-        const { useState, useRef } = React;
+        const { useState, useRef, useEffect } = React;
+
+        // AnalysisMemory - Persistent Storage System using IndexedDB
+        const AnalysisMemory = {
+          dbName: 'ForensicLegalAnalyzerDB',
+          storeName: 'analyses',
+          version: 1,
+
+          async init() {
+            return new Promise((resolve, reject) => {
+              const request = indexedDB.open(this.dbName, this.version);
+
+              request.onerror = () => reject(request.error);
+              request.onsuccess = () => resolve(request.result);
+
+              request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(this.storeName)) {
+                  const objectStore = db.createObjectStore(this.storeName, { keyPath: 'id', autoIncrement: true });
+                  objectStore.createIndex('timestamp', 'timestamp', { unique: false });
+                  objectStore.createIndex('fileAName', 'fileAName', { unique: false });
+                  objectStore.createIndex('fileBName', 'fileBName', { unique: false });
+                }
+              };
+            });
+          },
+
+          async getDB() {
+            return await this.init();
+          },
+
+          async saveAnalysis(analysisResults, files) {
+            const db = await this.getDB();
+            const tx = db.transaction(this.storeName, 'readwrite');
+            const store = tx.objectStore(this.storeName);
+
+            const record = {
+              timestamp: new Date().toISOString(),
+              fileAName: files.fileA?.name || 'Unknown',
+              fileBName: files.fileB?.name || 'Unknown',
+              analysisResults: analysisResults,
+              summary: analysisResults.summary
+            };
+
+            await store.add(record);
+            return tx.complete;
+          },
+
+          async getAllAnalyses() {
+            const db = await this.getDB();
+            const tx = db.transaction(this.storeName, 'readonly');
+            const store = tx.objectStore(this.storeName);
+            return await store.getAll();
+          },
+
+          async deleteAnalysis(id) {
+            const db = await this.getDB();
+            const tx = db.transaction(this.storeName, 'readwrite');
+            const store = tx.objectStore(this.storeName);
+            await store.delete(id);
+            return tx.complete;
+          },
+
+          async clearAll() {
+            const db = await this.getDB();
+            const tx = db.transaction(this.storeName, 'readwrite');
+            const store = tx.objectStore(this.storeName);
+            await store.clear();
+            return tx.complete;
+          }
+        };
+
+        // Pattern Detection Engine
+        const PatternDetector = {
+          detectRecurringIssues(historicalData) {
+            const issueMap = new Map();
+
+            historicalData.forEach(analysis => {
+              const issues = this.extractAllIssues(analysis);
+              issues.forEach(issue => {
+                const key = `${issue.type}-${issue.severity}`;
+                if (!issueMap.has(key)) {
+                  issueMap.set(key, { ...issue, count: 0, firstSeen: analysis.timestamp, lastSeen: analysis.timestamp });
+                }
+                const existing = issueMap.get(key);
+                existing.count++;
+                existing.lastSeen = analysis.timestamp;
+              });
+            });
+
+            return Array.from(issueMap.values())
+              .filter(issue => issue.count > 1)
+              .sort((a, b) => b.count - a.count);
+          },
+
+          extractAllIssues(analysis) {
+            const issues = [];
+            if (analysis.analysisResults?.phaseA) {
+              ['fileA', 'fileB'].forEach(fileKey => {
+                analysis.analysisResults.phaseA[fileKey]?.forEach(preset => {
+                  preset.findings?.potentialIssues?.forEach(issue => {
+                    issues.push(issue);
+                  });
+                });
+              });
+            }
+            return issues;
+          },
+
+          identifyNovelIssues(currentAnalysis, historicalData) {
+            const historicalIssues = new Set();
+            historicalData.forEach(analysis => {
+              this.extractAllIssues(analysis).forEach(issue => {
+                historicalIssues.add(`${issue.type}-${issue.severity}`);
+              });
+            });
+
+            const currentIssues = this.extractAllIssues(currentAnalysis);
+            return currentIssues.filter(issue =>
+              !historicalIssues.has(`${issue.type}-${issue.severity}`)
+            );
+          },
+
+          analyzeTrends(historicalData) {
+            if (historicalData.length < 2) return null;
+
+            const sortedData = [...historicalData].sort((a, b) =>
+              new Date(a.timestamp) - new Date(b.timestamp)
+            );
+
+            const recentCount = sortedData.slice(-3).reduce((sum, analysis) =>
+              sum + this.extractAllIssues(analysis).length, 0
+            ) / Math.min(3, sortedData.length);
+
+            const olderCount = sortedData.slice(0, -3).reduce((sum, analysis) =>
+              sum + this.extractAllIssues(analysis).length, 0
+            ) / Math.max(1, sortedData.length - 3);
+
+            const trend = recentCount < olderCount ? 'improving' :
+                          recentCount > olderCount ? 'declining' : 'stable';
+
+            return {
+              trend,
+              recentAverage: recentCount.toFixed(1),
+              olderAverage: olderCount.toFixed(1),
+              changePercentage: ((recentCount - olderCount) / olderCount * 100).toFixed(1)
+            };
+          },
+
+          createCrossReferenceMatrix(historicalData) {
+            const matrix = {};
+
+            historicalData.forEach(analysis => {
+              const issues = this.extractAllIssues(analysis);
+              const refs = this.extractStatutoryRefs(analysis);
+
+              issues.forEach(issue => {
+                refs.forEach(ref => {
+                  const key = `${issue.type}|||${ref}`;
+                  matrix[key] = (matrix[key] || 0) + 1;
+                });
+              });
+            });
+
+            return Object.entries(matrix)
+              .map(([key, count]) => {
+                const [issueType, statutoryRef] = key.split('|||');
+                return { issueType, statutoryRef, occurrences: count };
+              })
+              .sort((a, b) => b.occurrences - a.occurrences)
+              .slice(0, 20);
+          },
+
+          extractStatutoryRefs(analysis) {
+            const refs = new Set();
+            if (analysis.analysisResults?.phaseA) {
+              ['fileA', 'fileB'].forEach(fileKey => {
+                analysis.analysisResults.phaseA[fileKey]?.forEach(preset => {
+                  preset.findings?.legalReferences?.forEach(ref => {
+                    refs.add(ref.text);
+                  });
+                });
+              });
+            }
+            return Array.from(refs);
+          }
+        };
 
         // Simple icon components using Unicode symbols
         const Icon = ({ name, className = "", ...props }) => {
@@ -64,8 +250,42 @@
           const [currentPhase, setCurrentPhase] = useState('');
           const [analysisResults, setAnalysisResults] = useState(null);
           const [expandedSections, setExpandedSections] = useState({});
+          const [historicalData, setHistoricalData] = useState([]);
+          const [showInsights, setShowInsights] = useState(false);
           const fileInputA = useRef(null);
           const fileInputB = useRef(null);
+
+          // Initialize IndexedDB when app loads
+          useEffect(() => {
+            AnalysisMemory.init().then(() => {
+              console.log('AnalysisMemory initialized');
+              loadHistoricalData();
+            }).catch(err => {
+              console.error('Failed to initialize AnalysisMemory:', err);
+            });
+          }, []);
+
+          // Auto-save after analysis completes
+          useEffect(() => {
+            if (analysisState === 'complete' && analysisResults) {
+              AnalysisMemory.saveAnalysis(analysisResults, files)
+                .then(() => {
+                  console.log('Analysis saved successfully');
+                  loadHistoricalData();
+                })
+                .catch(err => console.error('Failed to save analysis:', err));
+            }
+          }, [analysisState, analysisResults]);
+
+          // Load historical data
+          const loadHistoricalData = async () => {
+            try {
+              const data = await AnalysisMemory.getAllAnalyses();
+              setHistoricalData(data);
+            } catch (err) {
+              console.error('Failed to load historical data:', err);
+            }
+          };
 
           const interpretivePresets = [
             {
@@ -762,7 +982,288 @@
                       <>⚠️ Commence Forensic Analysis</>
                     )}
                   </button>
+
+                  {historicalData.length > 0 && (
+                    <button
+                      onClick={() => setShowInsights(!showInsights)}
+                      style={{
+                        width: '100%',
+                        background: '#10b981',
+                        color: 'white',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        border: 'none',
+                        cursor: 'pointer',
+                        marginTop: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      📊 {showInsights ? 'Hide' : 'Show'} Historical Insights ({historicalData.length} analyses)
+                    </button>
+                  )}
                 </div>
+
+                {showInsights && historicalData.length > 0 && (
+                  <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    padding: '24px',
+                    marginBottom: '16px'
+                  }}>
+                    <h2 style={{
+                      fontSize: '24px',
+                      fontWeight: 'bold',
+                      color: '#111827',
+                      marginBottom: '16px'
+                    }}>🧠 Intelligent Analysis Insights</h2>
+
+                    {/* Trend Analysis */}
+                    {(() => {
+                      const trends = PatternDetector.analyzeTrends(historicalData);
+                      if (!trends) return null;
+
+                      const trendColors = {
+                        improving: { bg: '#f0fdf4', border: '#16a34a', text: '#14532d' },
+                        declining: { bg: '#fef2f2', border: '#dc2626', text: '#7f1d1d' },
+                        stable: { bg: '#eff6ff', border: '#2563eb', text: '#1e3a8a' }
+                      };
+                      const colors = trendColors[trends.trend];
+
+                      return (
+                        <div style={{
+                          backgroundColor: colors.bg,
+                          borderLeft: `4px solid ${colors.border}`,
+                          padding: '16px',
+                          marginBottom: '16px',
+                          borderRadius: '8px'
+                        }}>
+                          <h3 style={{ fontWeight: '600', color: colors.text, marginBottom: '8px' }}>
+                            📈 Trend Analysis
+                          </h3>
+                          <p style={{ fontSize: '14px', color: colors.text }}>
+                            Quality trend: <strong style={{ textTransform: 'uppercase' }}>{trends.trend}</strong>
+                            {trends.changePercentage !== 'NaN' && ` (${trends.changePercentage > 0 ? '+' : ''}${trends.changePercentage}%)`}
+                          </p>
+                          <p style={{ fontSize: '14px', color: colors.text, marginTop: '4px' }}>
+                            Recent average issues: {trends.recentAverage} | Historical average: {trends.olderAverage}
+                          </p>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Recurring Patterns */}
+                    {(() => {
+                      const recurring = PatternDetector.detectRecurringIssues(historicalData);
+                      if (recurring.length === 0) return null;
+
+                      return (
+                        <div style={{
+                          backgroundColor: '#fef3c7',
+                          borderLeft: '4px solid #f59e0b',
+                          padding: '16px',
+                          marginBottom: '16px',
+                          borderRadius: '8px'
+                        }}>
+                          <h3 style={{ fontWeight: '600', color: '#78350f', marginBottom: '12px' }}>
+                            🔄 Recurring Patterns Detected
+                          </h3>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {recurring.slice(0, 5).map((issue, idx) => (
+                              <div key={idx} style={{
+                                backgroundColor: 'white',
+                                padding: '12px',
+                                borderRadius: '4px',
+                                fontSize: '14px'
+                              }}>
+                                <p style={{ fontWeight: '500', color: '#111827' }}>
+                                  [{issue.severity?.toUpperCase()}] {issue.type}
+                                </p>
+                                <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '4px' }}>
+                                  Occurred <strong>{issue.count}</strong> times |
+                                  First: {new Date(issue.firstSeen).toLocaleDateString()} |
+                                  Last: {new Date(issue.lastSeen).toLocaleDateString()}
+                                </p>
+                                {issue.description && (
+                                  <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '4px' }}>
+                                    {issue.description}
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Novel Issues */}
+                    {analysisResults && (() => {
+                      const novelIssues = PatternDetector.identifyNovelIssues(
+                        { timestamp: new Date().toISOString(), analysisResults },
+                        historicalData.slice(0, -1)
+                      );
+                      if (novelIssues.length === 0) return null;
+
+                      return (
+                        <div style={{
+                          backgroundColor: '#fef2f2',
+                          borderLeft: '4px solid #dc2626',
+                          padding: '16px',
+                          marginBottom: '16px',
+                          borderRadius: '8px'
+                        }}>
+                          <h3 style={{ fontWeight: '600', color: '#7f1d1d', marginBottom: '12px' }}>
+                            ⚡ Novel Issues Identified
+                          </h3>
+                          <p style={{ fontSize: '14px', color: '#991b1b', marginBottom: '8px' }}>
+                            The following issues have never been seen before in your analysis history:
+                          </p>
+                          <ul style={{ paddingLeft: '20px' }}>
+                            {novelIssues.map((issue, idx) => (
+                              <li key={idx} style={{ fontSize: '14px', color: '#991b1b', marginBottom: '4px' }}>
+                                <strong>[{issue.severity?.toUpperCase()}]</strong> {issue.type}: {issue.description}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Cross-Reference Matrix */}
+                    {(() => {
+                      const matrix = PatternDetector.createCrossReferenceMatrix(historicalData);
+                      if (matrix.length === 0) return null;
+
+                      return (
+                        <div style={{
+                          backgroundColor: '#f5f3ff',
+                          borderLeft: '4px solid #7c3aed',
+                          padding: '16px',
+                          marginBottom: '16px',
+                          borderRadius: '8px'
+                        }}>
+                          <h3 style={{ fontWeight: '600', color: '#5b21b6', marginBottom: '12px' }}>
+                            🔗 Issue-Statute Correlation Matrix
+                          </h3>
+                          <p style={{ fontSize: '14px', color: '#6b21a8', marginBottom: '12px' }}>
+                            Common relationships between identified issues and statutory references:
+                          </p>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {matrix.slice(0, 10).map((item, idx) => (
+                              <div key={idx} style={{
+                                backgroundColor: 'white',
+                                padding: '10px',
+                                borderRadius: '4px',
+                                fontSize: '13px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center'
+                              }}>
+                                <div>
+                                  <strong style={{ color: '#111827' }}>{item.issueType}</strong>
+                                  <span style={{ color: '#6b7280', marginLeft: '8px' }}>↔️ {item.statutoryRef}</span>
+                                </div>
+                                <span style={{
+                                  backgroundColor: '#7c3aed',
+                                  color: 'white',
+                                  padding: '4px 8px',
+                                  borderRadius: '4px',
+                                  fontSize: '12px',
+                                  fontWeight: '500'
+                                }}>
+                                  {item.occurrences}x
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Historical Timeline */}
+                    <div style={{
+                      backgroundColor: '#eff6ff',
+                      borderLeft: '4px solid #2563eb',
+                      padding: '16px',
+                      borderRadius: '8px'
+                    }}>
+                      <h3 style={{ fontWeight: '600', color: '#1e40af', marginBottom: '12px' }}>
+                        📅 Analysis Timeline
+                      </h3>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {historicalData.slice().reverse().slice(0, 10).map((analysis, idx) => (
+                          <div key={analysis.id || idx} style={{
+                            backgroundColor: 'white',
+                            padding: '12px',
+                            borderRadius: '4px',
+                            fontSize: '14px'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <p style={{ fontWeight: '500', color: '#111827' }}>
+                                  {analysis.fileAName} vs {analysis.fileBName}
+                                </p>
+                                <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                                  {new Date(analysis.timestamp).toLocaleString()} |
+                                  {analysis.summary?.overallAssessment || 'Analysis Complete'}
+                                </p>
+                              </div>
+                              <button
+                                onClick={async () => {
+                                  if (confirm('Delete this analysis from history?')) {
+                                    await AnalysisMemory.deleteAnalysis(analysis.id);
+                                    loadHistoricalData();
+                                  }
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#dc2626',
+                                  cursor: 'pointer',
+                                  fontSize: '18px'
+                                }}
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {historicalData.length > 10 && (
+                        <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '12px', textAlign: 'center' }}>
+                          Showing 10 most recent analyses of {historicalData.length} total
+                        </p>
+                      )}
+                      <button
+                        onClick={async () => {
+                          if (confirm(`Delete all ${historicalData.length} analyses? This cannot be undone.`)) {
+                            await AnalysisMemory.clearAll();
+                            loadHistoricalData();
+                            setShowInsights(false);
+                          }
+                        }}
+                        style={{
+                          marginTop: '12px',
+                          width: '100%',
+                          padding: '8px',
+                          backgroundColor: '#dc2626',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '14px'
+                        }}
+                      >
+                        Clear All History
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {analysisResults && (
                   <div>
