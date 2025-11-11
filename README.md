@@ -1,9 +1,47 @@
-# Forensic Legal Analyzer - macOS Application
+# Forensic Legal Analyzer - Victorian Law Compliance Checker
 
 ## Overview
-Forensic Legal Analyzer is a sophisticated document analysis system designed for legal professionals conducting evidentiary analysis. The application performs multi-layered interpretive analysis of legal documents using advanced statutory interpretation principles.
+Forensic Legal Analyzer is a sophisticated document analysis system designed specifically for legal professionals working within Victorian (Australia) legal frameworks. The application performs meticulous word-by-word, line-by-line linguistic inspection of legal documents to identify defects, compliance issues, and narrative inconsistencies without modifying the source documents.
+
+## Purpose
+This tool is designed for uploading two completed legal documents to:
+- **Identify governing infrastructure and architecture** for each file
+- **Inspect linguistics word-by-word and line-by-line** for accuracy and compliance
+- **Evaluate against Victorian statutory requirements** with absolute precision
+- **Detect legal issues, flaws, and defects** in wording, referencing, timeline, and procedure
+- **Cross-evaluate narrative and timeline** consistency between both files
+- **Generate sequential defect mapping** showing exact locations of all issues
+
+**Important**: This tool does NOT suggest edits or modifications. It identifies legal compliance issues only.
+
+## Supported Document Types
+The system can analyze:
+- Statutory Legislation & Delegated Legislation
+- Victoria Police Manual Documentation
+- Disclosure Files & Evidence Exhibits
+- Statements, Affidavits, & Statutory Declarations
+- Court Orders & Court Documentation
+- Evidentiary Certificates
+- Summons & Charge Sheets
+- Submissions & Depositions
+- Case Law & Legal Citations
+- Legal Narratives & Chronologies
+- Any related Victorian legal documentation
 
 ## Features
+
+### Document Classification and Framework Identification
+- Automatically identifies document type upon upload
+- Detects governing Victorian legislation (Criminal Procedure Act 2009, Evidence Act 2008, etc.)
+- Identifies relevant Victoria Police procedures and court jurisdictions
+- Maps subordinate instrumentation and regulatory frameworks
+
+### Word-by-Word Linguistic Inspection Engine
+- **Terminology Accuracy**: Detects Victorian legal terminology errors
+- **Spelling Verification**: Identifies common legal misspellings
+- **Australian Spelling Compliance**: Flags American spellings in Victorian documents
+- **Citation Format Consistency**: Checks statutory reference formatting
+- **Line-Level Grammar**: Detects grammatical defects and structural issues
 
 ### Three-Phase Analysis System
 
@@ -16,18 +54,97 @@ Forensic Legal Analyzer is a sophisticated document analysis system designed for
 - Purposive Analysis
 - Comparative Cross-Reference Analysis
 - Evidentiary Standards Analysis
+- **Enhanced**: Word-by-word linguistic inspection with defect logging
 
-**Phase B: Statutory Framework & Cross-Reference**
-- Identifies governing legislation
+**Phase B: Victorian Statutory Compliance & Cross-Reference**
+- Identifies governing Victorian legislation
+- Checks compliance with:
+  - Criminal Procedure Act 2009
+  - Evidence Act 2008 (Vic)
+  - Victoria Police Act 2013
+  - Charter of Human Rights and Responsibilities Act 2006
+  - Victorian Court Acts and Rules
 - Detects discrepancies between documents
 - Flags omissions and inconsistencies
-- Assesses statutory compliance
+- Assesses statutory compliance with Victorian law
+- **Enhanced**: Timeline and narrative cross-evaluation between files
 
 **Phase C: Statutory Interpretation**
 - Applies literal, contextual, and purposive approaches
 - Uses established interpretive principles
 - Provides guidance on extrinsic aids
 - Generates ambiguity resolution strategies
+
+### Cross-File Narrative and Timeline Evaluation
+- **Timeline Discrepancy Detection**: Identifies dates referenced differently across documents
+- **Event Sequence Analysis**: Maps narrative events and detects sequence mismatches
+- **Factual Contradiction Detection**: Flags direct contradictions between files
+- **Sequential Element Mapping**: Creates comprehensive cross-reference map of all elements
+
+### Defect Detection and Sequential Mapping
+Every defect is logged with:
+- **Line number** and **word position** where it occurs
+- **Severity level** (critical, high, medium, low)
+- **Defect type** and detailed description
+- **Compliance status** (compliant/non-compliant/unclear)
+- **Governing statute** and relevant section
+- **Remediation guidance** (informational only - no automatic editing)
+- **Cross-file mapping** showing corresponding elements in other file
+
+## Victorian Law Compliance Framework
+
+### Primary Victorian Legislation Monitored
+The system automatically checks compliance with:
+
+**Criminal Justice**
+- Criminal Procedure Act 2009 (Vic) - disclosure requirements, court procedures
+- Evidence Act 2008 (Vic) - evidentiary requirements, certificate provisions
+- Crimes Act 1958 (Vic) - substantive criminal law
+- Bail Act 1977 (Vic) - bail considerations
+- Sentencing Act 1991 (Vic) - sentencing procedures
+
+**Courts and Procedures**
+- Supreme Court Act 1986 (Vic)
+- County Court Act 1958 (Vic)
+- Magistrates' Court Act 1989 (Vic)
+- Associated court rules and procedures
+
+**Human Rights and Police**
+- Charter of Human Rights and Responsibilities Act 2006 (Vic)
+- Victoria Police Act 2013 (Vic)
+- Victoria Police Manual (VPM) procedures
+
+### Compliance Defect Categories
+
+**Critical Defects** (Immediate attention required)
+- Acknowledged errors or corrections in documents
+- Jurisdictional defects
+- Missing certificate authorizing sections
+- Procedural fairness violations
+
+**High Severity Defects**
+- Missing primary legislation references
+- Incomplete court references
+- Missing mandatory document headers
+- Disclosure timeline non-compliance
+
+**Medium Severity Defects**
+- Vague temporal references
+- Missing specific statutory provisions
+- American spelling in Victorian documents
+- Inconsistent citation formats
+
+**Low Severity Defects**
+- Grammatical inconsistencies
+- Passive voice in procedural documents
+- Oxford comma usage issues
+
+### What the Tool Does NOT Do
+- ❌ Does not modify or edit your documents
+- ❌ Does not suggest specific text changes
+- ❌ Does not provide legal advice
+- ❌ Does not automatically fix defects
+- ✅ **Only identifies and reports issues for your review**
 
 ## System Requirements
 
@@ -55,7 +172,7 @@ Forensic Legal Analyzer is a sophisticated document analysis system designed for
 
 ## Usage
 
-### Uploading Documents
+### Document Upload and Classification
 
 The application supports three methods for uploading documents:
 
@@ -71,17 +188,74 @@ The application supports three methods for uploading documents:
    - Paste a URL to a publicly accessible document
    - Press Enter to load the document
 
-### Running Analysis
+**Upon upload, the system automatically**:
+- Classifies the document type (Statement, Disclosure, Court Order, etc.)
+- Identifies governing Victorian legislative framework
+- Detects relevant Victoria Police procedures
+- Maps applicable Victorian court jurisdictions
 
-1. Upload both Document A and Document B
-2. Click "Commence Forensic Analysis"
-3. The system will process documents through all three phases
-4. Review results in the expandable sections
+### Running Compliance Analysis
+
+1. **Upload both Document A and Document B**
+   - System classifies each document independently
+   - Framework identification occurs automatically
+
+2. **Click "Commence Forensic Analysis"**
+   - **Phase A**: Word-by-word, line-by-line linguistic inspection
+     - Checks legal terminology accuracy
+     - Verifies Australian spelling compliance
+     - Logs defects with line/word positions
+
+   - **Phase B**: Victorian statutory compliance check
+     - Validates against Criminal Procedure Act 2009
+     - Checks Evidence Act 2008 requirements
+     - Verifies court reference formatting
+     - Cross-evaluates narrative and timeline between files
+     - Identifies timeline discrepancies and contradictions
+
+   - **Phase C**: Statutory interpretation analysis
+     - Applies Victorian interpretive principles
+     - Generates compliance recommendations
+
+3. **Review Detailed Results**
+   - Expand each section to view findings
+   - Each defect shows:
+     - **Exact location** (File, Line number, Word position)
+     - **Defect type and severity**
+     - **Governing statute and section**
+     - **Compliance status**
+     - **Cross-file mapping** (if applicable)
+
+### Understanding the Report
+
+**Linguistic Inspection Results**
+- Total words and lines analyzed
+- Word accuracy issues with exact positions
+- Grammatical defects by line
+- Legal terminology errors
+- Victorian compliance defects
+
+**Victorian Statutory Compliance**
+- File A compliance issues
+- File B compliance issues
+- Specific statute violations
+- Remediation guidance (informational only)
+
+**Cross-File Narrative Evaluation**
+- Timeline discrepancies between documents
+- Event sequence mismatches
+- Factual contradictions
+- Sequential element mapping
 
 ### Exporting Reports
 
 - Click "Export Report" to download analysis as JSON
-- Reports include all findings, recommendations, and interpretive analysis
+- Reports include:
+  - All defects with line/word positions
+  - Victorian compliance findings
+  - Cross-file narrative analysis
+  - Sequential defect mapping
+  - Framework identification details
 - Timestamp included for record-keeping
 
 ## Understanding the Analysis
@@ -170,14 +344,36 @@ ForensicLegalAnalyzer.app/
 
 ## Legal Disclaimer
 
-This application is provided as an analytical tool for legal professionals. It does not constitute legal advice. Users should:
+This application is provided as an analytical tool for legal professionals working with Victorian (Australia) legal documents. **It does not constitute legal advice.**
 
-- Verify all findings independently
-- Consult relevant legislation and case law
+### Important Limitations
+
+**The tool identifies issues but does not**:
+- Provide legal advice or opinions
+- Replace professional legal review
+- Guarantee compliance with all Victorian laws
+- Modify or correct documents
+- Make legal recommendations or decisions
+
+**Users must**:
+- Independently verify all findings
+- Consult current Victorian legislation and case law
 - Seek professional legal counsel for specific matters
 - Use outputs as supplementary analysis only
+- Review documents for context and nuance
+- Verify the tool's classifications are accurate
 
-The application's analysis should not be relied upon as the sole basis for legal decisions or submissions.
+**Compliance Note**: While this tool checks against major Victorian statutes, it cannot:
+- Replace comprehensive legal research
+- Account for recent legislative amendments
+- Interpret complex factual scenarios
+- Consider all possible legal issues
+- Replace court or tribunal processes
+
+The application's analysis should not be relied upon as the sole basis for legal decisions, submissions, or court filings. All defects and compliance issues must be independently verified by qualified legal professionals before taking action.
+
+### Jurisdiction-Specific Notice
+This tool is specifically designed for **Victorian (Australia)** legal documents. Documents from other Australian states or Commonwealth jurisdictions may not be fully analyzed or may show false compliance issues. Ensure documents are appropriate for Victorian law analysis.
 
 ## Support & Feedback
 
