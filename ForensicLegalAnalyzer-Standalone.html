@@ -42,7 +42,7 @@
             return React.createElement(LucideIcon, props);
         };
 
-        const ForensicLegalAnalyzer = () => {
+        const App = () => {
           const [files, setFiles] = useState({ fileA: null, fileB: null });
           const [fileContents, setFileContents] = useState({ fileA: '', fileB: '' });
           const [analysisState, setAnalysisState] = useState('idle');
@@ -897,7 +897,7 @@
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<ForensicLegalAnalyzer />);
+        root.render(<App />);
     </script>
 </body>
 </html>
