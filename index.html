@@ -19,7 +19,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script>
-      // Configure PDF.js worker
       if (typeof pdfjsLib !== 'undefined') {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       }
@@ -358,7 +357,6 @@
         import { MagistratesCourtChecker } from './src/analyzers/CourtProcedureChecker.js';
         import { ExportManager } from './src/utils/exportManager.js';
 
-        // Make available globally for the main app
         window.MagistratesCourtChecker = MagistratesCourtChecker;
         window.ExportManager = ExportManager;
     </script>
@@ -366,7 +364,6 @@
     <script type="text/babel">
         const { useState, useRef } = React;
 
-        // Simple icon components using Unicode symbols
         const Icon = ({ name, className = "", ...props }) => {
             const icons = {
                 Upload: "⬆️",
@@ -394,7 +391,6 @@
             return <span className={`icon ${className}`} {...props}>{icons[name] || "•"}</span>;
         };
 
-        // Tooltip Component for Contextual Help
         const HelpTooltip = ({ content, children }) => {
           const [showTooltip, setShowTooltip] = React.useState(false);
 
@@ -442,8 +438,6 @@
           );
         };
 
-        // Persistent Intelligence Layer - Storage Manager
-        // Persistent Intelligence Layer - Production-Grade Storage Manager
         const AnalysisMemory = {
           storage: null,
           dbPromise: null,
@@ -453,7 +447,6 @@
           RETRY_DELAY: 1000,
           isInitialized: false,
 
-          // Utility: Retry with exponential backoff
           async retryOperation(operation, retries = this.MAX_RETRIES) {
             for (let i = 0; i < retries; i++) {
               try {
@@ -467,7 +460,6 @@
             }
           },
 
-          // Validate database health
           async validateDatabaseHealth() {
             try {
               const db = await this.getDB();
@@ -487,12 +479,10 @@
             }
           },
 
-          // Initialize with robust error handling
           init() {
             if (this.dbPromise) return this.dbPromise;
 
             this.dbPromise = new Promise((resolve, reject) => {
-              // Check IndexedDB support
               if (!window.indexedDB) {
                 const error = new Error('IndexedDB is not supported in this browser');
                 console.error(error);
@@ -508,10 +498,6 @@
                   const db = e.target.result;
                   const oldVersion = e.oldVersion;
                   const transaction = e.target.transaction;
-
-                  console.log(`Upgrading database from version ${oldVersion} to ${this.DB_VERSION}`);
-
-                  // Table 1: analyses (complete analysis records)
                   if (!db.objectStoreNames.contains('analyses')) {
                     const analysesStore = db.createObjectStore('analyses', {
                       keyPath: 'id',
@@ -520,10 +506,8 @@
                     analysesStore.createIndex('timestamp', 'timestamp', { unique: false });
                     analysesStore.createIndex('fileAName', 'fileAName', { unique: false });
                     analysesStore.createIndex('fileBName', 'fileBName', { unique: false });
-                    console.log('Created "analyses" object store');
                   }
 
-                  // Table 2: defect_patterns (recurring defect tracking)
                   if (!db.objectStoreNames.contains('defect_patterns')) {
                     const patternsStore = db.createObjectStore('defect_patterns', {
                       keyPath: 'pattern_id',
@@ -532,26 +516,20 @@
                     patternsStore.createIndex('defect_type', 'defect_type', { unique: false });
                     patternsStore.createIndex('occurrence_count', 'occurrence_count', { unique: false });
                     patternsStore.createIndex('last_seen', 'last_seen', { unique: false });
-                    console.log('Created "defect_patterns" object store');
                   }
 
-                  // Table 3: statutory_references (statute compliance tracking)
                   if (!db.objectStoreNames.contains('statutory_references')) {
                     const statutesStore = db.createObjectStore('statutory_references', {
                       keyPath: 'reference'
                     });
                     statutesStore.createIndex('times_encountered', 'times_encountered', { unique: false });
                     statutesStore.createIndex('compliance_rate', 'compliance_rate', { unique: false });
-                    console.log('Created "statutory_references" object store');
                   }
 
-                  // Migration: Remove old 'patterns' store if exists
                   if (oldVersion < 2 && db.objectStoreNames.contains('patterns')) {
                     db.deleteObjectStore('patterns');
-                    console.log('Migrated: Removed deprecated "patterns" object store');
                   }
 
-                  // Handle transaction abort
                   transaction.onabort = () => {
                     upgradeFailed = true;
                     console.error('Database upgrade transaction was aborted');
@@ -560,7 +538,6 @@
                 } catch (error) {
                   upgradeFailed = true;
                   console.error('Error during database upgrade:', error);
-                  // Transaction will abort automatically
                 }
               };
 
@@ -575,21 +552,16 @@
                 this.storage = e.target.result;
                 this.isInitialized = true;
 
-                // Handle unexpected database closure
                 this.storage.onversionchange = () => {
-                  console.warn('Database version changed, closing connection');
                   this.storage.close();
                   this.storage = null;
                   this.dbPromise = null;
                   this.isInitialized = false;
                 };
 
-                // Handle database errors
                 this.storage.onerror = (event) => {
                   console.error('Database error:', event.target.error);
                 };
-
-                console.log('✅ Database initialized successfully');
                 resolve(this.storage);
               };
 
@@ -597,7 +569,6 @@
                 const error = e.target.error;
                 console.error('Failed to open IndexedDB:', error);
 
-                // Provide user-friendly error messages
                 let errorMessage = 'Database initialization failed';
                 if (error.name === 'QuotaExceededError') {
                   errorMessage = 'Storage quota exceeded. Please free up space.';
@@ -609,22 +580,18 @@
               };
 
               request.onblocked = () => {
-                console.warn('Database upgrade blocked. Please close other tabs using this application.');
               };
             });
 
             return this.dbPromise;
           },
 
-          // Safe database getter with validation
           async getDB() {
             if (!this.storage || !this.isInitialized) {
               await this.init();
             }
 
-            // Validate connection is still alive
             if (this.storage && this.storage.objectStoreNames.length === 0) {
-              console.warn('Database connection appears invalid, reinitializing...');
               this.storage = null;
               this.dbPromise = null;
               this.isInitialized = false;
@@ -634,7 +601,6 @@
             return this.storage;
           },
 
-          // Validate analysis data before saving
           validateAnalysisData(results, files, fileContents) {
             const errors = [];
 
@@ -654,7 +620,6 @@
               errors.push('File B name exceeds maximum length');
             }
 
-            // Validate content size (limit to 10MB per file)
             const MAX_CONTENT_SIZE = 10 * 1024 * 1024;
             if (fileContents?.fileA && fileContents.fileA.length > MAX_CONTENT_SIZE) {
               errors.push('File A content exceeds maximum size (10MB)');
@@ -671,11 +636,9 @@
             return true;
           },
 
-          // Sanitize text content
           sanitizeContent(content) {
             if (typeof content !== 'string') return '';
 
-            // Remove potential XSS vectors while preserving legal text
             return content
               .replace(/<script[^>]*>.*?<\/script>/gi, '')
               .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
@@ -684,21 +647,17 @@
               .substring(0, 10 * 1024 * 1024); // Hard limit at 10MB
           },
 
-          // AUTO-SAVE: Complete analysis with all metadata (Production-Grade)
           async saveAnalysis(results, files, fileContents) {
             return this.retryOperation(async () => {
               try {
-                // Validate input data
                 this.validateAnalysisData(results, files, fileContents);
 
                 const db = await this.getDB();
 
-                // Extract and validate components
                 const defects = this.extractDefects(results);
                 const severity = this.calculateSeveritySummary(defects);
                 const statutes = this.extractStatutoryReferences(results);
 
-                // Sanitize file contents
                 const sanitizedFileA = this.sanitizeContent(fileContents?.fileA || '');
                 const sanitizedFileB = this.sanitizeContent(fileContents?.fileB || '');
 
@@ -717,11 +676,9 @@
                   savedAt: Date.now()
                 };
 
-                // Use transaction for atomicity
                 const tx = db.transaction('analyses', 'readwrite');
                 let analysisId = null;
 
-                // Set up transaction error handling
                 await new Promise((resolve, reject) => {
                   tx.oncomplete = () => resolve();
                   tx.onerror = () => reject(tx.error);
@@ -734,26 +691,20 @@
                   request.onerror = () => reject(request.error);
                 });
 
-                // Update patterns and references (separate transactions for resilience)
                 try {
                   await this.updateDefectPatterns(defects);
                 } catch (error) {
-                  console.warn('Failed to update defect patterns, continuing...', error);
                 }
 
                 try {
                   await this.updateStatutoryReferences(statutes, defects);
                 } catch (error) {
-                  console.warn('Failed to update statutory references, continuing...', error);
                 }
-
-                console.log(`✅ Analysis #${analysisId} saved successfully`);
                 return analysisId;
 
               } catch (error) {
                 console.error('Failed to save analysis:', error);
 
-                // Provide user-friendly error messages
                 if (error.name === 'QuotaExceededError') {
                   throw new Error('Storage quota exceeded. Please delete old analyses or free up space.');
                 } else if (error.name === 'ConstraintError') {
@@ -767,24 +718,20 @@
             });
           },
 
-          // Extract all defects from analysis results with robust null checking
           extractDefects(results) {
             const defects = [];
 
             try {
               if (!results || typeof results !== 'object') {
-                console.warn('extractDefects: Invalid results object');
                 return defects;
               }
 
-              // Phase A defects from both files
               ['fileA', 'fileB'].forEach(fileKey => {
                 try {
                   if (results.phaseA && Array.isArray(results.phaseA[fileKey])) {
                     results.phaseA[fileKey].forEach((preset, presetIndex) => {
                       try {
                         if (!preset || !preset.findings) {
-                          console.warn(`Phase A ${fileKey} preset ${presetIndex}: Missing findings`);
                           return;
                         }
 
@@ -796,11 +743,9 @@
                         if (Array.isArray(issues)) {
                           issues.forEach((issue, issueIndex) => {
                             try {
-                              // Handle both object and string issues
                               const issueObj = typeof issue === 'string' ? { description: issue } : issue;
 
                               if (!issueObj || typeof issueObj !== 'object') {
-                                console.warn(`Phase A ${fileKey} preset ${presetIndex} issue ${issueIndex}: Invalid issue format`);
                                 return;
                               }
 
@@ -828,14 +773,12 @@
                 }
               });
 
-              // Phase B discrepancies
               if (results.phaseB && Array.isArray(results.phaseB.discrepancies)) {
                 results.phaseB.discrepancies.forEach((disc, index) => {
                   try {
                     const discObj = typeof disc === 'string' ? { description: disc } : disc;
 
                     if (!discObj || typeof discObj !== 'object') {
-                      console.warn(`Phase B discrepancy ${index}: Invalid format`);
                       return;
                     }
 
@@ -852,12 +795,10 @@
                 });
               }
 
-              // Phase B omissions
               if (results.phaseB && Array.isArray(results.phaseB.omissions)) {
                 results.phaseB.omissions.forEach((om, index) => {
                   try {
                     if (!om || typeof om !== 'object') {
-                      console.warn(`Phase B omission ${index}: Invalid format`);
                       return;
                     }
 
@@ -876,14 +817,12 @@
                 });
               }
 
-              // Phase C defects (if any)
               if (results.phaseC && Array.isArray(results.phaseC.defects)) {
                 results.phaseC.defects.forEach((defect, index) => {
                   try {
                     const defectObj = typeof defect === 'string' ? { description: defect } : defect;
 
                     if (!defectObj || typeof defectObj !== 'object') {
-                      console.warn(`Phase C defect ${index}: Invalid format`);
                       return;
                     }
 
@@ -899,9 +838,6 @@
                   }
                 });
               }
-
-              console.log(`✅ Extracted ${defects.length} defects from analysis`);
-
             } catch (error) {
               console.error('Critical error in extractDefects:', error);
             }
@@ -909,7 +845,6 @@
             return defects;
           },
 
-          // Calculate severity summary
           calculateSeveritySummary(defects) {
             const summary = { HIGH: 0, MEDIUM: 0, LOW: 0, CRITICAL: 0 };
             defects.forEach(defect => {
@@ -923,7 +858,6 @@
             return summary;
           },
 
-          // Extract statutory references from results
           extractStatutoryReferences(results) {
             const statutes = new Set();
 
@@ -938,7 +872,6 @@
             return Array.from(statutes);
           },
 
-          // Build cross-references between documents
           buildCrossReferences(results) {
             const refs = {
               statutory: [],
@@ -990,7 +923,6 @@
             return related;
           },
 
-          // PATTERN RECOGNITION: Update defect patterns
           async updateDefectPatterns(defects) {
             try {
               const db = await this.getDB();
@@ -1000,7 +932,6 @@
               for (const defect of defects) {
                 const defectKey = `${defect.type}_${defect.severity}`;
 
-                // Try to find existing pattern
                 const allPatterns = await new Promise((resolve, reject) => {
                   const request = store.getAll();
                   request.onsuccess = () => resolve(request.result);
@@ -1012,7 +943,6 @@
                 );
 
                 if (existingPattern) {
-                  // Update existing pattern
                   existingPattern.occurrence_count++;
                   existingPattern.last_seen = new Date().toISOString();
                   existingPattern.associated_statutes = Array.from(new Set([
@@ -1020,7 +950,6 @@
                     ...(defect.statutes || [])
                   ]));
 
-                  // Generate recommendation for recurring issues (3+ times)
                   if (existingPattern.occurrence_count >= 3 && !existingPattern.recommendation) {
                     existingPattern.recommendation = this.generateRecommendation(existingPattern);
                   }
@@ -1031,7 +960,6 @@
                     request.onerror = () => reject(request.error);
                   });
                 } else {
-                  // Create new pattern
                   const newPattern = {
                     defect_type: defect.type,
                     description: defect.description,
@@ -1054,7 +982,6 @@
             }
           },
 
-          // Generate recommendations for recurring defects
           generateRecommendation(pattern) {
             const recommendations = {
               'Missing s.55D directions': 'Systematic issue with preliminary test procedure documentation. Create checklist requiring explicit documentation of: oral directions given, written directions provided, subject\'s response to directions.',
@@ -1074,7 +1001,6 @@
             return `This issue has occurred ${pattern.occurrence_count} times. Review procedural compliance and create systematic documentation checklist.`;
           },
 
-          // Update statutory reference statistics
           async updateStatutoryReferences(statutes, defects) {
             try {
               const db = await this.getDB();
@@ -1088,20 +1014,17 @@
                   request.onerror = () => reject(request.error);
                 });
 
-                // Find defects related to this statute
                 const relatedDefects = defects.filter(d =>
                   d.description.toLowerCase().includes(statute.toLowerCase())
                 ).map(d => d.type);
 
                 if (existing) {
-                  // Update existing reference
                   existing.times_encountered++;
                   existing.associated_defects = Array.from(new Set([
                     ...(existing.associated_defects || []),
                     ...relatedDefects
                   ]));
 
-                  // Calculate compliance rate (higher rate = fewer defects)
                   const totalDefects = relatedDefects.length;
                   existing.compliance_rate = Math.max(0, 100 - (totalDefects * 10));
 
@@ -1111,7 +1034,6 @@
                     request.onerror = () => reject(request.error);
                   });
                 } else {
-                  // Create new reference
                   const newRef = {
                     reference: statute,
                     statute_name: this.parseStatuteName(statute),
@@ -1133,7 +1055,6 @@
           },
 
           parseStatuteName(reference) {
-            // Extract statute name from reference (e.g., "s.49(1) RSA" -> "Road Safety Act")
             const statuteMap = {
               'RSA': 'Road Safety Act 1986',
               'Crimes Act': 'Crimes Act 1958',
@@ -1148,7 +1069,6 @@
             return reference;
           },
 
-          // Get all analyses with retry and pagination support
           async getAllAnalyses(options = {}) {
             return this.retryOperation(async () => {
               try {
@@ -1197,13 +1117,11 @@
                 });
               } catch (error) {
                 console.error('Failed to retrieve analyses:', error);
-                // Return empty array as fallback instead of crashing
                 return [];
               }
             });
           },
 
-          // Get all defect patterns with retry logic
           async getAllDefectPatterns() {
             return this.retryOperation(async () => {
               try {
@@ -1216,7 +1134,6 @@
 
                   request.onsuccess = () => {
                     const patterns = request.result || [];
-                    console.log(`Retrieved ${patterns.length} defect patterns`);
                     resolve(patterns);
                   };
 
@@ -1237,7 +1154,6 @@
             });
           },
 
-          // Get all statutory references with retry logic
           async getAllStatutoryReferences() {
             return this.retryOperation(async () => {
               try {
@@ -1250,7 +1166,6 @@
 
                   request.onsuccess = () => {
                     const references = request.result || [];
-                    console.log(`Retrieved ${references.length} statutory references`);
                     resolve(references);
                   };
 
@@ -1271,7 +1186,6 @@
             });
           },
 
-          // Delete old analyses to free up space (data retention policy)
           async deleteOldAnalyses(daysToKeep = 90) {
             return this.retryOperation(async () => {
               try {
@@ -1297,7 +1211,6 @@
                       deletedCount++;
                       cursor.continue();
                     } else {
-                      console.log(`Deleted ${deletedCount} old analyses`);
                       resolve(deletedCount);
                     }
                   };
@@ -1312,7 +1225,6 @@
             });
           },
 
-          // Get database statistics
           async getDatabaseStats() {
             try {
               const [analyses, patterns, references] = await Promise.all([
@@ -1339,7 +1251,6 @@
             }
           },
 
-          // CROSS-ANALYSIS INTELLIGENCE: Compare new analysis to history
           async getIntelligenceForAnalysis(currentDefects) {
             try {
               const allPatterns = await this.getAllDefectPatterns();
@@ -1379,7 +1290,6 @@
             }
           },
 
-          // LEARNING INSIGHTS: Generate system intelligence summary
           async generateLearningInsights() {
             try {
               const analyses = await this.getAllAnalyses();
@@ -1398,19 +1308,14 @@
                 };
               }
 
-              // Calculate total defects
               const totalDefects = analyses.reduce((sum, a) => sum + (a.defects?.length || 0), 0);
 
-              // Find most common issue
               const mostCommon = patterns.sort((a, b) => b.occurrence_count - a.occurrence_count)[0];
 
-              // Find recurring patterns (3+ occurrences)
               const recurring = patterns.filter(p => p.occurrence_count >= 3);
 
-              // Calculate temporal trends (comparing recent vs older analyses)
               const temporal = this.calculateTemporalTrends(analyses);
 
-              // Generate process improvement recommendations
               const recommendations = this.generateProcessRecommendations(patterns, statutes);
 
               return {
@@ -1433,7 +1338,6 @@
             }
           },
 
-          // Calculate temporal trends
           calculateTemporalTrends(analyses) {
             if (analyses.length < 2) return null;
 
@@ -1460,11 +1364,9 @@
             };
           },
 
-          // Generate process improvement recommendations
           generateProcessRecommendations(patterns, statutes) {
             const recommendations = [];
 
-            // Recurring defect recommendations
             patterns.filter(p => p.occurrence_count >= 3).forEach(pattern => {
               if (pattern.recommendation) {
                 recommendations.push({
@@ -1477,7 +1379,6 @@
               }
             });
 
-            // Low compliance statute recommendations
             statutes.filter(s => s.compliance_rate < 70).forEach(statute => {
               recommendations.push({
                 type: 'statute_compliance',
@@ -1492,7 +1393,6 @@
           }
         };
 
-        // Enhanced Timeline Visualization Component with Filtering
         const DefectTimeline = ({ analyses }) => {
           const [selectedDefect, setSelectedDefect] = useState(null);
           const [filters, setFilters] = useState({
@@ -1503,7 +1403,6 @@
           });
           const [expandedAnalysis, setExpandedAnalysis] = useState(null);
 
-          // Extract unique values for filters
           const filterOptions = React.useMemo(() => {
             if (!analyses || analyses.length === 0) return { types: [], severities: [], statutes: [] };
 
@@ -1530,13 +1429,11 @@
             };
           }, [analyses]);
 
-          // Filter analyses based on selected filters
           const filteredAnalyses = React.useMemo(() => {
             if (!analyses || analyses.length === 0) return [];
 
             let filtered = [...analyses];
 
-            // Date range filter
             if (filters.dateRange !== 'all') {
               const now = new Date();
               const daysMap = { last7: 7, last30: 30, last90: 90 };
@@ -1546,21 +1443,18 @@
               filtered = filtered.filter(a => new Date(a.timestamp) >= cutoff);
             }
 
-            // Defect type filter
             if (filters.defectType !== 'all') {
               filtered = filtered.filter(a =>
                 a.defects?.some(d => d.type === filters.defectType)
               );
             }
 
-            // Severity filter
             if (filters.severity !== 'all') {
               filtered = filtered.filter(a =>
                 a.defects?.some(d => d.severity === filters.severity)
               );
             }
 
-            // Statute filter
             if (filters.statute !== 'all') {
               filtered = filtered.filter(a =>
                 a.statutory_references?.includes(filters.statute)
@@ -1839,7 +1733,6 @@
           );
         };
 
-        // Learning Insights Panel Component
         const LearningInsightsPanel = ({ insights, currentDefects }) => {
           if (!insights) {
             return (
@@ -2149,7 +2042,6 @@
           );
         };
 
-        // Cross-Analysis Intelligence Display Component
         const CrossAnalysisIntelligence = ({ intelligence }) => {
           if (!intelligence || intelligence.length === 0) {
             return null;
@@ -2259,7 +2151,6 @@
           );
         };
 
-        // Pattern Recognition Engine
         const PatternDetector = {
           async analyze(currentAnalysis, historicalAnalyses) {
             const patterns = {
@@ -2268,7 +2159,6 @@
               resolved: []
             };
 
-            // Find recurring defects
             const defectCounts = {};
             historicalAnalyses.forEach(analysis => {
               if (analysis.defects) {
@@ -2279,7 +2169,6 @@
               }
             });
 
-            // Identify patterns
             Object.entries(defectCounts).forEach(([key, count]) => {
               if (count >= 3) {
                 const [type, description] = key.split('|');
@@ -2331,7 +2220,6 @@
           }
         };
 
-        // Helper function: Get color for severity
         const getColorForSeverity = (severity) => {
           const colors = {
             'critical': '#fecaca',
@@ -2342,7 +2230,6 @@
           return colors[severity] || '#f3f4f6';
         };
 
-        // Helper function: Find defects related to a reference
         const findDefectsForReference = (reference, analysis) => {
           const related = [];
           const refLower = reference.toLowerCase();
@@ -2371,11 +2258,9 @@
           return related;
         };
 
-        // Helper function: Build matrix
         const buildMatrix = (analysis) => {
           const matrix = [];
 
-          // Get all statutory references
           const refs = [];
           if (analysis.phaseA) {
             ['fileA', 'fileB'].forEach(fileKey => {
@@ -2387,7 +2272,6 @@
             });
           }
 
-          // Remove duplicates
           const uniqueRefs = [];
           const seen = new Set();
           refs.forEach(ref => {
@@ -2417,7 +2301,6 @@
           return matrix;
         };
 
-        // Helper function: Determine action
         const determineAction = (defects, compliant) => {
           if (compliant) return 'No action required - monitoring';
 
@@ -2431,7 +2314,6 @@
           return '📋 Review medium/low issues and plan remediation';
         };
 
-        // Helper function: Detect patterns from historical data
         const detectPatterns = (historicalAnalyses) => {
           if (!historicalAnalyses || historicalAnalyses.length === 0) return [];
 
@@ -2460,7 +2342,6 @@
           return Object.values(patternCounts).filter(p => p.count >= 2);
         };
 
-        // Cross-Reference Matrix Component
         const CrossReferenceMatrix = ({ analysis }) => {
           const matrix = React.useMemo(() => buildMatrix(analysis), [analysis]);
 
@@ -2570,22 +2451,17 @@
           );
         };
 
-        // Contextual Intelligence Enhancement
         const ContextualIntelligence = {
           async enhanceFindings(currentAnalysis, historicalAnalyses) {
             return {
               ...currentAnalysis,
               contextualInsights: {
-                // Compare current to historical average
                 severity: this.compareSeverity(currentAnalysis, historicalAnalyses),
 
-                // Identify if issues are worsening or improving
                 trend: this.analyzeTrend(currentAnalysis, historicalAnalyses),
 
-                // Suggest specific actions based on patterns
                 recommendations: this.generateSmartRecommendations(currentAnalysis, historicalAnalyses),
 
-                // Highlight new issue types never seen before
                 novelIssues: this.identifyNovelIssues(currentAnalysis, historicalAnalyses)
               }
             };
@@ -2664,11 +2540,9 @@
               };
             }
 
-            // Look at last 5 analyses
             const recent = historical.slice(-5);
             const counts = recent.map(a => this.countSeverity(a, 'high') + this.countSeverity(a, 'critical'));
 
-            // Simple linear trend
             const trend = counts[counts.length - 1] - counts[0];
 
             if (trend > 2) {
@@ -2695,7 +2569,6 @@
           generateSmartRecommendations(current, historical) {
             const recommendations = [];
 
-            // Get current issues
             const currentIssues = [];
             if (current.phaseA) {
               ['fileA', 'fileB'].forEach(fileKey => {
@@ -2710,7 +2583,6 @@
               });
             }
 
-            // Check for recurring high-severity issues
             const highSeverity = currentIssues.filter(i => i.severity === 'high' || i.severity === 'critical');
             if (highSeverity.length > 3) {
               recommendations.push({
@@ -2721,7 +2593,6 @@
               });
             }
 
-            // Check for missing statutory references
             const missingRefs = currentIssues.filter(i =>
               i.type && (i.type.includes('Missing') || i.type.includes('Statute'))
             );
@@ -2734,7 +2605,6 @@
               });
             }
 
-            // Check for procedural issues
             const proceduralIssues = currentIssues.filter(i =>
               i.type && (i.type.includes('Procedural') || i.type.includes('Fairness'))
             );
@@ -2764,7 +2634,6 @@
               return [];
             }
 
-            // Get all historical issue types
             const historicalTypes = new Set();
             historical.forEach(analysis => {
               if (analysis.defects) {
@@ -2774,7 +2643,6 @@
               }
             });
 
-            // Find current issues that are new
             const novelIssues = [];
             if (current.phaseA) {
               ['fileA', 'fileB'].forEach(fileKey => {
@@ -2802,9 +2670,7 @@
           }
         };
 
-        // Export Utility Functions
         const ExportUtils = {
-          // Export as JSON
           exportAsJSON(analysisResults, filename = 'forensic-analysis.json') {
             const exportData = {
               metadata: {
@@ -2821,7 +2687,6 @@
             saveAs(blob, filename);
           },
 
-          // Export as PDF Report
           async exportAsPDF(analysisResults, filename = 'forensic-analysis-report.pdf') {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -2830,7 +2695,6 @@
             const pageWidth = doc.internal.pageSize.getWidth();
             const margin = 20;
 
-            // Title Page
             doc.setFontSize(24);
             doc.setFont(undefined, 'bold');
             doc.text('Forensic Legal Analysis Report', pageWidth / 2, yPos, { align: 'center' });
@@ -2842,7 +2706,6 @@
 
             yPos += 20;
 
-            // Executive Summary
             doc.setFontSize(16);
             doc.setFont(undefined, 'bold');
             doc.text('Executive Summary', margin, yPos);
@@ -2862,7 +2725,6 @@
             doc.text(`Low Priority Issues: ${summary.lowCount}`, margin, yPos);
             yPos += 15;
 
-            // Defect Summary Table
             if (yPos > 250) {
               doc.addPage();
               yPos = 20;
@@ -2892,7 +2754,6 @@
 
             yPos = doc.lastAutoTable.finalY + 15;
 
-            // Statutory Compliance Matrix
             if (yPos > 250) {
               doc.addPage();
               yPos = 20;
@@ -2923,7 +2784,6 @@
               yPos = doc.lastAutoTable.finalY + 15;
             }
 
-            // Recommendations
             if (yPos > 250) {
               doc.addPage();
               yPos = 20;
@@ -2949,7 +2809,6 @@
             doc.save(filename);
           },
 
-          // Export as Word Document
           async exportAsWord(analysisResults, filename = 'forensic-analysis.docx') {
             const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, WidthType } = docx;
 
@@ -2960,7 +2819,6 @@
               sections: [{
                 properties: {},
                 children: [
-                  // Title
                   new Paragraph({
                     text: 'Forensic Legal Analysis Report',
                     heading: HeadingLevel.TITLE,
@@ -2972,7 +2830,6 @@
                   }),
                   new Paragraph({ text: '' }),
 
-                  // Executive Summary
                   new Paragraph({
                     text: 'Executive Summary',
                     heading: HeadingLevel.HEADING_1,
@@ -3009,7 +2866,6 @@
                   }),
                   new Paragraph({ text: '' }),
 
-                  // Key Defects
                   new Paragraph({
                     text: 'Key Defects Identified',
                     heading: HeadingLevel.HEADING_1,
@@ -3027,7 +2883,6 @@
 
                   new Paragraph({ text: '' }),
 
-                  // Recommendations
                   new Paragraph({
                     text: 'Recommendations',
                     heading: HeadingLevel.HEADING_1,
@@ -3046,14 +2901,11 @@
             saveAs(blob, filename);
           },
 
-          // Export Defects Only as CSV
           exportAsCSV(analysisResults, filename = 'defects-only.csv') {
             const defects = this.extractAllDefects(analysisResults);
 
-            // CSV Headers
             let csv = 'Date,Defect Type,Severity,Statute,Description,Recommendation\n';
 
-            // CSV Rows
             defects.forEach(defect => {
               const row = [
                 new Date().toLocaleDateString(),
@@ -3070,11 +2922,9 @@
             saveAs(blob, filename);
           },
 
-          // Helper: Extract all defects
           extractAllDefects(results) {
             const defects = [];
 
-            // Phase A defects
             if (results.phaseA) {
               ['fileA', 'fileB'].forEach(fileKey => {
                 if (results.phaseA[fileKey]) {
@@ -3099,7 +2949,6 @@
               });
             }
 
-            // Phase B defects
             if (results.phaseB) {
               if (results.phaseB.discrepancies) {
                 results.phaseB.discrepancies.forEach(disc => {
@@ -3127,7 +2976,6 @@
               }
             }
 
-            // Phase C defects
             if (results.phaseC && results.phaseC.defects) {
               results.phaseC.defects.forEach(defect => {
                 defects.push({
@@ -3137,7 +2985,6 @@
               });
             }
 
-            // Phase D defects
             if (results.phaseD && results.phaseD.defects) {
               results.phaseD.defects.forEach(defect => {
                 defects.push({
@@ -3150,7 +2997,6 @@
             return defects;
           },
 
-          // Helper: Generate summary
           generateSummary(results) {
             const defects = this.extractAllDefects(results);
 
@@ -3169,7 +3015,6 @@
             };
           },
 
-          // Helper: Extract statutory references
           extractStatutoryReferences(results) {
             const refs = [];
 
@@ -3190,7 +3035,6 @@
             return refs;
           },
 
-          // Helper: Generate recommendations
           generateRecommendations(summary) {
             const recs = [];
 
@@ -3258,20 +3102,15 @@
           const fileInputA = useRef(null);
           const fileInputB = useRef(null);
 
-          // Dark mode effect
           React.useEffect(() => {
             document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
           }, [darkMode]);
 
-          // Initialize persistent storage on component mount
           React.useEffect(() => {
             AnalysisMemory.init().then(() => {
-              console.log('Persistent Intelligence Layer initialized');
-              // Load historical analyses
               return AnalysisMemory.getAllAnalyses();
             }).then(analyses => {
               setHistoricalAnalyses(analyses || []);
-              console.log(`Loaded ${analyses?.length || 0} historical analyses`);
             }).catch(err => {
               console.error('Failed to initialize storage:', err);
             });
@@ -3320,7 +3159,6 @@
             }
           ];
 
-          // Victorian Law Document Type Classifier
           const classifyDocumentType = (filename, content) => {
             const types = {
               'Statutory Legislation': /\bact\s+\d{4}\b|primary legislation|statute/i,
@@ -3348,7 +3186,6 @@
             return 'General Legal Document';
           };
 
-          // Victorian Governing Framework Identifier
           const identifyVictorianFramework = (content, documentType) => {
             const framework = {
               primaryLegislation: [],
@@ -3359,7 +3196,6 @@
               applicableEvidentRules: []
             };
 
-            // Victorian Primary Legislation
             const vicActPatterns = [
               /Criminal\s+Procedure\s+Act\s+2009/gi,
               /Evidence\s+Act\s+2008/gi,
@@ -3382,7 +3218,6 @@
               }
             });
 
-            // Victorian Subordinate Instruments
             const vicRegPatterns = [
               /Criminal\s+Procedure\s+Regulations/gi,
               /Evidence\s+\(Miscellaneous\s+Provisions\s*\)\s+Regulations/gi,
@@ -3398,7 +3233,6 @@
               }
             });
 
-            // Victorian Courts
             const courtPatterns = [
               /Supreme\s+Court\s+of\s+Victoria/gi,
               /County\s+Court\s+of\s+Victoria/gi,
@@ -3414,7 +3248,6 @@
               }
             });
 
-            // Victorian Police Procedures
             if (documentType === 'Victoria Police Manual' || content.match(/victoria\s+police/i)) {
               const vpmPatterns = [
                 /VPM\s+[A-Z0-9-]+/g,
@@ -3430,7 +3263,6 @@
               });
             }
 
-            // Victorian Evidence Rules
             const evidenceRules = [
               /s\.\s*\d+\s+Evidence\s+Act/gi,
               /section\s+\d+\s+of\s+the\s+Evidence\s+Act/gi,
@@ -3447,15 +3279,12 @@
             return framework;
           };
 
-          // OCR Text Extraction Function
           const extractTextWithOCR = async (file, fileKey, onProgress) => {
             return new Promise((resolve, reject) => {
               const reader = new FileReader();
 
               reader.onload = async (e) => {
                 try {
-                  console.log(`Starting OCR processing for ${file.name}...`);
-
                   const { data: { text } } = await Tesseract.recognize(
                     e.target.result,
                     'eng',
@@ -3466,13 +3295,10 @@
                           if (onProgress) {
                             onProgress(progress);
                           }
-                          console.log(`OCR Progress: ${progress}%`);
                         }
                       }
                     }
                   );
-
-                  console.log(`OCR completed for ${file.name}. Extracted ${text.length} characters.`);
                   resolve(text);
                 } catch (error) {
                   console.error('OCR extraction failed:', error);
@@ -3485,22 +3311,18 @@
             });
           };
 
-          // PDF Text Extraction Function
           const extractTextFromPDF = async (file, fileKey, onProgress) => {
             return new Promise((resolve, reject) => {
               const reader = new FileReader();
 
               reader.onload = async (e) => {
                 try {
-                  console.log(`Starting PDF text extraction for ${file.name}...`);
                   const typedArray = new Uint8Array(e.target.result);
 
                   const loadingTask = pdfjsLib.getDocument(typedArray);
                   const pdf = await loadingTask.promise;
 
                   const numPages = pdf.numPages;
-                  console.log(`PDF has ${numPages} pages`);
-
                   let fullText = '';
 
                   for (let pageNum = 1; pageNum <= numPages; pageNum++) {
@@ -3515,8 +3337,6 @@
                     }
                     console.log(`Processed page ${pageNum}/${numPages} (${progress}%)`);
                   }
-
-                  console.log(`PDF extraction completed. Extracted ${fullText.length} characters from ${numPages} pages.`);
                   resolve(fullText);
                 } catch (error) {
                   console.error('PDF extraction failed:', error);
@@ -3529,7 +3349,6 @@
             });
           };
 
-          // File validation constants
           const FILE_VALIDATION = {
             MAX_SIZE: 50 * 1024 * 1024, // 50MB
             ALLOWED_TYPES: [
@@ -3545,7 +3364,6 @@
             ALLOWED_EXTENSIONS: ['.pdf', '.txt', '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif']
           };
 
-          // Validate file before processing
           const validateFile = (file) => {
             const errors = [];
 
@@ -3554,7 +3372,6 @@
               return { valid: false, errors };
             }
 
-            // Check file size
             if (file.size > FILE_VALIDATION.MAX_SIZE) {
               errors.push(`File size exceeds maximum allowed size (50MB). File size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
             }
@@ -3563,7 +3380,6 @@
               errors.push('File is empty');
             }
 
-            // Check file type
             const fileName = file.name.toLowerCase();
             const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
             const fileType = file.type.toLowerCase();
@@ -3575,7 +3391,6 @@
               errors.push(`Unsupported file type. Allowed types: PDF, Text files, Images (PNG, JPG, GIF, BMP, TIFF)`);
             }
 
-            // Check for suspicious patterns in filename
             if (fileName.includes('..') || fileName.includes('/') || fileName.includes('\\')) {
               errors.push('Invalid filename');
             }
@@ -3592,7 +3407,6 @@
               return;
             }
 
-            // Validate file before processing
             const validation = validateFile(file);
             if (!validation.valid) {
               alert(`File validation failed:\n\n${validation.errors.join('\n')}`);
@@ -3607,22 +3421,12 @@
               let content = '';
               const fileType = file.type;
               const fileName = file.name.toLowerCase();
-
-              console.log(`✅ File validation passed for ${file.name}`);
               console.log(`File size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
 
-              // PHASE 1: OCR and Text Extraction (happens FIRST before any analysis)
-              console.log(`Starting text extraction for ${file.name}...`);
-              console.log(`File type: ${fileType}`);
-
-              // Determine extraction method based on file type
               if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
-                // PDF files: Extract text using PDF.js
-                console.log('Detected PDF file - using PDF text extraction');
                 setUploadProgress(prev => ({ ...prev, [fileKey]: 5 }));
 
                 content = await extractTextFromPDF(file, fileKey, (progress) => {
-                  // Map PDF extraction progress to 5-70% of overall progress
                   const mappedProgress = 5 + Math.round(progress * 0.65);
                   setUploadProgress(prev => ({ ...prev, [fileKey]: mappedProgress }));
                 });
@@ -3634,19 +3438,14 @@
                          fileName.endsWith('.gif') ||
                          fileName.endsWith('.bmp') ||
                          fileName.endsWith('.tiff')) {
-                // Image files: Extract text using OCR (Tesseract.js)
-                console.log('Detected image file - using OCR text extraction');
                 setUploadProgress(prev => ({ ...prev, [fileKey]: 5 }));
 
                 content = await extractTextWithOCR(file, fileKey, (progress) => {
-                  // Map OCR progress to 5-70% of overall progress
                   const mappedProgress = 5 + Math.round(progress * 0.65);
                   setUploadProgress(prev => ({ ...prev, [fileKey]: mappedProgress }));
                 });
 
               } else {
-                // Plain text files: Read directly
-                console.log('Detected text file - reading as plain text');
                 content = await new Promise((resolve, reject) => {
                   const reader = new FileReader();
 
@@ -3663,22 +3462,16 @@
                 });
               }
 
-              // Verify we got content
               if (!content || content.trim().length === 0) {
                 throw new Error('No text could be extracted from the file. The file may be empty or the format is not supported.');
               }
-
-              console.log(`Text extraction completed. Extracted ${content.length} characters.`);
               setUploadProgress(prev => ({ ...prev, [fileKey]: 75 }));
 
-              // PHASE 2: Document Classification and Framework Identification
-              console.log('Classifying document and identifying legal framework...');
               const documentType = classifyDocumentType(file.name, content);
               const framework = identifyVictorianFramework(content, documentType);
 
               setUploadProgress(prev => ({ ...prev, [fileKey]: 90 }));
 
-              // PHASE 3: Store Results
               const enhancedFile = {
                 ...file,
                 documentType: documentType,
@@ -3692,14 +3485,6 @@
               setFileContents(prev => ({ ...prev, [fileKey]: content }));
               setUploadProgress(prev => ({ ...prev, [fileKey]: 100 }));
 
-              console.log(`File ${fileKey} processed successfully:`);
-              console.log(`- Classification: ${documentType}`);
-              console.log(`- Extraction Method: ${enhancedFile.extractionMethod}`);
-              console.log(`- Text Length: ${content.length} characters`);
-              console.log(`- Governing Framework:`, framework);
-
-              // PHASE 4: AUTOMATED PROVISIONAL ELEMENT & STATUTORY SEQUENCE TESTING
-              // This runs automatically on every uploaded file to validate compliance
               if (typeof ForensicAnalyzerConfig !== 'undefined' && ForensicAnalyzerConfig.utils.runAutomatedAnalysis) {
                 console.log(`\n${'='.repeat(80)}`);
                 console.log(`AUTOMATED COMPLIANCE ANALYSIS - ${fileKey.toUpperCase()}`);
@@ -3707,29 +3492,14 @@
 
                 const automatedResults = ForensicAnalyzerConfig.utils.runAutomatedAnalysis(content, file.name);
 
-                // Store automated test results with the file
                 enhancedFile.automatedAnalysis = automatedResults;
                 setFiles(prev => ({ ...prev, [fileKey]: enhancedFile }));
-
-                console.log('\nAUTOMATED ANALYSIS SUMMARY:');
                 console.log('─'.repeat(80));
-                console.log(`✓ Legislative Framework: ${automatedResults.framework.primaryLegislation.length} acts detected`);
-                console.log(`✓ Document Type: ${automatedResults.framework.documentType || 'Unknown'}`);
-                console.log(`✓ Framework Confidence: ${automatedResults.framework.confidence}%`);
-                console.log(`✓ Provisional Tests: ${automatedResults.provisionalTests.summary.passedTests}/${automatedResults.provisionalTests.summary.totalTests} passed`);
-                console.log(`✓ Sequence Validation: ${automatedResults.sequenceValidation.summary.compliantSequences}/${automatedResults.sequenceValidation.summary.totalSequences} compliant`);
+
                 if (automatedResults.reasonableBeliefTest) {
-                  console.log(`✓ Reasonable Belief Test: ${automatedResults.reasonableBeliefTest.compliant ? 'COMPLIANT' : 'NON-COMPLIANT'}`);
                 }
-                console.log(`\n► OVERALL STATUS: ${automatedResults.overallCompliance.status}`);
-                console.log(`► COMPLIANCE SCORE: ${automatedResults.overallCompliance.score}%`);
-                console.log(`► Critical Issues: ${automatedResults.overallCompliance.criticalIssues}`);
-                console.log(`► High Issues: ${automatedResults.overallCompliance.highIssues}`);
-                console.log(`► Medium Issues: ${automatedResults.overallCompliance.mediumIssues}`);
-                console.log(`► Low Issues: ${automatedResults.overallCompliance.lowIssues}`);
 
                 if (automatedResults.overallCompliance.recommendations.length > 0) {
-                  console.log('\nRECOMMENDATIONS:');
                   automatedResults.overallCompliance.recommendations.forEach((rec, idx) => {
                     console.log(`${idx + 1}. [${rec.priority.toUpperCase()}] ${rec.recommendation}`);
                   });
@@ -3824,43 +3594,29 @@
             setAnalysisResults(finalResults);
             setAnalysisProgress(90);
 
-            // Save analysis to persistent storage with file contents
             const analysisId = await AnalysisMemory.saveAnalysis(finalResults, files, fileContents);
-            console.log(`✅ Analysis #${analysisId} saved with learning capability enabled`);
-
-            // Reload historical analyses
             const updatedAnalyses = await AnalysisMemory.getAllAnalyses();
             setHistoricalAnalyses(updatedAnalyses || []);
 
             setAnalysisProgress(92);
 
-            // Generate learning insights from all analyses
             const learningInsights = await AnalysisMemory.generateLearningInsights();
-            console.log('📊 Learning insights generated:', learningInsights);
-
             setAnalysisProgress(94);
 
-            // Extract current defects for cross-analysis intelligence
             const currentDefects = AnalysisMemory.extractDefects(finalResults);
 
-            // Generate cross-analysis intelligence
             const crossIntelligence = await AnalysisMemory.getIntelligenceForAnalysis(currentDefects);
             setContextualInsights({
               learningInsights: learningInsights,
               crossIntelligence: crossIntelligence
             });
-            console.log('🔍 Cross-analysis intelligence:', crossIntelligence);
-
             setAnalysisProgress(96);
 
-            // Run pattern detection (legacy support)
             if (updatedAnalyses && updatedAnalyses.length > 0) {
               const patterns = await PatternDetector.analyze(finalResults, updatedAnalyses);
               setDetectedPatterns(patterns);
-              console.log('Pattern detection completed:', patterns);
             }
 
-            // Count total defects
             const totalDefects = ExportUtils.extractAllDefects(finalResults).length;
             setDefectCounter(totalDefects);
 
@@ -3869,7 +3625,6 @@
             setCurrentPhase('Analysis Complete - Intelligence Insights Ready');
           };
 
-          // Word-by-Word Linguistic Inspection Engine
           const performLinguisticInspection = (content, documentType, framework) => {
             const lines = content.split('\n');
             const linguisticReport = {
@@ -3895,7 +3650,6 @@
                 wordByWordInspection: []
               };
 
-              // Word-by-word inspection
               words.forEach((word, wordIndex) => {
                 const wordPosition = wordIndex + 1;
                 const cleanWord = word.replace(/[^\w\s'-]/g, '').toLowerCase();
@@ -3906,7 +3660,6 @@
                   issues: []
                 };
 
-                // Victorian legal terminology accuracy
                 const victorianTermIssues = checkVictorianLegalTerminology(word, cleanWord, documentType);
                 if (victorianTermIssues.length > 0) {
                   wordInspection.issues.push(...victorianTermIssues);
@@ -3918,7 +3671,6 @@
                   });
                 }
 
-                // Check for spelling and accuracy
                 const spellingIssues = checkLegalSpelling(word, cleanWord);
                 if (spellingIssues) {
                   wordInspection.issues.push(spellingIssues);
@@ -3935,7 +3687,6 @@
                 }
               });
 
-              // Line-level checks
               const lineIssues = performLineInspection(line, lineNumber, documentType, framework);
               lineAnalysis.issues.push(...lineIssues);
 
@@ -3953,7 +3704,6 @@
             return linguisticReport;
           };
 
-          // Victorian Legal Terminology Checker
           const checkVictorianLegalTerminology = (originalWord, cleanWord, documentType) => {
             const issues = [];
 
@@ -3982,7 +3732,6 @@
                 });
               }
 
-              // Check for American spelling in Victorian context
               if (info.american && cleanWord === info.american) {
                 issues.push({
                   type: 'Australian Spelling Required',
@@ -3997,7 +3746,6 @@
             return issues;
           };
 
-          // Legal Spelling Checker
           const checkLegalSpelling = (word, cleanWord) => {
             const commonLegalMisspellings = {
               'achive': 'achieve',
@@ -4041,11 +3789,9 @@
             return null;
           };
 
-          // Line-Level Inspection
           const performLineInspection = (line, lineNumber, documentType, framework) => {
             const issues = [];
 
-            // Check for incomplete statutory references
             if (/section\s+\d+\s*$/i.test(line) && !line.includes('Act')) {
               issues.push({
                 type: 'Incomplete Statutory Reference',
@@ -4055,7 +3801,6 @@
               });
             }
 
-            // Check for incorrect conjunction usage in legal lists
             if (/,\s+and\s+,/.test(line)) {
               issues.push({
                 type: 'Grammatical Error',
@@ -4065,7 +3810,6 @@
               });
             }
 
-            // Check for passive voice in Victoria Police procedural documents
             if (documentType === 'Victoria Police Manual' && /was\s+\w+ed\b|were\s+\w+ed\b/i.test(line)) {
               issues.push({
                 type: 'Passive Voice in Procedural Document',
@@ -4075,7 +3819,6 @@
               });
             }
 
-            // Check for ambiguous temporal references
             if (/as soon as possible|ASAP|promptly|immediately/i.test(line)) {
               issues.push({
                 type: 'Vague Temporal Reference',
@@ -4085,7 +3828,6 @@
               });
             }
 
-            // Check for missing mandatory elements in statements
             if (documentType === 'Statement' && lineNumber === 1) {
               if (!/statement\s+of/i.test(line)) {
                 issues.push({
@@ -4097,7 +3839,6 @@
               }
             }
 
-            // Check for incorrect court references
             const incorrectCourtRefs = [
               { pattern: /Magistrates Court(?!\s+of\s+Victoria)/gi, correct: 'Magistrates\' Court of Victoria' },
               { pattern: /Supreme Court(?!\s+of\s+Victoria)/gi, correct: 'Supreme Court of Victoria' },
@@ -4122,10 +3863,8 @@
             const words = content.split(/\s+/).filter(w => w.length > 0);
             const lines = content.split('\n').filter(l => l.trim().length > 0);
 
-            // Extract legal references first so we can pass them to issue identification
             const legalReferences = extractLegalReferences(content);
 
-            // Perform comprehensive linguistic inspection
             const linguisticInspection = performLinguisticInspection(content, 'General Legal Document', {});
 
             return {
@@ -4201,17 +3940,14 @@
             return references.slice(0, 15);
           };
 
-          // Enhanced issue identification with statutory compliance matrix
           const identifyPotentialIssues = (content, preset, legalReferences = []) => {
             const issues = [];
 
-            // Extract statutory framework for this document
             const primaryActs = legalReferences.filter(r => r.type === 'Act Citation');
             const sectionRefs = legalReferences.filter(r => r.type === 'Section Reference');
 
             // Category 1: CRITICAL STATUTORY DEFECTS (High Severity)
 
-            // 1.1 Acknowledged Errors or Corrections
             const errorPatterns = /\b(error|incorrect|mistake|erroneously|wrongly|inadvertent|oversight)\b/gi;
             const errorMatches = content.match(errorPatterns);
             if (errorMatches && errorMatches.length > 0) {
@@ -4226,7 +3962,6 @@
               });
             }
 
-            // 1.2 Jurisdiction Issues
             const jurisdictionPatterns = /\b(jurisdiction|ultra vires|beyond power|lack.*authority|void|invalid)\b/gi;
             const jurisdictionMatches = content.match(jurisdictionPatterns);
             if (jurisdictionMatches && jurisdictionMatches.length > 2) {
@@ -4241,7 +3976,6 @@
               });
             }
 
-            // 1.3 Procedural Fairness Violations
             const fairnessPatterns = /\b(natural justice|procedural fairness|bias|denied.*opportunity|no.*hearing|unfair)\b/gi;
             const fairnessMatches = content.match(fairnessPatterns);
             if (fairnessMatches && fairnessMatches.length > 0) {
@@ -4256,9 +3990,6 @@
               });
             }
 
-            // Category 2: STATUTORY REFERENCE DEFECTS (High-Medium Severity)
-
-            // 2.1 Missing Primary Legislation Reference
             if (primaryActs.length === 0) {
               issues.push({
                 severity: 'high',
@@ -4270,7 +4001,6 @@
               });
             }
 
-            // 2.2 Missing Section References
             if (sectionRefs.length === 0 && content.length > 500) {
               issues.push({
                 severity: 'medium',
@@ -4282,7 +4012,6 @@
               });
             }
 
-            // 2.3 Inconsistent Citation Format
             const inconsistentCitations = checkCitationConsistency(content);
             if (inconsistentCitations.length > 0) {
               issues.push({
@@ -4295,9 +4024,6 @@
               });
             }
 
-            // Category 3: SUBORDINATE INSTRUMENT ISSUES (Medium Severity)
-
-            // 3.1 Identify subordinate instruments
             const subordinateInstruments = identifySubordinateInstruments(content);
             if (subordinateInstruments.regulations.length > 0 && primaryActs.length === 0) {
               issues.push({
@@ -4311,7 +4037,6 @@
               });
             }
 
-            // 3.2 Regulation vs Act conflict indicators
             const conflictPatterns = /\b(contrary to|inconsistent with|conflict|override|supersede)\b/gi;
             const conflictMatches = content.match(conflictPatterns);
             if (conflictMatches && subordinateInstruments.regulations.length > 0) {
@@ -4326,13 +4051,10 @@
               });
             }
 
-            // Category 4: MANDATORY VS DISCRETIONARY LANGUAGE (Medium-Low Severity)
-
             const mustShallCount = (content.match(/\b(must|shall|required)\b/gi) || []).length;
             const mayCount = (content.match(/\b(may|discretion|permitted)\b/gi) || []).length;
             const couldCount = (content.match(/\b(could|might|possibly)\b/gi) || []).length;
 
-            // 4.1 Ambiguous mandatory obligations
             if (mustShallCount > 0 && mayCount > 0) {
               const ratio = mayCount / mustShallCount;
               const severity = ratio > 0.5 ? 'medium' : 'low';
@@ -4346,7 +4068,6 @@
               });
             }
 
-            // 4.2 Weak or vague language in statutory context
             if (couldCount > mustShallCount && mustShallCount > 0) {
               issues.push({
                 severity: 'medium',
@@ -4357,9 +4078,6 @@
               });
             }
 
-            // Category 5: EVIDENTIARY & PROCEDURAL SUFFICIENCY (Medium-Low Severity)
-
-            // 5.1 Insufficient factual detail
             const lines = content.split('\n').filter(l => l.trim().length > 0);
             const words = content.split(/\s+/).length;
             if (lines.length < 5 && words < 100) {
@@ -4373,7 +4091,6 @@
               });
             }
 
-            // 5.2 Missing temporal references
             const temporalMarkers = content.match(/\b(\d{1,2}\/\d{1,2}\/\d{2,4}|\d{4}-\d{2}-\d{2}|date|time|deadline|by|before|after|within \d+)\b/gi);
             if (!temporalMarkers && content.length > 500) {
               issues.push({
@@ -4385,7 +4102,6 @@
               });
             }
 
-            // 5.3 Evidence markers
             const evidenceMarkers = content.match(/\b(evidence|exhibit|annexure|attachment|schedule|appendix)\b/gi);
             if (evidenceMarkers && evidenceMarkers.length > 3) {
               const evidenceVerification = content.match(/\b(refer|attached|enclosed|provided)\b/gi);
@@ -4400,9 +4116,6 @@
               }
             }
 
-            // Category 6: INTERPRETIVE PRINCIPLES (Low-Medium Severity)
-
-            // 6.1 Specific vs General provisions (generalia specialibus non derogant)
             const generalTerms = content.match(/\b(general|overall|broadly|in general|generally)\b/gi);
             const specificTerms = content.match(/\b(specific|specifically|particular|precisely|expressly)\b/gi);
             if (generalTerms && specificTerms && generalTerms.length > specificTerms.length * 2) {
@@ -4416,7 +4129,6 @@
               });
             }
 
-            // 6.2 Express inclusions/exclusions (expressio unius est exclusio alterius)
             const inclusionTerms = content.match(/\b(includes?|including|such as|means)\b/gi);
             const exclusionTerms = content.match(/\b(excludes?|excluding|except|other than|but not)\b/gi);
             if (inclusionTerms && !exclusionTerms && inclusionTerms.length > 3) {
@@ -4430,13 +4142,10 @@
               });
             }
 
-            // Calculate overall severity score
             const totalWeight = issues.reduce((sum, issue) => sum + (issue.weight || 0), 0);
 
-            // Sort issues by weight (highest first)
             issues.sort((a, b) => (b.weight || 0) - (a.weight || 0));
 
-            // Add metadata
             issues.forEach((issue, index) => {
               issue.id = `ISSUE-${index + 1}`;
               issue.governingFramework = primaryActs.length > 0 ? primaryActs[0].text : 'Unspecified';
@@ -4456,11 +4165,9 @@
             };
           };
 
-          // Helper function: Check citation consistency
           const checkCitationConsistency = (content) => {
             const inconsistencies = [];
 
-            // Check for mixed section reference styles
             const sectionStyle1 = content.match(/section \d+/gi);
             const sectionStyle2 = content.match(/s\.\d+/gi);
             const sectionStyle3 = content.match(/sec\. \d+/gi);
@@ -4470,7 +4177,6 @@
               inconsistencies.push('Mixed section reference formats (e.g., "section 5", "s.5", "sec. 5")');
             }
 
-            // Check for mixed subsection styles
             const subsectionParen = content.match(/\(\d+\)/g);
             const subsectionBracket = content.match(/\[\d+\]/g);
             if (subsectionParen && subsectionBracket) {
@@ -4480,7 +4186,6 @@
             return inconsistencies;
           };
 
-          // Helper function: Identify subordinate instruments
           const identifySubordinateInstruments = (content) => {
             const regulations = content.match(/[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+Regulations?\s+\d{4}/g) || [];
             const rules = content.match(/[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+Rules\s+\d{4}/g) || [];
@@ -4504,16 +4209,10 @@
             };
           };
 
-          // Enhanced Victorian Law Statutory Compliance Checker for Criminal Summary Matters
           const checkVictorianStatutoryCompliance = (content, documentType, legalReferences) => {
             const complianceIssues = [];
 
-            // ====================================================================================
-            // PART 1: DISCLOSURE REQUIREMENTS - Criminal Procedure Act 2009 Part 3.3
-            // ====================================================================================
-
             if (documentType === 'Disclosure Document' || documentType === 'Statement') {
-              // Check 1.1: Informant's statement present
               if (!/informant[\'']?s?\s+statement/i.test(content)) {
                 complianceIssues.push({
                   severity: 'critical',
@@ -4525,7 +4224,6 @@
                 });
               }
 
-              // Check 1.2: Witness statements
               const witnessStatementMatch = content.match(/witness\s+statement/gi);
               if (!witnessStatementMatch || witnessStatementMatch.length === 0) {
                 complianceIssues.push({
@@ -4538,7 +4236,6 @@
                 });
               }
 
-              // Check 1.3: Prior convictions disclosed
               if (!/prior\s+(conviction|record|history)|criminal\s+(history|record)/i.test(content)) {
                 complianceIssues.push({
                   severity: 'medium',
@@ -4550,7 +4247,6 @@
                 });
               }
 
-              // Check 1.4: Physical evidence list
               if (!/evidence\s+(list|schedule|inventory)|exhibit\s+(list|schedule|inventory)|physical\s+evidence/i.test(content)) {
                 complianceIssues.push({
                   severity: 'high',
@@ -4562,7 +4258,6 @@
                 });
               }
 
-              // Check 1.5: Statements signed and dated
               const hasSignature = /signed|signature/i.test(content);
               const hasDate = /dated|date\s*:/i.test(content);
               if (!hasSignature) {
@@ -4586,7 +4281,6 @@
                 });
               }
 
-              // Check 1.6: s.186 timeframe compliance
               if (!/within\s+\d+\s+(days?|weeks?|months?)|disclosure\s+deadline/i.test(content)) {
                 complianceIssues.push({
                   severity: 'high',
@@ -4598,7 +4292,6 @@
                 });
               }
 
-              // Check 1.7: Exhibits properly identified
               const exhibitReferences = content.match(/exhibit\s+[A-Z0-9]+/gi);
               if (exhibitReferences && exhibitReferences.length > 0) {
                 const properIdentification = /exhibit\s+[A-Z0-9]+:\s*[\w\s]+/i.test(content);
@@ -4615,14 +4308,9 @@
               }
             }
 
-            // ====================================================================================
-            // PART 2: PRELIMINARY TEST REQUIREMENTS - Road Safety Act 1986
-            // ====================================================================================
-
             const isPreliminaryTest = /preliminary\s+(test|breath|drug)|roadside\s+test|screening\s+test/i.test(content);
 
             if (isPreliminaryTest) {
-              // Check 2.1: Section 49(1) - "reason to believe"
               const hasReasonToBelieve = /reason\s+to\s+(believe|suspect)|reasonable\s+(belief|suspicion)|believed|suspected/i.test(content);
               if (!hasReasonToBelieve) {
                 complianceIssues.push({
@@ -4635,7 +4323,6 @@
                 });
               }
 
-              // Check 2.2: Section 55D(1) - test "in accordance with directions"
               const hasDirections = /in\s+accordance\s+with\s+directions?|directions?\s+(given|provided|issued)|followed\s+directions?/i.test(content);
               if (!hasDirections) {
                 complianceIssues.push({
@@ -4648,7 +4335,6 @@
                 });
               }
 
-              // Check 2.3: Section 55D(2) - oral directions if literate
               const hasOralDirections = /oral\s+directions?|verbal\s+(?:directions?|instructions?)|spoken\s+to|told\s+to|instructed\s+(?:to|that)/i.test(content);
               const hasLiteracyRef = /literate|able\s+to\s+read|read\s+and\s+understand/i.test(content);
               if (!hasOralDirections && !hasLiteracyRef) {
@@ -4662,7 +4348,6 @@
                 });
               }
 
-              // Check 2.4: Section 55E - "proper performance" indicators
               const properPerformanceIndicators = [
                 /device\s+approval|approved\s+device|approved\s+(?:by|under)/i,
                 /calibrat(?:ed|ion)|maintain(?:ed|ance)|servic(?:ed|ing)/i,
@@ -4681,7 +4366,6 @@
                 });
               }
 
-              // Check 2.5: Device approval number
               const hasApprovalNumber = /approval\s+(?:number|no\.?|#)\s*:?\s*[\w\d\-]+|device\s+(?:number|no\.?|#)\s*:?\s*[\w\d\-]+/i.test(content);
               if (!hasApprovalNumber) {
                 complianceIssues.push({
@@ -4694,7 +4378,6 @@
                 });
               }
 
-              // Check 2.6: Calibration/maintenance records
               const hasMaintenanceRecords = /calibrat(?:ed|ion)\s+(?:on|date|record)|maintenance\s+(?:log|record)|service\s+(?:date|record)/i.test(content);
               if (!hasMaintenanceRecords) {
                 complianceIssues.push({
@@ -4707,7 +4390,6 @@
                 });
               }
 
-              // Check 2.7: Section 55(1) - evidentiary test compliance
               const hasEvidentinaryTest = /evidentiary\s+test|evidential\s+(?:test|breath)/i.test(content);
               if (hasEvidentinaryTest) {
                 const hasCompliance = /complied\s+with|in\s+accordance\s+with|pursuant\s+to.*s(?:ection)?\s*55\(1\)/i.test(content);
@@ -4723,7 +4405,6 @@
                 }
               }
 
-              // Check 2.8: Time of test vs time of driving
               const hasTestTime = /time\s+of\s+test|test\s+conducted\s+at|tested\s+at/i.test(content);
               const hasDrivingTime = /time\s+of\s+(?:driving|incident|offence)|drove\s+at|driving\s+at/i.test(content);
               if (hasTestTime && !hasDrivingTime) {
@@ -4738,11 +4419,6 @@
               }
             }
 
-            // ====================================================================================
-            // PART 3: EVIDENCE ACT 2008 COMPLIANCE
-            // ====================================================================================
-
-            // Check 3.1: Hearsay issues (s.59)
             const hearsayIndicators = /(?:he|she|they)\s+(?:said|told|stated)|told\s+(?:me|us|the\s+officer)|stated\s+that|informed\s+(?:me|us)|reported\s+that/i;
             const hasHearsay = hearsayIndicators.test(content);
             if (hasHearsay) {
@@ -4755,7 +4431,6 @@
                 remediation: 'Verify hearsay is admissible under exception (s.60-69) or consider s.59 exclusion'
               });
 
-              // Check 3.2: If hearsay, is exception claimed? (s.60-69)
               const hearsayExceptions = /s(?:ection)?\s*(?:60|61|62|63|64|65|66|67|68|69)|exception\s+to\s+hearsay|business\s+records|contemporaneous\s+statement/i;
               if (!hearsayExceptions.test(content)) {
                 complianceIssues.push({
@@ -4768,7 +4443,6 @@
                 });
               }
 
-              // Check 3.3: Business records exception (s.69)
               const businessRecords = /business\s+records?|s(?:ection)?\s*69|records?\s+(?:kept|made)\s+in\s+(?:the\s+)?course\s+of.*business/i;
               if (businessRecords.test(content)) {
                 const hasFoundation = /person\s+with\s+knowledge|made\s+(?:by|at)|kept\s+in\s+(?:the\s+)?ordinary\s+course/i.test(content);
@@ -4785,7 +4459,6 @@
               }
             }
 
-            // Check 3.4: Section 137 - probative vs prejudicial
             const highlyPrejudicial = /prior\s+(?:conviction|offence)|bad\s+character|previous\s+(?:criminal|bad)\s+(?:conduct|behaviour)|prejudicial/i;
             if (highlyPrejudicial.test(content)) {
               complianceIssues.push({
@@ -4798,7 +4471,6 @@
               });
             }
 
-            // Check 3.5: Section 138 - improperly obtained evidence
             const improperlyObtained = /obtained\s+(?:illegally|unlawfully|improperly)|breach\s+of|violated|without\s+(?:warrant|authority|consent)|unlawful\s+(?:search|seizure)/i;
             if (improperlyObtained.test(content)) {
               complianceIssues.push({
@@ -4811,11 +4483,6 @@
               });
             }
 
-            // ====================================================================================
-            // PART 4: GENERAL VICTORIAN COMPLIANCE CHECKS
-            // ====================================================================================
-
-            // Check 4.1: Victoria Police Act 2013 compliance
             if (documentType === 'Victoria Police Manual' || /victoria\s+police/i.test(content)) {
               if (!/Victoria\s+Police\s+Act\s+2013/i.test(content)) {
                 complianceIssues.push({
@@ -4829,7 +4496,6 @@
               }
             }
 
-            // Check 4.2: Charter of Human Rights compliance
             const humanRightsIndicators = /rights?|fairness|natural justice|discrimination|equality/i;
             if (humanRightsIndicators.test(content)) {
               if (!/Charter\s+of\s+Human\s+Rights/i.test(content)) {
@@ -4844,7 +4510,6 @@
               }
             }
 
-            // Check 4.3: Court-specific compliance
             if (documentType === 'Court Order' || documentType === 'Court Documentation') {
               const hasCourtRef = /Supreme\s+Court|County\s+Court|Magistrates/i.test(content);
               const hasFullCourtName = /Supreme\s+Court\s+of\s+Victoria|County\s+Court\s+of\s+Victoria|Magistrates[\'']?\s+Court\s+of\s+Victoria/i.test(content);
@@ -4864,7 +4529,6 @@
             return complianceIssues;
           };
 
-          // Cross-File Narrative and Timeline Evaluator
           const evaluateCrossFileNarrativeTimeline = (contentA, contentB, fileAMetadata, fileBMetadata) => {
             const narrativeAnalysis = {
               timelineDiscrepancies: [],
@@ -4874,15 +4538,12 @@
               sequentialMapping: []
             };
 
-            // Extract dates and temporal references from both files
             const datesA = extractDatesAndTimeline(contentA);
             const datesB = extractDatesAndTimeline(contentB);
 
-            // Extract events and narrative elements
             const eventsA = extractNarrativeEvents(contentA);
             const eventsB = extractNarrativeEvents(contentB);
 
-            // Compare timelines
             datesA.forEach(dateA => {
               const matchingDatesB = datesB.filter(dateB =>
                 dateB.normalizedDate === dateA.normalizedDate
@@ -4904,7 +4565,6 @@
               }
             });
 
-            // Compare event sequences
             const commonTerms = findCommonNarrativeTerms(eventsA, eventsB);
             commonTerms.forEach(term => {
               const orderA = eventsA.findIndex(e => e.text.toLowerCase().includes(term.toLowerCase()));
@@ -4914,7 +4574,6 @@
                 const contextA = eventsA[orderA];
                 const contextB = eventsB[orderB];
 
-                // Check if surrounding context differs significantly
                 if (contextA.surrounding !== contextB.surrounding) {
                   narrativeAnalysis.eventSequenceMismatch.push({
                     term: term,
@@ -4928,11 +4587,9 @@
               }
             });
 
-            // Look for direct contradictions
             const contradictions = findFactualContradictions(contentA, contentB);
             narrativeAnalysis.factualContradictions = contradictions;
 
-            // Build sequential mapping of all cross-referenced elements
             narrativeAnalysis.sequentialMapping = buildSequentialMapping(
               datesA,
               datesB,
@@ -4945,7 +4602,6 @@
             return narrativeAnalysis;
           };
 
-          // Extract dates and temporal references
           const extractDatesAndTimeline = (content) => {
             const dates = [];
             const lines = content.split('\n');
@@ -4970,7 +4626,6 @@
                 });
               });
 
-              // Temporal markers
               const temporalMarkers = [
                 /\bbefore\s+[^.]+/gi,
                 /\bafter\s+[^.]+/gi,
@@ -4994,7 +4649,6 @@
             return dates;
           };
 
-          // Extract narrative events
           const extractNarrativeEvents = (content) => {
             const events = [];
             const lines = content.split('\n');
@@ -5022,7 +4676,6 @@
             return events;
           };
 
-          // Find common narrative terms
           const findCommonNarrativeTerms = (eventsA, eventsB) => {
             const termsA = new Set(
               eventsA.flatMap(e => e.text.toLowerCase().match(/\b\w{4,}\b/g) || [])
@@ -5034,18 +4687,15 @@
             return [...termsA].filter(term => termsB.has(term) && !['this', 'that', 'with', 'from', 'have', 'been', 'were', 'said'].includes(term));
           };
 
-          // Find factual contradictions
           const findFactualContradictions = (contentA, contentB) => {
             const contradictions = [];
 
-            // Simple contradiction patterns
             const contradictionPatterns = [
               { pattern: /\b(yes|no|true|false|did|did not|was|was not)\b/gi, type: 'affirmation/negation' },
               { pattern: /\b\d+\s+(person|people|officer|individual|item|exhibit)/gi, type: 'quantity' },
               { pattern: /\b(present|absent|available|unavailable)\b/gi, type: 'presence' }
             ];
 
-            // This is a simplified version - full implementation would use NLP
             contradictionPatterns.forEach(({ pattern, type }) => {
               const matchesA = contentA.match(pattern) || [];
               const matchesB = contentB.match(pattern) || [];
@@ -5054,7 +4704,6 @@
                 const uniqueA = new Set(matchesA.map(m => m.toLowerCase()));
                 const uniqueB = new Set(matchesB.map(m => m.toLowerCase()));
 
-                // Check for direct opposites
                 uniqueA.forEach(a => {
                   if (a.includes('not') && uniqueB.has(a.replace(/not\s+/, ''))) {
                     contradictions.push({
@@ -5072,11 +4721,9 @@
             return contradictions;
           };
 
-          // Build sequential mapping
           const buildSequentialMapping = (datesA, datesB, eventsA, eventsB, contentA, contentB) => {
             const mapping = [];
 
-            // Map all dates sequentially
             datesA.forEach((dateA, indexA) => {
               mapping.push({
                 sequenceNumber: mapping.length + 1,
@@ -5103,7 +4750,6 @@
               }
             });
 
-            // Map all events sequentially
             eventsA.forEach(eventA => {
               mapping.push({
                 sequenceNumber: mapping.length + 1,
@@ -5131,7 +4777,6 @@
             return mapping.sort((a, b) => a.sequenceNumber - b.sequenceNumber);
           };
 
-          // Generate Comprehensive Omissions Report - Doc A vs Doc B
           const generateOmissionsReport = (contentA, contentB, phaseAResults) => {
             const report = {
               statutoryReferences: {
@@ -5151,7 +4796,6 @@
               }
             };
 
-            // Extract statutory references
             const refsA = new Set(phaseAResults.fileA[0].findings.legalReferences.map(r => r.text));
             const refsB = new Set(phaseAResults.fileB[0].findings.legalReferences.map(r => r.text));
 
@@ -5177,7 +4821,6 @@
               }
             });
 
-            // Extract procedural elements
             const proceduralA = phaseAResults.fileA[0].findings.proceduralElements || [];
             const proceduralB = phaseAResults.fileB[0].findings.proceduralElements || [];
 
@@ -5212,7 +4855,6 @@
 
             // Critical Victorian Criminal Matter Omissions
 
-            // Check: "in accordance with directions" language (s.55D RSA 1986)
             const hasDirectionsA = /in\s+accordance\s+with\s+directions?/i.test(contentA);
             const hasDirectionsB = /in\s+accordance\s+with\s+directions?/i.test(contentB);
             if (hasDirectionsA && !hasDirectionsB) {
@@ -5236,7 +4878,6 @@
               });
             }
 
-            // Check: Officer's subjective belief formation (s.49 RSA 1986)
             const hasReasonToBelieveA = /reason\s+to\s+(believe|suspect)|reasonable\s+(belief|suspicion)/i.test(contentA);
             const hasReasonToBelieveB = /reason\s+to\s+(believe|suspect)|reasonable\s+(belief|suspicion)/i.test(contentB);
             if (hasReasonToBelieveA && !hasReasonToBelieveB) {
@@ -5260,7 +4901,6 @@
               });
             }
 
-            // Check: Device approval number (s.55E RSA 1986)
             const hasApprovalA = /approval\s+(?:number|no\.?|#)|device\s+(?:number|no\.?|#)/i.test(contentA);
             const hasApprovalB = /approval\s+(?:number|no\.?|#)|device\s+(?:number|no\.?|#)/i.test(contentB);
             if (hasApprovalA && !hasApprovalB) {
@@ -5274,7 +4914,6 @@
               });
             }
 
-            // Check: Calibration/maintenance records (s.55E proper performance)
             const hasCalibrationA = /calibrat(?:ed|ion)|maintenance|service/i.test(contentA);
             const hasCalibrationB = /calibrat(?:ed|ion)|maintenance|service/i.test(contentB);
             if (hasCalibrationA && !hasCalibrationB) {
@@ -5288,7 +4927,6 @@
               });
             }
 
-            // Check: Time of test vs time of driving
             const hasTestTimeA = /time\s+of\s+test|test\s+(?:conducted|administered)\s+at/i.test(contentA);
             const hasTestTimeB = /time\s+of\s+test|test\s+(?:conducted|administered)\s+at/i.test(contentB);
             const hasDrivingTimeA = /time\s+of\s+(?:driving|incident|offence)/i.test(contentA);
@@ -5316,7 +4954,6 @@
               });
             }
 
-            // Check: Hearsay exceptions
             const hasHearsayExceptionA = /s(?:ection)?\s*(?:60|61|62|63|64|65|66|67|68|69)|exception\s+to\s+hearsay/i.test(contentA);
             const hasHearsayExceptionB = /s(?:ection)?\s*(?:60|61|62|63|64|65|66|67|68|69)|exception\s+to\s+hearsay/i.test(contentB);
             if (hasHearsayExceptionA && !hasHearsayExceptionB) {
@@ -5333,14 +4970,11 @@
             return report;
           };
 
-          // Build Enhanced Cross-Reference Matrix with Doc A vs Doc B Compliance
           const buildComplianceMatrix = (phaseAResults, complianceA, complianceB) => {
             const matrix = [];
 
-            // Build a comprehensive list of all statutory provisions mentioned
             const provisionsMap = new Map();
 
-            // Add provisions from Victorian compliance checks
             [...complianceA, ...complianceB].forEach(issue => {
               const key = `${issue.statute}|${issue.section}`;
               if (!provisionsMap.has(key)) {
@@ -5357,13 +4991,11 @@
               }
             });
 
-            // Populate Doc A compliance
             complianceA.forEach(issue => {
               const key = `${issue.statute}|${issue.section}`;
               const provision = provisionsMap.get(key);
               if (provision) {
                 provision.docAIssues.push(issue);
-                // Determine compliance status
                 if (issue.compliance === 'compliant') {
                   provision.docACompliance = 'compliant';
                 } else if (issue.compliance === 'non-compliant') {
@@ -5374,13 +5006,11 @@
               }
             });
 
-            // Populate Doc B compliance
             complianceB.forEach(issue => {
               const key = `${issue.statute}|${issue.section}`;
               const provision = provisionsMap.get(key);
               if (provision) {
                 provision.docBIssues.push(issue);
-                // Determine compliance status
                 if (issue.compliance === 'compliant') {
                   provision.docBCompliance = 'compliant';
                 } else if (issue.compliance === 'non-compliant') {
@@ -5391,9 +5021,7 @@
               }
             });
 
-            // Identify discrepancies and determine actions
             provisionsMap.forEach((provision, key) => {
-              // Default to compliant if no issues found
               if (provision.docACompliance === null && provision.docAIssues.length === 0) {
                 provision.docACompliance = 'compliant';
               }
@@ -5401,12 +5029,10 @@
                 provision.docBCompliance = 'compliant';
               }
 
-              // Identify discrepancies
               if (provision.docACompliance !== provision.docBCompliance) {
                 provision.discrepancies.push(`Doc A is ${provision.docACompliance || 'unknown'} but Doc B is ${provision.docBCompliance || 'unknown'}`);
               }
 
-              // Determine action required based on compliance
               const highSeverityA = provision.docAIssues.filter(i => i.severity === 'critical' || i.severity === 'high');
               const highSeverityB = provision.docBIssues.filter(i => i.severity === 'critical' || i.severity === 'high');
 
@@ -5473,7 +5099,6 @@
               });
             }
 
-            // Add Victorian statutory compliance checks
             const complianceA = checkVictorianStatutoryCompliance(
               fileContents.fileA,
               files.fileA?.documentType || 'General Legal Document',
@@ -5486,7 +5111,6 @@
               phaseAResults.fileB[0].findings.legalReferences
             );
 
-            // Add narrative and timeline evaluation
             const narrativeEvaluation = evaluateCrossFileNarrativeTimeline(
               fileContents.fileA,
               fileContents.fileB,
@@ -5494,14 +5118,12 @@
               files.fileB
             );
 
-            // Generate comprehensive omissions report
             const omissionsReport = generateOmissionsReport(
               fileContents.fileA,
               fileContents.fileB,
               phaseAResults
             );
 
-            // Build enhanced compliance matrix
             const complianceMatrix = buildComplianceMatrix(
               phaseAResults,
               complianceA,
@@ -5586,12 +5208,10 @@
               phaseAResults[fileKey].forEach(analysis => {
                 const potentialIssues = analysis.findings.potentialIssues;
 
-                // Handle both old format (array) and new format (object with issues/summary)
                 const issues = potentialIssues.issues || potentialIssues;
                 const summary = potentialIssues.summary;
 
                 if (summary) {
-                  // New enhanced format
                   assessment[fileKey].criticalIssues += summary.critical || 0;
                   assessment[fileKey].highIssues += summary.high || 0;
                   assessment[fileKey].mediumIssues += summary.medium || 0;
@@ -5606,7 +5226,6 @@
                     assessment[fileKey].compliant++;
                   }
                 } else {
-                  // Old simple format (backward compatibility)
                   if (issues.length === 0) {
                     assessment[fileKey].compliant++;
                   } else {
@@ -5638,11 +5257,6 @@
             return assessment;
           };
 
-          // ============================================================================
-          // PHASE C: COMPREHENSIVE STATUTORY INTERPRETATION ENGINE
-          // Implements Interpretation Act 1984 (Vic) and Common Law Maxims
-          // ============================================================================
-
           /**
            * Apply Interpretation Act 1984 (Vic) Section 35(a) - Purposive Construction
            * Analyzes provisions to determine Parliament's intention and legislative purpose
@@ -5656,7 +5270,6 @@
               recommendation: ''
             };
 
-            // Analyze based on provision type
             if (provision.includes('s.49') || provision.includes('section 49')) {
               analysis.parliamentaryIntention = 'Parliament intended to provide lawful authority for preliminary breath testing while protecting individual rights through procedural safeguards';
               analysis.mischiefAddressed = 'Addresses the mischief of impaired driving detection while preventing arbitrary testing without reasonable grounds';
@@ -5695,7 +5308,6 @@
               applicationGuidance: ''
             };
 
-            // Identify common ambiguous phrases in Victorian traffic law
             const ambiguousPhrases = [
               { phrase: 'reason to believe', type: 'Subjective vs Objective Standard' },
               { phrase: 'as soon as practicable', type: 'Temporal Requirement' },
@@ -5890,7 +5502,6 @@
               caseLawPrinciples: []
             };
 
-            // Analyze "reason to believe"
             if (ambiguousPhrase.toLowerCase().includes('reason to believe')) {
               resolution.literalInterpretation = {
                 meaning: 'Plain English: A reason (cause, ground) to believe (accept as true)',
@@ -5925,7 +5536,6 @@
                 'Context and purpose trump literalism where ambiguity exists'
               ];
             }
-            // Analyze "in accordance with directions"
             else if (ambiguousPhrase.toLowerCase().includes('in accordance with')) {
               resolution.literalInterpretation = {
                 meaning: 'Plain meaning: In conformity with; following; complying with',
@@ -5960,7 +5570,6 @@
                 'Purposive interpretation favors strict compliance where liberty interests engaged'
               ];
             }
-            // Analyze "directions"
             else if (ambiguousPhrase.toLowerCase().includes('directions') || ambiguousPhrase.toLowerCase().includes('direction')) {
               resolution.literalInterpretation = {
                 meaning: 'Plain meaning: Instructions or orders about how to do something',
@@ -5995,7 +5604,6 @@
                 'Ambiguity resolved to protect procedural rights of accused'
               ];
             }
-            // Default analysis for other ambiguous phrases
             else {
               resolution.literalInterpretation = {
                 meaning: `Plain, ordinary meaning of "${ambiguousPhrase}"`,
@@ -6054,13 +5662,10 @@
                 argumentApproach: ''
               };
 
-              // Extract positions from documents
               harmonization.fileAPosition = `File A: ${conflict.status?.includes('File A') ? conflict.element : 'Position stated in File A'}`;
               harmonization.fileBPosition = `File B: ${conflict.status?.includes('File B') ? conflict.element : 'Position stated in File B'}`;
 
-              // Attempt reconciliation using interpretation principles
               if (conflict.type === 'Statutory Reference' || conflict.element?.toLowerCase().includes('s.') || conflict.element?.toLowerCase().includes('section')) {
-                // Statutory reference conflict
                 harmonization.reconciliationAttempt = 'Apply harmonious construction principle: attempt to read both documents together to give effect to all provisions. If both documents purport to describe same event, reconcile by examining whether references are complementary or contradictory.';
 
                 if (conflict.status?.includes('only in File A')) {
@@ -6083,7 +5688,6 @@
                   harmonization.argumentApproach = 'Documents align on statutory basis - no interpretative issue';
                 }
               } else if (conflict.type === 'Document Comprehensiveness' || conflict.description?.includes('terminology density')) {
-                // Comprehensiveness conflict
                 harmonization.reconciliationAttempt = 'Differences in detail or terminology density do not necessarily create irreconcilable conflict. Apply principle that more detailed account may supplement (not contradict) less detailed account.';
                 harmonization.isReconcilable = true;
                 harmonization.whichPrevails = 'More comprehensive document provides fuller account';
@@ -6091,7 +5695,6 @@
                 harmonization.legalConsequence = 'More detailed document may reveal omissions in less detailed document. Not necessarily contradictory.';
                 harmonization.argumentApproach = 'ARGUMENT: Difference in comprehensiveness suggests one document more complete. Question which is contemporaneous and which is reconstruction. More detailed document may be preferred if created closer to events.';
               } else {
-                // General conflict
                 harmonization.reconciliationAttempt = 'Attempt harmonious construction: can documents be read together without contradiction? If irreconcilable, determine which has better statutory foundation and contemporaneous reliability.';
                 harmonization.isReconcilable = false;
                 harmonization.whichPrevails = 'Depends on statutory support, contemporaneous creation, and procedural context';
@@ -6121,13 +5724,11 @@
               recommendedArgument: ''
             };
 
-            // Generate report for s.49 RSA (Preliminary Breath Test)
             if (provision.includes('s.49') || provision.includes('section 49') || provision.includes('s 49')) {
               report.plainText = 'Road Safety Act 1986 (Vic) s.49 - Preliminary Breath Test. Requires: (1) Person driving/in charge of motor vehicle; (2) Officer has reason to believe person consumed intoxicating liquor [s.49(1)(b)] OR other circumstances in s.49(1)(a)-(h); (3) Officer may require preliminary breath test; (4) Person must comply with requirement.';
 
               report.applicationToFacts = `Analyzing documents for s.49 compliance:\n`;
 
-              // Check for "reason to believe"
               const hasReasonToBelieve = documentText.toLowerCase().includes('reason to believe') ||
                                         documentText.toLowerCase().includes('believed') ||
                                         documentText.toLowerCase().includes('appeared');
@@ -6153,14 +5754,12 @@
                 report.deficiencies.push('CRITICAL: No evidence of "reason to believe" person consumed intoxicating liquor per s.49(1)(b)');
               }
 
-              // Analyze deficiencies
               if (report.deficiencies.length > 0) {
                 report.legalConsequences.push('Preliminary breath test may be unauthorized if s.49 requirements not satisfied');
                 report.legalConsequences.push('Unauthorized preliminary test may affect admissibility of subsequent evidentiary test');
                 report.legalConsequences.push('Lack of statutory authority for initial stop/test may vitiate entire procedure');
               }
 
-              // Recommended argument
               if (report.requirementsSatisfied === 'NOT SATISFIED') {
                 report.recommendedArgument = 'LITERAL INTERPRETATION ARGUMENT: s.49 expressly requires "reason to believe" person consumed intoxicating liquor. Document lacks any evidence of this prerequisite. Per expressio unius principle, circumstances listed in s.49(1)(a)-(h) are exhaustive - test outside these circumstances is unauthorized. Preliminary test was unlawful, vitiating subsequent evidentiary procedure.';
               } else if (report.requirementsSatisfied === 'UNCLEAR') {
@@ -6170,13 +5769,11 @@
               }
             }
 
-            // Generate report for s.55D RSA (Breath Test Directions)
             else if (provision.includes('s.55D') || provision.includes('section 55D') || provision.includes('s.55') || provision.includes('s 55')) {
               report.plainText = 'Road Safety Act 1986 (Vic) s.55D - Breath Test Directions. Requires: (1) Test must be "in accordance with the directions" of person conducting test; (2) Directions may be oral or written; (3) Person must be given opportunity to comply; (4) Procedure must follow approved device requirements.';
 
               report.applicationToFacts = `Analyzing documents for s.55D compliance:\n`;
 
-              // Check for directions evidence
               const hasDirections = documentText.toLowerCase().includes('directions') ||
                                    documentText.toLowerCase().includes('directed') ||
                                    documentText.toLowerCase().includes('instructed') ||
@@ -6202,7 +5799,6 @@
                 report.deficiencies.push('CRITICAL: No evidence that directions were given per s.55D(1) requirement');
               }
 
-              // Check for "in accordance with" compliance
               const hasDeviceMention = documentText.toLowerCase().includes('device') ||
                                       documentText.toLowerCase().includes('machine') ||
                                       documentText.toLowerCase().includes('approved');
@@ -6211,14 +5807,12 @@
                 report.deficiencies.push('No mention of approved device - cannot assess "in accordance with directions" compliance');
               }
 
-              // Analyze deficiencies
               if (report.deficiencies.length > 0) {
                 report.legalConsequences.push('Breath test result potentially inadmissible if not conducted "in accordance with directions"');
                 report.legalConsequences.push('s.55D is mandatory procedural requirement - non-compliance vitiates test validity');
                 report.legalConsequences.push('Lack of proof that directions given is evidentiary deficiency');
               }
 
-              // Recommended argument
               if (report.requirementsSatisfied === 'NOT SATISFIED') {
                 report.recommendedArgument = 'LITERAL/STRICT COMPLIANCE ARGUMENT: s.55D(1) expressly requires test be "in accordance with the directions" of person conducting test. Document contains NO evidence that any directions were actually given. Cannot have test "in accordance with" non-existent directions. This is mandatory procedural requirement - strict compliance required. Breath test result inadmissible.';
               } else if (report.requirementsSatisfied === 'UNCLEAR') {
@@ -6228,7 +5822,6 @@
               }
             }
 
-            // Generate report for Road Safety Act generally
             else if (provision.toLowerCase().includes('road safety act') || provision.toLowerCase().includes('rsa')) {
               report.plainText = 'Road Safety Act 1986 (Vic) - Comprehensive traffic and road safety legislation governing driving offences, testing procedures, and evidentiary requirements.';
               report.applicationToFacts = 'Road Safety Act provides statutory framework for breath testing regime. Key provisions: Part 5 (drink and drug driving), ss.49-56 (testing procedures), evidentiary provisions.';
@@ -6236,7 +5829,6 @@
               report.recommendedArgument = 'Apply purposive construction per Interpretation Act 1984 (Vic) s.35(a). RSA balances road safety objectives with procedural protections for accused. Strict compliance with testing procedures required to advance protective purpose.';
             }
 
-            // Default report for other provisions
             else {
               report.plainText = `Statutory provision: ${provision}`;
               report.applicationToFacts = 'Analyze how provision applies to facts in documents. Determine whether statutory requirements satisfied.';
@@ -6252,7 +5844,6 @@
            * Orchestrates all interpretation analyses
            */
           const performStatutoryInterpretation = (phaseAResults, phaseBResults) => {
-            // Extract key statutory provisions from both phases
             const allStatutoryRefs = [];
 
             phaseAResults.fileA.forEach(analysis => {
@@ -6271,7 +5862,6 @@
               });
             });
 
-            // Apply Interpretation Act 1984 (Vic) rules
             const interpretationActAnalysis = {
               section35aPurposive: allStatutoryRefs.slice(0, 5).map(item =>
                 applyPurposiveConstruction(item.ref, `Found in ${item.source}`)
@@ -6279,7 +5869,6 @@
               section36ExtrinsicMaterials: []
             };
 
-            // Identify ambiguous provisions needing extrinsic materials
             const ambiguousPhrases = ['reason to believe', 'in accordance with', 'directions', 'as soon as practicable', 'satisfied that'];
             ambiguousPhrases.forEach(phrase => {
               const extrinsicAnalysis = identifyExtrinsicMaterialsNeeded(
@@ -6291,7 +5880,6 @@
               }
             });
 
-            // Apply common law maxims
             const commonLawMaxims = {
               nosciturASociis: [
                 applyNosciturASociis('reason to believe', 's.49 RSA context'),
@@ -6311,21 +5899,18 @@
               ]
             };
 
-            // Build comprehensive ambiguity resolver
             const ambiguityResolutions = [
               resolveAmbiguity('reason to believe', fileContents.fileA + fileContents.fileB, 's.49 Road Safety Act'),
               resolveAmbiguity('in accordance with directions', fileContents.fileA + fileContents.fileB, 's.55D Road Safety Act'),
               resolveAmbiguity('directions', fileContents.fileA + fileContents.fileB, 's.55D(2) Road Safety Act')
             ];
 
-            // Create harmonization analysis for conflicts
             const conflicts = [
               ...phaseBResults.discrepancies,
               ...phaseBResults.omissions
             ];
             const harmonizationAnalysis = harmonizeConflicts(conflicts, phaseAResults, phaseBResults);
 
-            // Generate detailed provision reports
             const provisionReports = [
               generateProvisionReport('s.49 Road Safety Act 1986 (Vic)', fileContents.fileA, phaseAResults.fileA),
               generateProvisionReport('s.55D Road Safety Act 1986 (Vic)', fileContents.fileA, phaseAResults.fileA),
@@ -6340,7 +5925,6 @@
               harmonization: harmonizationAnalysis,
               provisionReports: provisionReports,
 
-              // Legacy compatibility - keep existing structure
               literalInterpretation: {
                 approach: 'Textualist/Literal Analysis',
                 findings: 'Plain meaning interpretation applied. See detailed provision reports for literal interpretation of key requirements.'
@@ -6370,16 +5954,11 @@
             };
           };
 
-          // =============================================================================
-          // PHASE D: VICTORIAN MAGISTRATES' COURT CRIMINAL PROCEDURE ANALYSIS
-          // =============================================================================
-
           const performMagistratesCourtAnalysis = async (phaseAResults, phaseBResults, phaseCResults) => {
             const contentA = fileContents.fileA || '';
             const contentB = fileContents.fileB || '';
             const combinedContent = contentA + '\n' + contentB;
 
-            // 0. NEW: INTEGRATED COURT COMPLIANCE CHECKER
             let courtCompliance = null;
             if (window.MagistratesCourtChecker) {
               try {
@@ -6388,28 +5967,21 @@
                   checkDisclosure: true,
                   checkRSA: true
                 });
-                console.log('✓ Court Compliance Analysis completed', courtCompliance);
               } catch (error) {
                 console.error('Court Compliance Analysis failed:', error);
               }
             }
 
-            // 1. COURT-SPECIFIC DEFECT CATEGORIZATION
             const defectCategories = categorizeDefects(phaseAResults, phaseBResults, contentA, contentB);
 
-            // 2. MAGISTRATES' COURT PROCEDURE COMPLIANCE
             const procedureCompliance = checkMagistratesCourtProcedure(combinedContent, defectCategories);
 
-            // 3. RSA 1986 SPECIFIC CHECKLIST
             const rsaCompliance = performRSAChecklist(combinedContent);
 
-            // 4. DISCLOSURE COMPLIANCE MATRIX (CPA 2009 Part 3.3)
             const disclosureCompliance = checkDisclosureCompliance(combinedContent);
 
-            // 5. COURT-READY SUBMISSIONS GENERATOR
             const courtSubmissions = generateCourtReadySubmissions(defectCategories, rsaCompliance, disclosureCompliance);
 
-            // 6. CASE-SPECIFIC LEARNING FRAMEWORK
             const learningInsights = analyzeCasePatterns(defectCategories);
 
             return {
@@ -6423,7 +5995,6 @@
             };
           };
 
-          // 1. DEFECT CATEGORIZATION SYSTEM
           const categorizeDefects = (phaseAResults, phaseBResults, contentA, contentB) => {
             const categories = {
               categoryA_Jurisdictional: [],
@@ -6432,9 +6003,6 @@
               categoryD_Factual: []
             };
 
-            // CATEGORY A: Jurisdictional Defects (Court lacks authority)
-
-            // A1: Missing statutory authority
             const statutoryAuthMatches = checkPattern(contentA + contentB, /pursuant to|under (section|s\.)\s*\d+|authorized by/gi);
             if (statutoryAuthMatches.count === 0) {
               categories.categoryA_Jurisdictional.push({
@@ -6448,7 +6016,6 @@
               });
             }
 
-            // A2: Offense not within summary jurisdiction
             const indictableIndicators = checkPattern(contentA + contentB, /indictable|higher court|committal|county court/gi);
             if (indictableIndicators.count > 0) {
               categories.categoryA_Jurisdictional.push({
@@ -6462,7 +6029,6 @@
               });
             }
 
-            // A3: Time limit issues
             const timeLimitMatches = checkPattern(contentA + contentB, /time.*limit|statute.*limitation|prescribed time|within.*months/gi);
             if (timeLimitMatches.count > 0) {
               categories.categoryA_Jurisdictional.push({
@@ -6476,69 +6042,50 @@
               });
             }
 
-            // CATEGORY B: Procedural Defects (Process not followed)
-
-            // B1: Disclosure non-compliance (CPA Part 3.3)
             const disclosureDefects = identifyDisclosureDefects(contentA, contentB);
             categories.categoryB_Procedural.push(...disclosureDefects);
 
-            // B2: Missing s.49 preliminary test prerequisites
             const s49Prerequisites = checks49Prerequisites(contentA, contentB);
             if (s49Prerequisites.defects.length > 0) {
               categories.categoryB_Procedural.push(...s49Prerequisites.defects);
             }
 
-            // B3: Absent s.55D/55E compliance
             const s55Compliance = checks55DECompliance(contentA, contentB);
             if (s55Compliance.defects.length > 0) {
               categories.categoryB_Procedural.push(...s55Compliance.defects);
             }
 
-            // B4: Unsigned/undated documents
             const documentValidation = checkDocumentFormalities(contentA, contentB);
             categories.categoryB_Procedural.push(...documentValidation);
 
-            // B5: Missing service evidence
             const serviceEvidence = checkServiceEvidence(contentA, contentB);
             if (serviceEvidence.defects.length > 0) {
               categories.categoryB_Procedural.push(...serviceEvidence.defects);
             }
 
-            // CATEGORY C: Evidentiary Defects
-
-            // C1: Hearsay without exception (Evidence Act s.59)
             const hearsayDefects = identifyHearsayDefects(contentA, contentB);
             categories.categoryC_Evidentiary.push(...hearsayDefects);
 
-            // C2: Opinion evidence without expertise (s.76-79)
             const opinionDefects = identifyOpinionDefects(contentA, contentB);
             categories.categoryC_Evidentiary.push(...opinionDefects);
 
-            // C3: Improperly obtained evidence (s.138)
             const improperEvidence = checkImproperlyObtainedEvidence(contentA, contentB);
             if (improperEvidence.defects.length > 0) {
               categories.categoryC_Evidentiary.push(...improperEvidence.defects);
             }
 
-            // C4: Unfairly prejudicial evidence (s.137)
             const prejudicialEvidence = checkUnfairlyPrejudicialEvidence(contentA, contentB);
             categories.categoryC_Evidentiary.push(...prejudicialEvidence);
 
-            // C5: Missing authentication (s.48 certification)
             const authenticationDefects = checkAuthentication(contentA, contentB);
             categories.categoryC_Evidentiary.push(...authenticationDefects);
 
-            // C6: Insufficient proper performance evidence (RSA s.55E)
             const properPerformanceDefects = checkProperPerformanceEvidence(contentA, contentB);
             categories.categoryC_Evidentiary.push(...properPerformanceDefects);
 
-            // CATEGORY D: Factual Defects
-
-            // D1: Timeline contradictions
             const timelineDefects = identifyTimelineContradictions(contentA, contentB);
             categories.categoryD_Factual.push(...timelineDefects);
 
-            // D2: Conflicting statements
             const conflictingStatements = phaseBResults.discrepancies.map(disc => ({
               defectId: 'D2',
               title: 'Conflicting Statement Between Documents',
@@ -6560,7 +6107,6 @@
           const exportReport = async () => {
             if (!analysisResults) return;
 
-            // Generate enhanced report with historical context
             const learningInsights = await AnalysisMemory.generateLearningInsights();
             const currentDefects = AnalysisMemory.extractDefects(analysisResults);
             const crossIntelligence = await AnalysisMemory.getIntelligenceForAnalysis(currentDefects);
@@ -6628,7 +6174,6 @@
               exportedBy: 'Forensic Legal Analyzer v2.0 - Enhanced Learning System'
             };
 
-            // Create downloadable file
             const blob = new Blob([JSON.stringify(enhancedReport, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -6636,8 +6181,6 @@
             a.download = `forensic-analysis-enhanced-${Date.now()}.json`;
             a.click();
             URL.revokeObjectURL(url);
-
-            console.log('📥 Enhanced report exported with full learning context');
           };
 
           const identifyDisclosureDefects = (contentA, contentB) => {
@@ -6673,7 +6216,6 @@
             const defects = [];
             const combined = contentA + contentB;
 
-            // Check for "reason to believe" basis
             const reasonToBelieve = combined.match(/reason to believe|reasonable.*belief/gi);
             if (!reasonToBelieve) {
               defects.push({
@@ -6688,7 +6230,6 @@
               });
             }
 
-            // Check for specific indicators under s.49(1)(a)-(h)
             const indicators = [
               'smell.*alcohol',
               'bloodshot.*eyes',
@@ -6721,7 +6262,6 @@
             const defects = [];
             const combined = contentA + contentB;
 
-            // s.55D(1): "in accordance with directions"
             const directionsCompliance = combined.match(/in accordance with|directions.*use|followed.*directions/gi);
             if (!directionsCompliance) {
               defects.push({
@@ -6736,7 +6276,6 @@
               });
             }
 
-            // s.55D(2): Oral/written directions requirement
             const directionsGiven = combined.match(/oral.*direction|written.*direction|directions.*given|instructed/gi);
             if (!directionsGiven) {
               defects.push({
@@ -6751,7 +6290,6 @@
               });
             }
 
-            // s.55E: Proper performance presumption requirements
             const properPerformance = {
               approved: combined.match(/approved.*device|device.*approved/gi),
               designed: combined.match(/used as designed|designed.*use/gi),
@@ -6804,7 +6342,6 @@
           const checkDocumentFormalities = (contentA, contentB) => {
             const defects = [];
 
-            // Check for signatures
             const signaturesA = contentA.match(/signed|signature|sworn|declared/gi);
             const signaturesB = contentB.match(/signed|signature|sworn|declared/gi);
 
@@ -6820,7 +6357,6 @@
               });
             }
 
-            // Check for dates
             const datesA = contentA.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}/gi);
             const datesB = contentB.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}/gi);
 
@@ -6924,7 +6460,6 @@
             const defects = [];
             const combined = contentA + contentB;
 
-            // Look for opinion evidence without expertise qualification
             const opinionIndicators = /appears to|seemed|looked like|in my opinion|I believe|my view/gi;
             const expertiseIndicators = /qualified|expert|specialist|training|experience.*years/gi;
 
@@ -7017,7 +6552,6 @@
             const defects = [];
             const combined = contentA + contentB;
 
-            // Check for certificates under s.48 RSA
             const certificateIndicators = combined.match(/certificate|certify|certified|sworn.*statement/gi);
             const breathTestRefs = combined.match(/breath.*test|breath.*analysis|evidentiary.*test/gi);
 
@@ -7067,13 +6601,11 @@
           const identifyTimelineContradictions = (contentA, contentB) => {
             const defects = [];
 
-            // Extract times from both documents
             const timePattern = /\d{1,2}:\d{2}\s*(?:am|pm)?|\d{1,2}\s*(?:am|pm)/gi;
             const timesA = contentA.match(timePattern) || [];
             const timesB = contentB.match(timePattern) || [];
 
             if (timesA.length > 0 && timesB.length > 0) {
-              // Simple check: if documents have different times, flag for review
               const uniqueTimesA = [...new Set(timesA.map(t => t.toLowerCase()))];
               const uniqueTimesB = [...new Set(timesB.map(t => t.toLowerCase()))];
 
@@ -7092,7 +6624,6 @@
               }
             }
 
-            // Check for sequence contradictions
             const sequenceIndicators = ['first', 'then', 'next', 'after', 'before', 'finally', 'subsequently'];
             const hasSequenceA = sequenceIndicators.some(ind => new RegExp('\\b' + ind + '\\b', 'i').test(contentA));
             const hasSequenceB = sequenceIndicators.some(ind => new RegExp('\\b' + ind + '\\b', 'i').test(contentB));
@@ -7143,7 +6674,6 @@
             return defects;
           };
 
-          // 2. MAGISTRATES' COURT PROCEDURE CHECKER
           const checkMagistratesCourtProcedure = (content, defectCategories) => {
             const procedureStages = {
               contestMention: {
@@ -7176,7 +6706,6 @@
               }
             };
 
-            // Determine overall compliance
             let totalReqs = 0;
             let satisfiedReqs = 0;
 
@@ -7205,7 +6734,6 @@
             return matches && matches.length > 0 ? 'SATISFIED' : 'NOT_SATISFIED';
           };
 
-          // 3. RSA 1986 SPECIFIC CHECKLIST
           const performRSAChecklist = (content) => {
             const checklist = {
               preliminaryTestChain: {
@@ -7304,7 +6832,6 @@
               }
             };
 
-            // Calculate compliance
             const allItems = [...checklist.preliminaryTestChain.items, ...checklist.evidentiaryTestChain.items];
             const mandatoryItems = allItems.filter(item => item.mandatory);
             const satisfiedMandatory = mandatoryItems.filter(item => item.checked).length;
@@ -7324,7 +6851,6 @@
             return checklist;
           };
 
-          // 4. DISCLOSURE COMPLIANCE MATRIX
           const checkDisclosureCompliance = (content) => {
             const matrix = {
               prosecutionDisclosure: {
@@ -7401,7 +6927,6 @@
               }
             };
 
-            // Calculate overall compliance
             const allReqs = [...matrix.prosecutionDisclosure.requirements, ...matrix.defenceDisclosure.requirements];
             const mandatoryReqs = allReqs.filter(req => req.mandatory);
             const satisfiedMandatory = mandatoryReqs.filter(req => req.status === 'PROVIDED' || req.status === 'SATISFIED').length;
@@ -7418,34 +6943,29 @@
             return matrix;
           };
 
-          // 5. COURT-READY SUBMISSIONS GENERATOR
           const generateCourtReadySubmissions = (defectCategories, rsaCompliance, disclosureCompliance) => {
             const submissions = [];
 
             // Generate submissions for each critical defect
 
-            // Category A - Jurisdictional Defects
             defectCategories.categoryA_Jurisdictional.forEach(defect => {
               if (defect.severity === 'CRITICAL' || defect.severity === 'HIGH') {
                 submissions.push(generateSubmission(defect, 'JURISDICTIONAL'));
               }
             });
 
-            // Category B - Procedural Defects (RSA specific)
             defectCategories.categoryB_Procedural.forEach(defect => {
               if (defect.defectId.startsWith('B2') || defect.defectId.startsWith('B3')) {
                 submissions.push(generateSubmission(defect, 'RSA_PROCEDURAL'));
               }
             });
 
-            // Category C - Evidentiary Defects
             defectCategories.categoryC_Evidentiary.forEach(defect => {
               if (defect.severity === 'CRITICAL' || defect.severity === 'HIGH') {
                 submissions.push(generateSubmission(defect, 'EVIDENTIARY'));
               }
             });
 
-            // Disclosure compliance submission
             if (disclosureCompliance.summary.assessment !== 'FULL_COMPLIANCE') {
               submissions.push(generateDisclosureSubmission(disclosureCompliance));
             }
@@ -7692,7 +7212,6 @@ Authorities:
 • Principle: Court has inherent power to prevent abuse of process`;
           };
 
-          // 6. CASE-SPECIFIC LEARNING FRAMEWORK
           const analyzeCasePatterns = (defectCategories) => {
             const allDefects = [
               ...defectCategories.categoryA_Jurisdictional,
@@ -7710,14 +7229,12 @@ Authorities:
             };
 
             allDefects.forEach(defect => {
-              // Group by type
               const typeKey = defect.defectId.substring(0, 2);
               if (!defectsByType[typeKey]) {
                 defectsByType[typeKey] = [];
               }
               defectsByType[typeKey].push(defect);
 
-              // Group by severity
               if (defectsBySeverity[defect.severity]) {
                 defectsBySeverity[defect.severity].push(defect);
               }
@@ -7751,7 +7268,6 @@ Authorities:
           const identifyCommonPatterns = (defects) => {
             const patterns = [];
 
-            // RSA compliance issues
             const rsaDefects = defects.filter(d => d.defectId.startsWith('B2') || d.defectId.startsWith('B3'));
             if (rsaDefects.length > 0) {
               patterns.push({
@@ -7762,7 +7278,6 @@ Authorities:
               });
             }
 
-            // Disclosure issues
             const disclosureDefects = defects.filter(d => d.defectId === 'B1' || d.title.includes('Disclosure'));
             if (disclosureDefects.length > 0) {
               patterns.push({
@@ -7773,7 +7288,6 @@ Authorities:
               });
             }
 
-            // Evidentiary admissibility issues
             const evidentiaryDefects = defects.filter(d => d.defectId.startsWith('C'));
             if (evidentiaryDefects.length >= 3) {
               patterns.push({
@@ -7835,7 +7349,6 @@ Authorities:
             const totalIssuesA = phaseA.fileA.reduce((sum, analysis) => sum + analysis.findings.potentialIssues.length, 0);
             const totalIssuesB = phaseA.fileB.reduce((sum, analysis) => sum + analysis.findings.potentialIssues.length, 0);
 
-            // Phase D statistics
             const phaseDStats = phaseD ? {
               totalDefects: phaseD.learningInsights.totalDefects,
               critical: phaseD.learningInsights.criticalDefects,
@@ -7917,7 +7430,6 @@ Authorities:
             a.click();
           };
 
-          // Progress Bar Component
           const ProgressBar = ({ progress, label, showPercentage = true }) => (
             <div style={{ width: '100%', marginBottom: '12px' }}>
               {label && (
@@ -7966,7 +7478,6 @@ Authorities:
             </div>
           );
 
-          // Skeleton Loader Component
           const SkeletonLoader = ({ width = '100%', height = '20px', style = {} }) => (
             <div
               className="skeleton"
@@ -7978,7 +7489,6 @@ Authorities:
             />
           );
 
-          // Enhanced Badge Component
           const Badge = ({ children, variant = 'default', size = 'md' }) => {
             const variants = {
               default: { bg: '#f3f4f6', color: '#374151' },
