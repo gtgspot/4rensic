@@ -22,13 +22,14 @@ export const DefectTimeline = ({ timeline, findings }) => {
 
     // Add timeline dates/times
     if (timeline.dates) {
-      timeline.dates.forEach(dateInfo => {
+      timeline.dates.forEach((dateInfo, idx) => {
         events.push({
           type: 'date',
           timestamp: dateInfo.date,
           description: dateInfo.context,
           source: dateInfo.source,
-          severity: 'info'
+          severity: 'info',
+          id: `date-${idx}-${dateInfo.date}`
         });
       });
     }
@@ -44,7 +45,7 @@ export const DefectTimeline = ({ timeline, findings }) => {
           findingType: finding.type,
           presetName: finding.presetName,
           context: finding.context,
-          id: `finding-${idx}`
+          id: `finding-${idx}-${finding.type || 'unknown'}`
         });
       }
     });
@@ -150,11 +151,11 @@ export const DefectTimeline = ({ timeline, findings }) => {
           <div className="no-events">No events match the current filters</div>
         ) : (
           <div className="timeline-track">
-            {filteredEvents.map((event, index) => (
+            {filteredEvents.map((event) => (
               <div
-                key={index}
-                className={`timeline-event ${event.type} ${highlightedEvent === index ? 'highlighted' : ''}`}
-                onMouseEnter={() => setHighlightedEvent(index)}
+                key={event.id}
+                className={`timeline-event ${event.type} ${highlightedEvent === event.id ? 'highlighted' : ''}`}
+                onMouseEnter={() => setHighlightedEvent(event.id)}
                 onMouseLeave={() => setHighlightedEvent(null)}
               >
                 <div className="event-marker" style={{ background: getSeverityColor(event.severity) }}>
@@ -187,7 +188,7 @@ export const DefectTimeline = ({ timeline, findings }) => {
                     <div className="event-source">Source: {event.source}</div>
                   )}
 
-                  {event.context && highlightedEvent === index && (
+                  {event.context && highlightedEvent === event.id && (
                     <div className="event-context">
                       <details open>
                         <summary>Context</summary>

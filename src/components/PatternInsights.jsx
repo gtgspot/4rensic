@@ -17,13 +17,14 @@ export const PatternInsights = ({ patterns, analysisHistory }) => {
   const processedPatterns = useMemo(() => {
     if (!patterns || patterns.length === 0) return [];
 
-    return patterns.map(pattern => {
+    return patterns.map((pattern, idx) => {
       const occurrences = pattern.occurrences || 1;
       const avgSeverity = pattern.avgSeverity || 'medium';
       const significance = pattern.significance || 'normal';
 
       return {
         ...pattern,
+        id: pattern.id || `pattern-${pattern.type || 'unknown'}-${idx}`,
         occurrences,
         avgSeverity,
         significance,
@@ -184,11 +185,11 @@ export const PatternInsights = ({ patterns, analysisHistory }) => {
 
       {/* Patterns List */}
       <div className="patterns-list">
-        {sortedPatterns.map((pattern, index) => (
+        {sortedPatterns.map((pattern) => (
           <div
-            key={index}
-            className={`pattern-item ${selectedPattern === index ? 'selected' : ''}`}
-            onClick={() => setSelectedPattern(selectedPattern === index ? null : index)}
+            key={pattern.id}
+            className={`pattern-item ${selectedPattern === pattern.id ? 'selected' : ''}`}
+            onClick={() => setSelectedPattern(selectedPattern === pattern.id ? null : pattern.id)}
           >
             <div className="pattern-header">
               <div className="pattern-type">
@@ -234,7 +235,7 @@ export const PatternInsights = ({ patterns, analysisHistory }) => {
               </div>
             )}
 
-            {selectedPattern === index && (
+            {selectedPattern === pattern.id && (
               <div className="pattern-details">
                 <div className="details-section">
                   <div className="details-title">Pattern Details</div>
@@ -244,7 +245,7 @@ export const PatternInsights = ({ patterns, analysisHistory }) => {
                       <div className="examples-title">Examples:</div>
                       <ul className="examples-list">
                         {pattern.examples.slice(0, 3).map((example, idx) => (
-                          <li key={idx}>{example}</li>
+                          <li key={`${pattern.id}-example-${idx}`}>{example}</li>
                         ))}
                       </ul>
                       {pattern.examples.length > 3 && (
@@ -273,7 +274,7 @@ export const PatternInsights = ({ patterns, analysisHistory }) => {
             )}
 
             <div className="expand-hint">
-              {selectedPattern === index ? '▲ Click to collapse' : '▼ Click for details'}
+              {selectedPattern === pattern.id ? '▲ Click to collapse' : '▼ Click for details'}
             </div>
           </div>
         ))}

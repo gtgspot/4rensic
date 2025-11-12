@@ -20,11 +20,13 @@ export const AnalysisResults = ({ analysis, onExport }) => {
     }
 
     const findings = [];
+    let findingCounter = 0;
     analysis.phases.presetAnalysis.forEach(preset => {
       if (preset.findings) {
         preset.findings.forEach(finding => {
           findings.push({
             ...finding,
+            id: finding.id || `finding-${preset.presetId || 'unknown'}-${findingCounter++}`,
             presetName: preset.presetName,
             presetId: preset.presetId
           });
@@ -175,9 +177,9 @@ export const AnalysisResults = ({ analysis, onExport }) => {
             No findings match the current filter
           </div>
         ) : (
-          sortedFindings.map((finding, index) => (
+          sortedFindings.map((finding) => (
             <div
-              key={index}
+              key={finding.id}
               className={`finding-item ${getSeverityClass(finding.severity)}`}
             >
               <div className="finding-header">

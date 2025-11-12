@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forensic Legal Analyzer - v2.1 with Advanced Features</title>
+
+    <!-- External Dependencies -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- OCR and PDF Processing -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <!-- Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <script>
+        // Configure PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+
+    <style>
+        /* Modern UI Styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .features-list {
+            margin-top: 15px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .feature-badge {
+            background: #f7fafc;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #4a5568;
+            border-left: 3px solid #667eea;
+        }
+
+        #app-root {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .loading-screen {
+            text-align: center;
+            padding: 100px 20px;
+            color: #4a5568;
+        }
+
+        .loading-spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .loading-hint {
+            font-size: 14px;
+            color: #a0aec0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                🔬 Forensic Legal Analyzer
+                <span class="version-badge">v2.1 ADVANCED</span>
+            </h1>
+            <p class="subtitle">
+                Victorian Legal Document Analysis System with Advanced Timeline & Cross-Reference Features
+            </p>
+            <div class="features-list">
+                <div class="feature-badge">📅 Chronological Timeline</div>
+                <div class="feature-badge">🔗 Multi-Document Cross-Reference</div>
+                <div class="feature-badge">🧠 Pattern Detection & Learning</div>
+                <div class="feature-badge">💾 Persistent Storage</div>
+                <div class="feature-badge">📊 Advanced Analytics</div>
+            </div>
+        </div>
+
+        <div id="app-root">
+            <div class="loading-screen">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Initializing Forensic Analyzer...</div>
+                <div class="loading-hint">Loading modular components and AI engines</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- React Application -->
+    <script type="text/babel" data-type="module">
+        import ForensicAnalyzer from './src/main.jsx';
+        import { App } from './src/components/App.jsx';
+
+        const { createElement } = React;
+        const { createRoot } = ReactDOM;
+
+        // Initialize and mount app
+        async function initializeApp() {
+            try {
+                console.log('🚀 Initializing Forensic Legal Analyzer v2.1...');
+
+                // Wait for analyzer to initialize
+                const status = ForensicAnalyzer.getStatus();
+
+                if (!status.initialized) {
+                    // Wait a bit for initialization
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+
+                console.log('✅ Analyzer initialized:', ForensicAnalyzer.getStatus());
+
+                // Mount React app
+                const root = createRoot(document.getElementById('app-root'));
+                root.render(createElement(App, { analyzer: ForensicAnalyzer }));
+
+                console.log('✅ React app mounted successfully');
+
+                // Make available globally for debugging
+                window.ForensicAnalyzer = ForensicAnalyzer;
+                console.log('💡 ForensicAnalyzer available globally for debugging');
+
+            } catch (error) {
+                console.error('❌ Initialization failed:', error);
+                document.getElementById('app-root').innerHTML = `
+                    <div class="loading-screen" style="color: #f56565;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
+                        <div class="loading-text">Initialization Failed</div>
+                        <div class="loading-hint">${error.message}</div>
+                        <div style="margin-top: 20px; font-size: 12px; color: #a0aec0;">
+                            Check console for details
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Start initialization
+        initializeApp();
+    </script>
+</body>
+</html>

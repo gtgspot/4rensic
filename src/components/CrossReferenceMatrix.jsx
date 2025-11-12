@@ -18,11 +18,13 @@ export const CrossReferenceMatrix = ({ crossRefData, documents }) => {
     if (!crossRefData) return [];
 
     const discrepancies = [];
+    let discrepancyCounter = 0;
 
     // Date discrepancies
     if (crossRefData.dateDiscrepancies) {
       crossRefData.dateDiscrepancies.forEach(d => {
         discrepancies.push({
+          id: `date-discrepancy-${discrepancyCounter++}`,
           category: 'date',
           severity: d.severity || 'medium',
           description: d.description,
@@ -36,6 +38,7 @@ export const CrossReferenceMatrix = ({ crossRefData, documents }) => {
     if (crossRefData.timeDiscrepancies) {
       crossRefData.timeDiscrepancies.forEach(d => {
         discrepancies.push({
+          id: `time-discrepancy-${discrepancyCounter++}`,
           category: 'time',
           severity: d.severity || 'medium',
           description: d.description,
@@ -49,6 +52,7 @@ export const CrossReferenceMatrix = ({ crossRefData, documents }) => {
     if (crossRefData.locationDiscrepancies) {
       crossRefData.locationDiscrepancies.forEach(d => {
         discrepancies.push({
+          id: `location-discrepancy-${discrepancyCounter++}`,
           category: 'location',
           severity: d.severity || 'high',
           description: d.description,
@@ -62,6 +66,7 @@ export const CrossReferenceMatrix = ({ crossRefData, documents }) => {
     if (crossRefData.eventSequenceDiscrepancies) {
       crossRefData.eventSequenceDiscrepancies.forEach(d => {
         discrepancies.push({
+          id: `sequence-discrepancy-${discrepancyCounter++}`,
           category: 'sequence',
           severity: d.severity || 'high',
           description: d.description,
@@ -173,7 +178,7 @@ export const CrossReferenceMatrix = ({ crossRefData, documents }) => {
           <div className="panel-title">Documents in Analysis</div>
           <div className="document-list">
             {documents.map((doc, idx) => (
-              <div key={idx} className="document-item">
+              <div key={doc.name || `document-${idx}`} className="document-item">
                 <div className="document-icon">📄</div>
                 <div className="document-name">{doc.name || `Document ${idx + 1}`}</div>
               </div>
@@ -209,11 +214,11 @@ export const CrossReferenceMatrix = ({ crossRefData, documents }) => {
           </div>
         ) : (
           <div className="discrepancy-list">
-            {filteredDiscrepancies.map((discrepancy, index) => (
+            {filteredDiscrepancies.map((discrepancy) => (
               <div
-                key={index}
-                className={`discrepancy-item ${expandedDiscrepancy === index ? 'expanded' : ''}`}
-                onClick={() => setExpandedDiscrepancy(expandedDiscrepancy === index ? null : index)}
+                key={discrepancy.id}
+                className={`discrepancy-item ${expandedDiscrepancy === discrepancy.id ? 'expanded' : ''}`}
+                onClick={() => setExpandedDiscrepancy(expandedDiscrepancy === discrepancy.id ? null : discrepancy.id)}
               >
                 <div className="discrepancy-header">
                   <div className="category-badge" style={{ background: getCategoryColor(discrepancy.category) }}>
@@ -236,7 +241,7 @@ export const CrossReferenceMatrix = ({ crossRefData, documents }) => {
                   </div>
                 )}
 
-                {expandedDiscrepancy === index && discrepancy.details && (
+                {expandedDiscrepancy === discrepancy.id && discrepancy.details && (
                   <div className="discrepancy-details">
                     <div className="details-title">Details:</div>
                     <pre>{JSON.stringify(discrepancy.details, null, 2)}</pre>
@@ -244,7 +249,7 @@ export const CrossReferenceMatrix = ({ crossRefData, documents }) => {
                 )}
 
                 <div className="expand-hint">
-                  {expandedDiscrepancy === index ? '▲ Click to collapse' : '▼ Click for details'}
+                  {expandedDiscrepancy === discrepancy.id ? '▲ Click to collapse' : '▼ Click for details'}
                 </div>
               </div>
             ))}
