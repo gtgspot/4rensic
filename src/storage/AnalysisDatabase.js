@@ -1,16 +1,16 @@
 /**
- * Analysis Database
+ * Analysis Database - Enhanced with Outcome Tracking
  *
  * IndexedDB wrapper for storing analysis results, document history,
- * and learning patterns.
+ * learning patterns, and court outcomes for intelligence gathering.
  *
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 export class AnalysisDatabase {
   constructor() {
     this.dbName = 'ForensicAnalyzerDB';
-    this.dbVersion = 1;
+    this.dbVersion = 2; // Incremented for new outcomes store
     this.db = null;
   }
 
@@ -52,6 +52,13 @@ export class AnalysisDatabase {
           const patternsStore = db.createObjectStore('patterns', { keyPath: 'id', autoIncrement: true });
           patternsStore.createIndex('type', 'type', { unique: false });
           patternsStore.createIndex('frequency', 'frequency', { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains('outcomes')) {
+          const outcomesStore = db.createObjectStore('outcomes', { keyPath: 'id', autoIncrement: true });
+          outcomesStore.createIndex('analysisId', 'analysisId', { unique: false });
+          outcomesStore.createIndex('date', 'date', { unique: false });
+          outcomesStore.createIndex('outcome', 'outcome', { unique: false });
         }
       };
     });
@@ -142,10 +149,83 @@ export class AnalysisDatabase {
   }
 
   /**
+   * Save an outcome
+   */
+  async saveOutcome(analysisId, outcome) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['outcomes'], 'readwrite');
+      const store = transaction.objectStore('outcomes');
+
+      const outcomeRecord = {
+        analysisId: analysisId,
+        outcome: outcome.outcome,
+        defectsRaised: outcome.defectsRaised || [],
+        courtResponse: outcome.courtResponse || '',
+        effectiveArguments: outcome.effectiveArguments || [],
+        date: outcome.date || new Date().toISOString(),
+        timestamp: new Date().toISOString()
+      };
+
+      const request = store.add(outcomeRecord);
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Get outcome by analysis ID
+   */
+  async getOutcomeByAnalysisId(analysisId) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['outcomes'], 'readonly');
+      const store = transaction.objectStore('outcomes');
+      const index = store.index('analysisId');
+      const request = index.getAll(analysisId);
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Get all outcomes
+   */
+  async getAllOutcomes() {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['outcomes'], 'readonly');
+      const store = transaction.objectStore('outcomes');
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Update success rates from outcomes
+   */
+  async updateSuccessRates(patternDetector) {
+    try {
+      const outcomes = await this.getAllOutcomes();
+
+      for (const outcome of outcomes) {
+        await patternDetector.learnFromOutcome(outcome.analysisId, outcome);
+      }
+
+      console.log('✓ Success rates updated from outcomes');
+      return patternDetector.getSuccessRates();
+    } catch (error) {
+      console.error('✗ Failed to update success rates:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Clear all data
    */
   async clearAll() {
-    const storeNames = ['analyses', 'documents', 'patterns'];
+    const storeNames = ['analyses', 'documents', 'patterns', 'outcomes'];
     const promises = storeNames.map(storeName => {
       return new Promise((resolve, reject) => {
         const transaction = this.db.transaction([storeName], 'readwrite');
