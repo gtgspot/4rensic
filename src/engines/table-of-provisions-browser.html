@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Road Safety Act 1986 - Table of Provisions</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+      color: #2c3e50;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .header h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+
+    .header .metadata {
+      opacity: 0.9;
+      font-size: 0.9em;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 20px;
+    }
+
+    .sidebar {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      height: fit-content;
+      position: sticky;
+      top: 20px;
+    }
+
+    .sidebar h2 {
+      font-size: 1.2em;
+      margin-bottom: 15px;
+      color: #667eea;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 8px;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .filter-group {
+      margin-bottom: 15px;
+    }
+
+    .filter-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      font-size: 0.9em;
+    }
+
+    .filter-group select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .stats {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      margin-top: 15px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .stat-label {
+      color: #666;
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: #667eea;
+    }
+
+    .main-content {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      min-height: 600px;
+    }
+
+    .part {
+      margin-bottom: 30px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .part-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s;
+    }
+
+    .part-header:hover {
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+
+    .part-header h3 {
+      font-size: 1.1em;
+    }
+
+    .toggle-icon {
+      font-size: 1.5em;
+      transition: transform 0.3s;
+    }
+
+    .part-header.collapsed .toggle-icon {
+      transform: rotate(-90deg);
+    }
+
+    .part-content {
+      padding: 20px;
+      display: none;
+    }
+
+    .part-content.expanded {
+      display: block;
+    }
+
+    .division {
+      margin-bottom: 25px;
+      padding-left: 20px;
+      border-left: 3px solid #667eea;
+    }
+
+    .division-header {
+      font-size: 1.05em;
+      font-weight: 600;
+      color: #667eea;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .section {
+      margin-bottom: 12px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      border-left: 3px solid #ddd;
+      transition: all 0.2s;
+    }
+
+    .section:hover {
+      background: #e3f2fd;
+      border-left-color: #667eea;
+      transform: translateX(5px);
+      cursor: pointer;
+    }
+
+    .section.key-provision {
+      border-left-color: #4caf50;
+      background: #e8f5e9;
+    }
+
+    .section.offence-provision {
+      border-left-color: #f44336;
+      background: #ffebee;
+    }
+
+    .section.implemented {
+      border-left-color: #2196f3;
+      background: #e3f2fd;
+    }
+
+    .section-number {
+      font-weight: 700;
+      color: #667eea;
+      display: inline-block;
+      min-width: 50px;
+    }
+
+    .section-title {
+      display: inline;
+      color: #2c3e50;
+    }
+
+    .section-badges {
+      display: flex;
+      gap: 5px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75em;
+      font-weight: 600;
+    }
+
+    .badge.key {
+      background: #4caf50;
+      color: white;
+    }
+
+    .badge.offence {
+      background: #f44336;
+      color: white;
+    }
+
+    .badge.implemented {
+      background: #2196f3;
+      color: white;
+    }
+
+    .badge.subsections {
+      background: #9e9e9e;
+      color: white;
+    }
+
+    .section-detail {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .section-detail h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .detail-label {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .detail-value {
+      color: #2c3e50;
+    }
+
+    .related-sections {
+      margin-top: 15px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+
+    .related-sections h4 {
+      margin-bottom: 8px;
+      color: #667eea;
+      font-size: 0.95em;
+    }
+
+    .related-link {
+      display: inline-block;
+      margin: 4px 8px 4px 0;
+      padding: 4px 10px;
+      background: #667eea;
+      color: white;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.85em;
+      transition: all 0.2s;
+    }
+
+    .related-link:hover {
+      background: #764ba2;
+      transform: translateY(-2px);
+    }
+
+    .implementation-info {
+      margin-top: 15px;
+      padding: 12px;
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      border-radius: 4px;
+    }
+
+    .implementation-info h4 {
+      color: #1976d2;
+      margin-bottom: 8px;
+      font-size: 0.95em;
+    }
+
+    .rule-id {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #2196f3;
+      color: white;
+      border-radius: 4px;
+      font-size: 0.8em;
+      margin: 4px 4px 4px 0;
+      font-family: 'Courier New', monospace;
+    }
+
+    .breadcrumb {
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      font-size: 0.85em;
+      color: #666;
+    }
+
+    .close-detail {
+      float: right;
+      cursor: pointer;
+      font-size: 1.5em;
+      color: #999;
+      transition: color 0.2s;
+    }
+
+    .close-detail:hover {
+      color: #f44336;
+    }
+
+    .legend {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85em;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 3px;
+    }
+
+    .quick-links {
+      margin-bottom: 15px;
+    }
+
+    .quick-link-btn {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.2s;
+    }
+
+    .quick-link-btn:hover {
+      background: #764ba2;
+      transform: translateX(5px);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div style="max-width: 1400px; margin: 0 auto;">
+      <h1 id="act-title">Road Safety Act 1986</h1>
+      <div class="metadata" id="metadata">Loading...</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="sidebar">
+      <h2>Navigation</h2>
+
+      <input type="text" class="search-box" id="search-box" placeholder="Search sections...">
+
+      <div class="quick-links">
+        <button class="quick-link-btn" onclick="showImplemented()">📋 Implemented Rules</button>
+        <button class="quick-link-btn" onclick="showKeyProvisions()">⭐ Key Provisions</button>
+        <button class="quick-link-btn" onclick="showOffences()">⚠️ Offence Provisions</button>
+        <button class="quick-link-btn" onclick="showPriorities()">🎯 Priority for Implementation</button>
+      </div>
+
+      <div class="filter-group">
+        <label>Filter by Part</label>
+        <select id="part-filter" onchange="filterByPart()">
+          <option value="">All Parts</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Filter by Topic</label>
+        <select id="topic-filter" onchange="filterByTopic()">
+          <option value="">All Topics</option>
+        </select>
+      </div>
+
+      <div class="stats" id="stats">
+        <strong>Act Statistics:</strong>
+        <div class="stats-grid" id="stats-content">
+          Loading...
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background: #e8f5e9; border-left: 3px solid #4caf50;"></div>
+          <span>Key Provision</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #ffebee; border-left: 3px solid #f44336;"></div>
+          <span>Offence Provision</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #e3f2fd; border-left: 3px solid #2196f3;"></div>
+          <span>Implemented</span>
+        </div>
+      </div>
+
+      <div id="content">Loading Table of Provisions...</div>
+      <div id="detail-panel"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createNavigator } from './TableOfProvisionsNavigator.js';
+
+    let navigator;
+    let currentStructure = null;
+
+    // Initialize
+    async function init() {
+      try {
+        navigator = createNavigator();
+        await navigator.init();
+
+        displayMetadata();
+        displayStatistics();
+        populateFilters();
+        displayStructure();
+        setupSearch();
+
+        console.log('✓ Table of Provisions Browser initialized');
+      } catch (error) {
+        document.getElementById('content').innerHTML =
+          `<div style="color: #f44336; padding: 20px;">
+            <h3>Error Loading Table of Provisions</h3>
+            <p>${error.message}</p>
+          </div>`;
+      }
+    }
+
+    // Display metadata
+    function displayMetadata() {
+      const metadata = navigator.getMetadata();
+      document.getElementById('act-title').textContent = metadata.act;
+      document.getElementById('metadata').innerHTML =
+        `${metadata.jurisdiction} | Version ${metadata.version} | Current to ${metadata.currentTo}`;
+    }
+
+    // Display statistics
+    function displayStatistics() {
+      const stats = navigator.getStatistics();
+      const html = `
+        <div class="stat-item">
+          <span class="stat-label">Parts:</span>
+          <span class="stat-value">${stats.parts}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Divisions:</span>
+          <span class="stat-value">${stats.divisions}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Sections:</span>
+          <span class="stat-value">${stats.sections}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Key:</span>
+          <span class="stat-value">${stats.keyProvisions}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Offences:</span>
+          <span class="stat-value">${stats.offenceProvisions}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Implemented:</span>
+          <span class="stat-value">${stats.implementedRules}</span>
+        </div>
+      `;
+      document.getElementById('stats-content').innerHTML = html;
+    }
+
+    // Populate filters
+    function populateFilters() {
+      const structure = navigator.getCompleteStructure();
+
+      // Part filter
+      const partFilter = document.getElementById('part-filter');
+      structure.forEach(part => {
+        const option = document.createElement('option');
+        option.value = part.number;
+        option.textContent = `Part ${part.number} - ${part.title}`;
+        partFilter.appendChild(option);
+      });
+
+      // Topic filter
+      const topicFilter = document.getElementById('topic-filter');
+      const topics = navigator.getAllTopics();
+      topics.forEach(topic => {
+        const crossRef = navigator.getCrossReferences(topic);
+        const option = document.createElement('option');
+        option.value = topic;
+        option.textContent = crossRef.topic;
+        topicFilter.appendChild(option);
+      });
+    }
+
+    // Display structure
+    function displayStructure(structure = null) {
+      currentStructure = structure || navigator.getCompleteStructure();
+      let html = '';
+
+      currentStructure.forEach(part => {
+        html += renderPart(part);
+      });
+
+      document.getElementById('content').innerHTML = html;
+      document.getElementById('detail-panel').innerHTML = '';
+    }
+
+    // Render part
+    function renderPart(part) {
+      let html = `
+        <div class="part">
+          <div class="part-header" onclick="togglePart(this)">
+            <h3>Part ${part.number} — ${part.title}</h3>
+            <span class="toggle-icon">▼</span>
+          </div>
+          <div class="part-content">
+      `;
+
+      if (part.divisions.length > 0) {
+        part.divisions.forEach(division => {
+          html += renderDivision(division);
+        });
+      } else if (part.sections.length > 0) {
+        part.sections.forEach(section => {
+          html += renderSection(section);
+        });
+      }
+
+      html += '</div></div>';
+      return html;
+    }
+
+    // Render division
+    function renderDivision(division) {
+      let html = `
+        <div class="division">
+          <div class="division-header">Division ${division.number} — ${division.title}</div>
+      `;
+
+      division.sections.forEach(section => {
+        html += renderSection(section);
+      });
+
+      html += '</div>';
+      return html;
+    }
+
+    // Render section
+    function renderSection(section) {
+      const implStatus = navigator.getImplementationStatus(section.number);
+      const classes = ['section'];
+      const badges = [];
+
+      if (section.keyProvision) {
+        classes.push('key-provision');
+        badges.push('<span class="badge key">KEY</span>');
+      }
+
+      if (section.offenceProvision) {
+        classes.push('offence-provision');
+        badges.push('<span class="badge offence">OFFENCE</span>');
+      }
+
+      if (implStatus) {
+        classes.push('implemented');
+        badges.push('<span class="badge implemented">IMPLEMENTED</span>');
+      }
+
+      if (section.hasSubsections) {
+        const count = section.subsections?.length || '?';
+        badges.push(`<span class="badge subsections">${count} subsections</span>`);
+      }
+
+      return `
+        <div class="${classes.join(' ')}" onclick="showSectionDetail('${section.number}')">
+          <div>
+            <span class="section-number">s.${section.number}</span>
+            <span class="section-title">${section.title}</span>
+          </div>
+          ${badges.length > 0 ? `<div class="section-badges">${badges.join('')}</div>` : ''}
+        </div>
+      `;
+    }
+
+    // Show section detail
+    window.showSectionDetail = function(sectionNumber) {
+      const section = navigator.getSection(sectionNumber);
+      const hierarchy = navigator.getSectionHierarchy(sectionNumber);
+      const relatedSections = navigator.getRelatedSections(sectionNumber);
+      const implStatus = navigator.getImplementationStatus(sectionNumber);
+
+      let html = `
+        <div class="section-detail">
+          <span class="close-detail" onclick="closeDetail()">×</span>
+          <h3>Section ${section.number} — ${section.title}</h3>
+
+          <div class="breadcrumb">
+            ${navigator.getNavigationPath(sectionNumber)}
+          </div>
+
+          <div class="detail-grid">
+            <div class="detail-label">Part:</div>
+            <div class="detail-value">Part ${hierarchy.part.number} — ${hierarchy.part.title}</div>
+
+            ${hierarchy.division ? `
+              <div class="detail-label">Division:</div>
+              <div class="detail-value">Division ${hierarchy.division.number} — ${hierarchy.division.title}</div>
+            ` : ''}
+
+            <div class="detail-label">Key Provision:</div>
+            <div class="detail-value">${section.keyProvision ? 'Yes' : 'No'}</div>
+
+            <div class="detail-label">Offence Provision:</div>
+            <div class="detail-value">${section.offenceProvision ? 'Yes' : 'No'}</div>
+
+            ${section.hasSubsections ? `
+              <div class="detail-label">Subsections:</div>
+              <div class="detail-value">${section.subsections?.join(', ') || 'N/A'}</div>
+            ` : ''}
+          </div>
+      `;
+
+      if (implStatus) {
+        html += `
+          <div class="implementation-info">
+            <h4>✓ Implementation Status: ${implStatus.status}</h4>
+            <p><strong>Rule IDs:</strong></p>
+            ${implStatus.ruleIds.map(id => `<span class="rule-id">${id}</span>`).join('')}
+          </div>
+        `;
+      }
+
+      if (relatedSections.length > 0) {
+        html += `
+          <div class="related-sections">
+            <h4>Related Sections:</h4>
+            ${relatedSections.map(rel =>
+              `<a href="#" class="related-link" onclick="showSectionDetail('${rel.number}'); return false;">
+                s.${rel.number} ${rel.title}
+              </a>`
+            ).join('')}
+          </div>
+        `;
+      }
+
+      html += '</div>';
+
+      document.getElementById('detail-panel').innerHTML = html;
+      document.getElementById('detail-panel').scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // Close detail panel
+    window.closeDetail = function() {
+      document.getElementById('detail-panel').innerHTML = '';
+    };
+
+    // Toggle part
+    window.togglePart = function(header) {
+      const content = header.nextElementSibling;
+      const isExpanded = content.classList.contains('expanded');
+
+      if (isExpanded) {
+        content.classList.remove('expanded');
+        header.classList.add('collapsed');
+      } else {
+        content.classList.add('expanded');
+        header.classList.remove('collapsed');
+      }
+    };
+
+    // Filter by part
+    window.filterByPart = function() {
+      const partNumber = document.getElementById('part-filter').value;
+
+      if (!partNumber) {
+        displayStructure();
+        return;
+      }
+
+      const part = navigator.getPart(partNumber);
+      if (part) {
+        const structure = [{
+          number: part.partNumber,
+          title: part.title,
+          divisions: part.divisions ? Object.values(part.divisions).map(div => ({
+            number: div.divisionNumber,
+            title: div.title,
+            sections: Object.values(div.sections)
+          })) : [],
+          sections: part.sections ? Object.values(part.sections) : []
+        }];
+
+        displayStructure(structure);
+      }
+    };
+
+    // Filter by topic
+    window.filterByTopic = function() {
+      const topic = document.getElementById('topic-filter').value;
+
+      if (!topic) {
+        displayStructure();
+        return;
+      }
+
+      const crossRef = navigator.getCrossReferences(topic);
+      if (!crossRef) return;
+
+      // Collect all relevant sections
+      const allSections = [
+        ...(crossRef.primarySections || []),
+        ...(crossRef.relatedSections || []),
+        ...(crossRef.testingSections || []),
+        ...(crossRef.evidenceSections || []),
+        ...(crossRef.offences || []),
+        ...(crossRef.defences || [])
+      ];
+
+      // Get unique sections
+      const uniqueSections = [...new Set(allSections)];
+
+      // Build structure
+      const structure = [];
+      const partMap = new Map();
+
+      uniqueSections.forEach(sectionNum => {
+        const section = navigator.getSection(sectionNum);
+        if (!section) return;
+
+        if (!partMap.has(section.part)) {
+          const part = navigator.getPart(section.part);
+          partMap.set(section.part, {
+            number: part.partNumber,
+            title: part.title,
+            divisions: [],
+            sections: []
+          });
+        }
+
+        const partStruct = partMap.get(section.part);
+        partStruct.sections.push(section);
+      });
+
+      displayStructure(Array.from(partMap.values()));
+    };
+
+    // Show implemented sections
+    window.showImplemented = function() {
+      const implemented = navigator.getImplementedSections();
+      const sections = implemented.map(impl => impl.sectionDetails);
+
+      const structure = [{
+        number: 'Implemented',
+        title: 'Sections with Implemented Rules',
+        divisions: [],
+        sections: sections.filter(s => s)
+      }];
+
+      displayStructure(structure);
+    };
+
+    // Show key provisions
+    window.showKeyProvisions = function() {
+      const keyProvisions = navigator.getKeyProvisions();
+
+      const structure = [{
+        number: 'Key',
+        title: 'Key Provisions',
+        divisions: [],
+        sections: keyProvisions
+      }];
+
+      displayStructure(structure);
+    };
+
+    // Show offences
+    window.showOffences = function() {
+      const offences = navigator.getOffenceProvisions();
+
+      const structure = [{
+        number: 'Offences',
+        title: 'Offence Provisions',
+        divisions: [],
+        sections: offences
+      }];
+
+      displayStructure(structure);
+    };
+
+    // Show priorities
+    window.showPriorities = function() {
+      const priorities = navigator.getPriorityForImplementation();
+
+      let html = `
+        <div class="section-detail">
+          <h3>Priority Sections for Implementation</h3>
+          <p style="margin-bottom: 20px; color: #666;">These sections are prioritized for future rule implementation.</p>
+      `;
+
+      const grouped = { HIGH: [], MEDIUM: [], LOW: [] };
+      priorities.forEach(p => grouped[p.priority].push(p));
+
+      Object.entries(grouped).forEach(([priority, items]) => {
+        if (items.length === 0) return;
+
+        html += `
+          <div style="margin-bottom: 20px;">
+            <h4 style="color: ${priority === 'HIGH' ? '#f44336' : priority === 'MEDIUM' ? '#ff9800' : '#4caf50'}; margin-bottom: 10px;">
+              ${priority} Priority (${items.length})
+            </h4>
+        `;
+
+        items.forEach(item => {
+          html += `
+            <div class="section" onclick="showSectionDetail('${item.section.split('(')[0]}')" style="margin-bottom: 8px;">
+              <span class="section-number">s.${item.section}</span>
+              <span class="section-title">${item.title}</span>
+            </div>
+          `;
+        });
+
+        html += '</div>';
+      });
+
+      html += '</div>';
+      document.getElementById('detail-panel').innerHTML = html;
+      document.getElementById('detail-panel').scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // Setup search
+    function setupSearch() {
+      const searchBox = document.getElementById('search-box');
+      let searchTimeout;
+
+      searchBox.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          const keyword = e.target.value.trim();
+
+          if (!keyword) {
+            displayStructure();
+            return;
+          }
+
+          const results = navigator.searchSections(keyword);
+
+          if (results.length === 0) {
+            document.getElementById('content').innerHTML =
+              '<p style="padding: 20px; color: #999;">No sections found matching your search.</p>';
+            return;
+          }
+
+          const structure = [{
+            number: 'Search',
+            title: `Search Results for "${keyword}" (${results.length} found)`,
+            divisions: [],
+            sections: results
+          }];
+
+          displayStructure(structure);
+        }, 300);
+      });
+    }
+
+    // Start the app
+    init();
+  </script>
+</body>
+</html>

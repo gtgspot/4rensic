@@ -1,0 +1,631 @@
+{
+  "metadata": {
+    "act": "Road Safety Act 1986",
+    "jurisdiction": "Victoria, Australia",
+    "version": "127",
+    "currentTo": "1 July 2024",
+    "citation": "Road Safety Act 1986 (Vic)",
+    "status": "In force",
+    "generatedDate": "2025-01-13"
+  },
+  "tableOfProvisions": {
+    "part1": {
+      "partNumber": "1",
+      "title": "Preliminary",
+      "sections": {
+        "1": {
+          "number": "1",
+          "title": "Purposes",
+          "hasSubsections": false
+        },
+        "2": {
+          "number": "2",
+          "title": "Commencement",
+          "hasSubsections": false
+        },
+        "3": {
+          "number": "3",
+          "title": "Definitions",
+          "hasSubsections": true,
+          "subsections": ["1", "2", "3", "4", "5"]
+        },
+        "3A": {
+          "number": "3A",
+          "title": "Meaning of motorcycle",
+          "hasSubsections": false
+        },
+        "3B": {
+          "number": "3B",
+          "title": "Meaning of corresponding law",
+          "hasSubsections": true,
+          "subsections": ["1", "2"]
+        },
+        "4": {
+          "number": "4",
+          "title": "Application of Act",
+          "hasSubsections": false
+        },
+        "5": {
+          "number": "5",
+          "title": "Act binds the Crown",
+          "hasSubsections": false
+        }
+      }
+    },
+    "part2": {
+      "partNumber": "2",
+      "title": "Alcohol and Drug Testing",
+      "divisions": {
+        "division1": {
+          "divisionNumber": "1",
+          "title": "Preliminary Alcohol and Drug Testing",
+          "sections": {
+            "48": {
+              "number": "48",
+              "title": "Interpretation",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3"],
+              "relatedSections": ["49", "50", "51", "52", "53"]
+            },
+            "49": {
+              "number": "49",
+              "title": "Preliminary breath test",
+              "hasSubsections": true,
+              "subsections": ["1", "1A", "2", "3", "4"],
+              "keyProvision": true,
+              "rulesImplemented": ["RSA_s49_1_reason_to_believe", "RSA_s49_1_articulation_of_belief"],
+              "relatedSections": ["48", "50", "55"],
+              "paragraphs": {
+                "1": {
+                  "paragraphs": ["a", "b", "c"]
+                }
+              }
+            },
+            "50": {
+              "number": "50",
+              "title": "Preliminary oral fluid test",
+              "hasSubsections": true,
+              "subsections": ["1", "1A", "2", "3", "4", "5"],
+              "keyProvision": true,
+              "relatedSections": ["49", "51", "55"]
+            },
+            "51": {
+              "number": "51",
+              "title": "Preliminary impairment assessment",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3", "4"],
+              "relatedSections": ["50", "52"]
+            },
+            "52": {
+              "number": "52",
+              "title": "Preliminary tests at scene of accident",
+              "hasSubsections": true,
+              "subsections": ["1", "2"],
+              "relatedSections": ["49", "50", "51"]
+            },
+            "53": {
+              "number": "53",
+              "title": "General provisions relating to preliminary tests",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3", "4", "5", "6"],
+              "relatedSections": ["49", "50", "51", "52"]
+            }
+          }
+        },
+        "division2": {
+          "divisionNumber": "2",
+          "title": "Evidentiary Breath Testing",
+          "sections": {
+            "55": {
+              "number": "55",
+              "title": "Requirement to undergo breath test",
+              "hasSubsections": true,
+              "subsections": ["1", "1A", "1B", "2", "3", "4", "5", "6"],
+              "keyProvision": true,
+              "rulesImplemented": ["RSA_s55_1_evidentiary_test_prerequisite"],
+              "relatedSections": ["49", "50", "55A", "55B", "55C", "55D"]
+            },
+            "55A": {
+              "number": "55A",
+              "title": "Requirement to remain at place",
+              "hasSubsections": true,
+              "subsections": ["1", "2"],
+              "relatedSections": ["55"]
+            },
+            "55B": {
+              "number": "55B",
+              "title": "Requirement to accompany police officer",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3", "4"],
+              "relatedSections": ["55", "55A"]
+            },
+            "55C": {
+              "number": "55C",
+              "title": "Detention after breath test",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3"],
+              "relatedSections": ["55", "55D"]
+            },
+            "55D": {
+              "number": "55D",
+              "title": "Conduct of breath test",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3", "4", "5"],
+              "keyProvision": true,
+              "rulesImplemented": ["RSA_s55D_proper_administration"],
+              "relatedSections": ["55", "55E"]
+            },
+            "55E": {
+              "number": "55E",
+              "title": "Certificate as to breath analysis",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3", "4"],
+              "relatedSections": ["55D"]
+            }
+          }
+        },
+        "division3": {
+          "divisionNumber": "3",
+          "title": "Evidentiary Blood and Oral Fluid Testing",
+          "sections": {
+            "55F": {
+              "number": "55F",
+              "title": "Interpretation",
+              "hasSubsections": true,
+              "subsections": ["1", "2"]
+            },
+            "56": {
+              "number": "56",
+              "title": "Right to have sample taken by medical practitioner",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3", "4", "5"],
+              "keyProvision": true,
+              "rulesImplemented": ["RSA_s56_right_to_medical_practitioner"],
+              "relatedSections": ["55", "55D", "57"]
+            },
+            "56A": {
+              "number": "56A",
+              "title": "Analysis of blood sample",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3"]
+            },
+            "57": {
+              "number": "57",
+              "title": "Requirement to provide oral fluid sample",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3", "4", "5", "6"],
+              "keyProvision": true,
+              "relatedSections": ["50", "56"]
+            },
+            "57A": {
+              "number": "57A",
+              "title": "Analysis of oral fluid sample",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3"]
+            },
+            "57B": {
+              "number": "57B",
+              "title": "Certificate as to analysis of blood or oral fluid",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3", "4"]
+            }
+          }
+        },
+        "division4": {
+          "divisionNumber": "4",
+          "title": "Offences",
+          "sections": {
+            "49A": {
+              "number": "49A",
+              "title": "Offences—fail to comply with preliminary test",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3"],
+              "offenceProvision": true,
+              "relatedSections": ["49", "50", "51"]
+            },
+            "49B": {
+              "number": "49B",
+              "title": "Offence—interfere with preliminary testing equipment",
+              "hasSubsections": false,
+              "offenceProvision": true
+            },
+            "55G": {
+              "number": "55G",
+              "title": "Offence—fail to remain or accompany police officer",
+              "hasSubsections": true,
+              "subsections": ["1", "2"],
+              "offenceProvision": true,
+              "relatedSections": ["55A", "55B"]
+            },
+            "55H": {
+              "number": "55H",
+              "title": "Offence—fail to comply with breath test requirement",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3"],
+              "offenceProvision": true,
+              "relatedSections": ["55"]
+            },
+            "57C": {
+              "number": "57C",
+              "title": "Offence—fail to provide oral fluid sample",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3"],
+              "offenceProvision": true,
+              "relatedSections": ["57"]
+            }
+          }
+        },
+        "division5": {
+          "divisionNumber": "5",
+          "title": "General Provisions",
+          "sections": {
+            "58": {
+              "number": "58",
+              "title": "Use of force",
+              "hasSubsections": true,
+              "subsections": ["1", "2"]
+            },
+            "59": {
+              "number": "59",
+              "title": "Defences",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3"]
+            },
+            "60": {
+              "number": "60",
+              "title": "Approved devices and procedures",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3", "4"]
+            }
+          }
+        }
+      }
+    },
+    "part3": {
+      "partNumber": "3",
+      "title": "Alcohol and Drug Offences",
+      "sections": {
+        "5": {
+          "number": "5",
+          "title": "Drink driving offences",
+          "hasSubsections": true,
+          "subsections": ["1", "2", "3", "4", "5"],
+          "offenceProvision": true,
+          "keyProvision": true
+        },
+        "5A": {
+          "number": "5A",
+          "title": "Driving with prescribed illicit drug present",
+          "hasSubsections": true,
+          "subsections": ["1", "2", "3"],
+          "offenceProvision": true,
+          "keyProvision": true
+        },
+        "49C": {
+          "number": "49C",
+          "title": "Impaired driving",
+          "hasSubsections": true,
+          "subsections": ["1", "2"],
+          "offenceProvision": true,
+          "keyProvision": true
+        }
+      }
+    },
+    "part4": {
+      "partNumber": "4",
+      "title": "Licensing of Drivers",
+      "divisions": {
+        "division1": {
+          "divisionNumber": "1",
+          "title": "Driver Licences",
+          "sections": {
+            "6": {
+              "number": "6",
+              "title": "Unlicensed driving",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3"],
+              "offenceProvision": true
+            },
+            "7": {
+              "number": "7",
+              "title": "Classes of driver licence",
+              "hasSubsections": true,
+              "subsections": ["1", "2"]
+            },
+            "8": {
+              "number": "8",
+              "title": "Learner permits",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3"]
+            },
+            "9": {
+              "number": "9",
+              "title": "Probationary licences",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3", "4"]
+            },
+            "10": {
+              "number": "10",
+              "title": "Full driver licences",
+              "hasSubsections": true,
+              "subsections": ["1", "2"]
+            }
+          }
+        },
+        "division2": {
+          "divisionNumber": "2",
+          "title": "Licence Suspension and Cancellation",
+          "sections": {
+            "22": {
+              "number": "22",
+              "title": "Immediate licence suspension",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3", "4"]
+            },
+            "23": {
+              "number": "23",
+              "title": "Mandatory licence cancellation",
+              "hasSubsections": true,
+              "subsections": ["1", "2", "3"]
+            },
+            "24": {
+              "number": "24",
+              "title": "Discretionary licence cancellation",
+              "hasSubsections": true,
+              "subsections": ["1", "2"]
+            }
+          }
+        }
+      }
+    },
+    "part5": {
+      "partNumber": "5",
+      "title": "Registration of Vehicles",
+      "sections": {
+        "3": {
+          "number": "3",
+          "title": "Unregistered vehicle offences",
+          "hasSubsections": true,
+          "subsections": ["1", "2", "3"],
+          "offenceProvision": true
+        },
+        "4": {
+          "number": "4",
+          "title": "Vehicle registration requirements",
+          "hasSubsections": true,
+          "subsections": ["1", "2"]
+        }
+      }
+    },
+    "part6": {
+      "partNumber": "6",
+      "title": "Road Traffic and Safety",
+      "sections": {
+        "61": {
+          "number": "61",
+          "title": "Careless driving",
+          "hasSubsections": true,
+          "subsections": ["1", "2"],
+          "offenceProvision": true
+        },
+        "62": {
+          "number": "62",
+          "title": "Dangerous driving",
+          "hasSubsections": true,
+          "subsections": ["1", "2", "3"],
+          "offenceProvision": true
+        },
+        "62A": {
+          "number": "62A",
+          "title": "Culpable driving causing death",
+          "hasSubsections": true,
+          "subsections": ["1", "2", "3"],
+          "offenceProvision": true,
+          "keyProvision": true
+        },
+        "63": {
+          "number": "63",
+          "title": "Speeding offences",
+          "hasSubsections": true,
+          "subsections": ["1", "2", "3"],
+          "offenceProvision": true
+        },
+        "64": {
+          "number": "64",
+          "title": "Road rage",
+          "hasSubsections": true,
+          "subsections": ["1", "2"],
+          "offenceProvision": true
+        }
+      }
+    },
+    "part7": {
+      "partNumber": "7",
+      "title": "Enforcement",
+      "sections": {
+        "82": {
+          "number": "82",
+          "title": "Police powers to require production of licence",
+          "hasSubsections": true,
+          "subsections": ["1", "2", "3"]
+        },
+        "83": {
+          "number": "83",
+          "title": "Police powers to require name and address",
+          "hasSubsections": true,
+          "subsections": ["1", "2"]
+        },
+        "84": {
+          "number": "84",
+          "title": "Police powers to inspect vehicles",
+          "hasSubsections": true,
+          "subsections": ["1", "2", "3"]
+        }
+      }
+    },
+    "part8": {
+      "partNumber": "8",
+      "title": "Legal Proceedings",
+      "sections": {
+        "90": {
+          "number": "90",
+          "title": "Time limit for prosecutions",
+          "hasSubsections": true,
+          "subsections": ["1", "2"]
+        },
+        "91": {
+          "number": "91",
+          "title": "Evidentiary certificates",
+          "hasSubsections": true,
+          "subsections": ["1", "2", "3", "4"]
+        },
+        "92": {
+          "number": "92",
+          "title": "Proof of ownership",
+          "hasSubsections": true,
+          "subsections": ["1", "2"]
+        }
+      }
+    },
+    "part9": {
+      "partNumber": "9",
+      "title": "Miscellaneous",
+      "sections": {
+        "100": {
+          "number": "100",
+          "title": "Regulations",
+          "hasSubsections": true,
+          "subsections": ["1", "2", "3"]
+        },
+        "101": {
+          "number": "101",
+          "title": "Service of notices",
+          "hasSubsections": true,
+          "subsections": ["1", "2"]
+        },
+        "102": {
+          "number": "102",
+          "title": "Fees",
+          "hasSubsections": true,
+          "subsections": ["1", "2"]
+        }
+      }
+    }
+  },
+  "schedules": {
+    "schedule1": {
+      "number": "1",
+      "title": "Prescribed Illicit Drugs"
+    },
+    "schedule2": {
+      "number": "2",
+      "title": "Prescribed Alcohol Concentrations"
+    },
+    "schedule3": {
+      "number": "3",
+      "title": "Demerit Points"
+    }
+  },
+  "crossReferences": {
+    "alcoholTesting": {
+      "topic": "Alcohol Testing Procedures",
+      "primarySections": ["49", "55", "55D", "56"],
+      "relatedSections": ["48", "50", "53", "55A", "55B", "55C", "55E"],
+      "offences": ["49A", "55G", "55H"],
+      "defences": ["59"]
+    },
+    "drugTesting": {
+      "topic": "Drug Testing Procedures",
+      "primarySections": ["50", "51", "57"],
+      "relatedSections": ["48", "53", "57A", "57B"],
+      "offences": ["49A", "57C"],
+      "defences": ["59"]
+    },
+    "drinkDriving": {
+      "topic": "Drink Driving Offences",
+      "primarySections": ["5"],
+      "testingSections": ["49", "55", "55D"],
+      "evidenceSections": ["56", "55E", "57B"],
+      "relatedOffences": ["49A", "55H"]
+    },
+    "drugDriving": {
+      "topic": "Drug Driving Offences",
+      "primarySections": ["5A", "49C"],
+      "testingSections": ["50", "51", "57"],
+      "evidenceSections": ["57A", "57B"],
+      "relatedOffences": ["49A", "57C"]
+    },
+    "policePowers": {
+      "topic": "Police Powers",
+      "testingPowers": ["49", "50", "51", "55", "57"],
+      "detentionPowers": ["55A", "55B", "55C"],
+      "generalPowers": ["82", "83", "84"],
+      "useOfForce": ["58"]
+    }
+  },
+  "implementationStatus": {
+    "rulesImplemented": {
+      "s49_1": {
+        "section": "49(1)",
+        "title": "Preliminary breath test - reason to believe",
+        "ruleIds": ["RSA_s49_1_reason_to_believe", "RSA_s49_1_articulation_of_belief"],
+        "status": "IMPLEMENTED"
+      },
+      "s55_1": {
+        "section": "55(1)",
+        "title": "Evidentiary breath test prerequisites",
+        "ruleIds": ["RSA_s55_1_evidentiary_test_prerequisite"],
+        "status": "IMPLEMENTED"
+      },
+      "s55D": {
+        "section": "55D",
+        "title": "Proper administration of breath test",
+        "ruleIds": ["RSA_s55D_proper_administration"],
+        "status": "IMPLEMENTED"
+      },
+      "s56": {
+        "section": "56",
+        "title": "Right to medical practitioner",
+        "ruleIds": ["RSA_s56_right_to_medical_practitioner"],
+        "status": "IMPLEMENTED"
+      }
+    },
+    "priorityForImplementation": [
+      {
+        "section": "49(1A)",
+        "title": "Preliminary breath test - random testing",
+        "priority": "HIGH"
+      },
+      {
+        "section": "50(1)",
+        "title": "Preliminary oral fluid test",
+        "priority": "HIGH"
+      },
+      {
+        "section": "53",
+        "title": "General provisions relating to preliminary tests",
+        "priority": "MEDIUM"
+      },
+      {
+        "section": "55A",
+        "title": "Requirement to remain at place",
+        "priority": "MEDIUM"
+      },
+      {
+        "section": "55B",
+        "title": "Requirement to accompany police officer",
+        "priority": "MEDIUM"
+      },
+      {
+        "section": "5(1)",
+        "title": "Drink driving offences",
+        "priority": "HIGH"
+      },
+      {
+        "section": "5A(1)",
+        "title": "Drug driving offences",
+        "priority": "HIGH"
+      }
+    ]
+  }
+}

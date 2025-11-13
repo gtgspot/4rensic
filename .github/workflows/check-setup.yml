@@ -1,75 +1,150 @@
-name: Setup Check
+  - name: Prepare environment and helper functions
+    shell: bash
+    run: |
+      set -euo pipefail
+      export JOB_ID="${{ github.event.inputs.job_id }}"
+      export POLL_INTERVAL="${{ github.event.inputs.poll_interval_seconds }}"
+      export MAX_POLL_SECONDS=$(( ${{ github.event.inputs.max_poll_minutes }} * 60 ))
+      export REPO="${{ github.repository }}"
+      export API="https://api.github.com/repos/$REPO"
+      # Use GITHUB_TOKEN; replace with REPO_PAT if you have a PAT in secrets
+      export TOKEN="${{ secrets.GITHUB_TOKEN }}"
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+      echo "JOB_ID=$JOB_ID REPO=$REPO"
 
-jobs:
-  verify-setup:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      api_get() {
+        curl -sS -H "Authorization: token $TOKEN" -H "Accept: application/vnd.github+json" "$1"
+      }
+      api_post() {
+        curl -sS -X POST -H "Authorization: token $TOKEN" -H "Accept: application/vnd.github+json" "$1"
+      }
 
-      - name: Show environment versions
-        run: |
-          echo "Python version:"
-          python3 --version || true
-          echo "Node version:"
-          node --version || true
-          echo "npm version:"
-          npm --version || true
-
-      - name: npm install (no external deps expected)
-        run: npm install || true
-
-      - name: Make serve.py executable
-        run: chmod +x serve.py || true
-
-      - name: Start serve.py in background and wait for it
-        run: |
-          echo "Starting serve.py (port 8000) in background..."
-          nohup python3 serve.py &>/tmp/serve.log &
-          echo $! >/tmp/serve.pid
-          echo "Waiting for server to respond on http://localhost:8000/index-modular.html ..."
-          for i in {1..20}; do
-            if curl -sSf http://localhost:8000/index-modular.html >/dev/null; then
-              echo "Server responded"
-              break
-            else
-              echo "Waiting for server ($i/20)..."
-              sleep 1
-            fi
-          done
-          if ! curl -sSf http://localhost:8000/index-modular.html >/dev/null; then
-            echo "Server did not respond; dumping /tmp/serve.log"
-            sed -n '1,200p' /tmp/serve.log || true
-            exit 1
+      retry() {
+        # retry <n> <command...>  (default 5 attempts)
+        local max=5
+        if [[ "$1" =~ ^[0-9]+$ ]]; then max="$1"; shift; fi
+        local n=0
+        until "$@"; do
+          n=$((n+1))
+          if [ "$n" -ge "$max" ]; then
+            echo "Command failed after $n attempts: $*"
+            return 1
           fi
+          sleep $((n * 2))
+        done
+      }
 
-      - name: Smoke-test index pages
-        run: |
-          echo "Fetching index-modular.html ..."
-          curl -sSf http://localhost:8000/index-modular.html -o /tmp/index-modular.html
-          echo "Size: $(wc -c < /tmp/index-modular.html) bytes"
-          echo "Fetching index.html ..."
-          curl -sSf http://localhost:8000/index.html -o /tmp/index.html
-          echo "Size: $(wc -c < /tmp/index.html) bytes"
+      echo "Helpers ready"
 
-      - name: Validate CORS / headers (basic)
-        run: |
-          echo "Checking headers for index-modular.html ..."
-          curl -sI http://localhost:8000/index-modular.html | sed -n '1,200p'
+  - name: Get job metadata (job -> run_id)
+    id: job-meta
+    shell: bash
+    run: |
+      set -e
+      job_json=$(api_get "$API/actions/jobs/$JOB_ID")
+      echo "$job_json" | jq -r '.' > job-${JOB_ID}.json
+      run_id=$(jq -r '.run_id' job-${JOB_ID}.json)
+      if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+        echo "Could not determine run_id for job $JOB_ID. Full job JSON saved to job-${JOB_ID}.json"
+        exit 2
+      fi
+      echo "Found run_id=$run_id"
+      echo "run_id=$run_id" >> $GITHUB_OUTPUT
+      echo "job_json_path=job-${JOB_ID}.json" >> $GITHUB_OUTPUT
 
-      - name: Cleanup
-        if: always()
-        run: |
-          if [ -f /tmp/serve.pid ]; then
-            pid=$(cat /tmp/serve.pid)
-            echo "Killing serve.py (pid $pid) ..."
-            kill "$pid" || true
-            sleep 1
-          fi
-          echo "Done"
+  - name: Trigger rerun of the job
+    id: trigger
+    shell: bash
+    run: |
+      set -e
+      echo "Requesting rerun for job $JOB_ID..."
+      response=$(api_post "$API/actions/jobs/$JOB_ID/rerun")
+      # Save returned JSON for audit; some endpoints return 202 with empty body
+      echo "$response" | jq -r '.' > rerun-response-${JOB_ID}.json || true
+      echo "Rerun request sent; saved rerun-response-${JOB_ID}.json"
+      # Note: rerun may re-use same run_id or create a new run. We will poll the original run_id (from previous step).
+      echo "rerun_response_path=rerun-response-${JOB_ID}.json" >> $GITHUB_OUTPUT
+
+  - name: Poll run status until completed (or timeout)
+    id: poll
+    shell: bash
+    run: |
+      set -e
+      run_id="${{ steps.job-meta.outputs.run_id }}"
+      echo "Polling status for run_id=$run_id"
+      elapsed=0
+      while true; do
+        status_json=$(api_get "$API/actions/runs/$run_id")
+        status=$(echo "$status_json" | jq -r '.status // empty')
+        conclusion=$(echo "$status_json" | jq -r '.conclusion // empty')
+        echo "status=$status conclusion=$conclusion (elapsed ${elapsed}s)"
+        if [ "$status" = "completed" ] || [ "$status" = "failure" ] || [ "$status" = "cancelled" ] || [ "$status" = "timed_out" ]; then
+          echo "$status_json" | jq -r '.' > run-${run_id}.json
+          echo "run_json_path=run-${run_id}.json" >> $GITHUB_OUTPUT
+          echo "status=$status" >> $GITHUB_OUTPUT
+          echo "conclusion=${conclusion:-unknown}" >> $GITHUB_OUTPUT
+          break
+        fi
+        if [ "$elapsed" -ge "$MAX_POLL_SECONDS" ]; then
+          echo "Polling timed out after $elapsed seconds"
+          exit 3
+        fi
+        sleep "$POLL_INTERVAL"
+        elapsed=$((elapsed + POLL_INTERVAL))
+      done
+
+  - name: Download run logs and extract
+    shell: bash
+    run: |
+      set -e
+      run_id=$(jq -r '.run_id' run-${{ steps.job-meta.outputs.run_id }}.json 2>/dev/null || true)
+      # Use the run id we stored earlier (fallback: use output directly)
+      RUN_ID="${{ steps.job-meta.outputs.run_id }}"
+      echo "Downloading logs for run $RUN_ID"
+      curl -sSL -H "Authorization: token $TOKEN" -o run-${RUN_ID}-logs.zip "$API/actions/runs/${RUN_ID}/logs"
+      mkdir -p logs-${RUN_ID}
+      unzip -q run-${RUN_ID}-logs.zip -d logs-${RUN_ID} || true
+      echo "Saved logs to logs-${RUN_ID}/"
+
+  - name: Dump runner diagnostics (helpful when job is cancelled/no logs)
+    shell: bash
+    run: |
+      set -e
+      mkdir -p runner-diagnostics
+      echo "=== uname ===" > runner-diagnostics/runner-info.txt
+      uname -a >> runner-diagnostics/runner-info.txt || true
+      echo "" >> runner-diagnostics/runner-info.txt
+      if command -v lsb_release >/dev/null; then lsb_release -a >> runner-diagnostics/runner-info.txt || true; fi
+      echo "" >> runner-diagnostics/runner-info.txt
+      echo "=== Disk usage ===" >> runner-diagnostics/runner-info.txt
+      df -h >> runner-diagnostics/runner-info.txt || true
+      echo "" >> runner-diagnostics/runner-info.txt
+      echo "=== Memory ===" >> runner-diagnostics/runner-info.txt
+      free -h >> runner-diagnostics/runner-info.txt || true
+      echo "" >> runner-diagnostics/runner-info.txt
+      echo "=== Runner env ===" >> runner-diagnostics/runner-info.txt
+      env | sort >> runner-diagnostics/runner-env.txt || true
+      echo "Collected runner diagnostics"
+
+  - name: Package logs and diagnostics
+    shell: bash
+    run: |
+      set -e
+      RUN_ID="${{ steps.job-meta.outputs.run_id }}"
+      tar czf rerun-${JOB_ID}-run-${RUN_ID}-bundle.tgz logs-${RUN_ID} runner-diagnostics job-${JOB_ID}.json rerun-response-${JOB_ID}.json run-${RUN_ID}.json || true
+      ls -lah rerun-${JOB_ID}-run-${RUN_ID}-bundle.tgz
+
+  - name: Upload collected bundle
+    uses: actions/upload-artifact@v4
+    with:
+      name: rerun-${{ github.event.inputs.job_id }}-bundle
+      path: rerun-*.tgz
+
+  - name: Print short summary (final)
+    if: always()
+    shell: bash
+    run: |
+      echo "Rerun summary:"
+      echo "Job ID: $JOB_ID"
+      echo "Run JSON: run-${{ steps.job-meta.outputs.run_id }}.json"
+      echo "Artifact name: rerun-${JOB_ID}-run-${{ steps.job-meta.outputs.run_id }}-bundle.tgz"

@@ -1,7 +1,7 @@
 {
   "name": "forensic-legal-analyzer",
-  "version": "2.0.0",
-  "description": "Victorian Legal Document Analysis System with Modular Architecture",
+  "version": "2.1.0",
+  "description": "Victorian Legal Document Analysis System with YScript Rules-as-Code Engine",
   "type": "module",
   "main": "src/main.jsx",
   "scripts": {
@@ -17,7 +17,11 @@
     "legislation",
     "compliance",
     "statute",
-    "analyzer"
+    "analyzer",
+    "rules-as-code",
+    "yscript",
+    "statutory-rules",
+    "preprocessing-engine"
   ],
   "author": "Forensic Legal Analysis Team",
   "license": "PROPRIETARY",
@@ -32,6 +36,7 @@
   "exports": {
     ".": "./src/main.jsx",
     "./analyzers/*": "./src/analyzers/*.js",
+    "./engines/*": "./src/engines/*.js",
     "./storage/*": "./src/storage/*.js",
     "./utils/*": "./src/utils/*.js",
     "./data/*": "./src/data/*.json"
